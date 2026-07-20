@@ -189,6 +189,14 @@
     "workflow": {
       "title": "Approval workflow",
       "blurb": "When a board moves to “To review”, the client receives an email notification. They approve or comment directly on the board; you are notified of every response."
+    },
+    "manage": {
+      "add": "Add a board",
+      "addPlaceholder": "A board this wedding calls for — Pool party, Sunday brunch…",
+      "added": "The board is in the studio, in creation.",
+      "failed": "The board could not be added just now.",
+      "remove": "Retire “{title}”",
+      "removeConfirm": "Retire the board “{title}”? Its sheet and exchanges leave with it."
     }
   },
   "budget": {

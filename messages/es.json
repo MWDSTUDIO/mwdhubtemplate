@@ -189,6 +189,14 @@
     "workflow": {
       "title": "Circuito de aprobación",
       "blurb": "Cuando un panel pasa a «A su consideración», el cliente recibe una notificación por correo. Aprueba o comenta directamente sobre el panel; usted es avisada de cada respuesta."
+    },
+    "manage": {
+      "add": "Añadir un panel",
+      "addPlaceholder": "Un panel que esta boda pide — Pool party, brunch del domingo…",
+      "added": "El panel está en el Estudio, en creación.",
+      "failed": "El panel no ha podido añadirse por ahora.",
+      "remove": "Retirar «{title}»",
+      "removeConfirm": "¿Retirar el panel «{title}»? Su hoja y sus intercambios se van con él."
     }
   },
   "budget": {

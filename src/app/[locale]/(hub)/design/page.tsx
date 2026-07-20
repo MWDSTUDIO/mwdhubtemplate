@@ -3,6 +3,7 @@ import { requireHouseSession } from "@/lib/session";
 import { createClient } from "@/lib/supabase/server";
 import { Link } from "@/i18n/navigation";
 import type { Board, SubBoard } from "@/lib/types";
+import { AddBoardBar, RemoveBoardButton } from "./studio-client";
 
 function StatusTag({ status, t }: { status: Board["status"]; t: (k: string) => string }) {
   if (status === "approved") return <span className="tag ok">{t("approved")}</span>;
@@ -63,32 +64,38 @@ export default async function DesignPage({
 
       <div className="planches">
         {[...moments, ...(stationery ? [stationery] : [])].map((board) => (
-          <Link
-            key={board.id}
-            href={`/design/${board.id}`}
-            className="planche"
-            style={{ textDecoration: "none" }}
-          >
-            <div className="visu">
-              {board.cover_url ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={board.cover_url} alt="" />
-              ) : (
-                <span>{board.title}</span>
-              )}
-            </div>
-            <div className="body">
-              <h3>{board.title}</h3>
-              <div className="sub">
-                {board.type === "stationery"
-                  ? t("stationerySubs")
-                  : t("subBoards", { count: subsFor(board.id).length })}
+          <div key={board.id} style={{ position: "relative" }}>
+            {session.isTeam && (
+              <RemoveBoardButton boardId={board.id} title={board.title} />
+            )}
+            <Link
+              href={`/design/${board.id}`}
+              className="planche"
+              style={{ textDecoration: "none" }}
+            >
+              <div className="visu">
+                {board.cover_url ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={board.cover_url} alt="" />
+                ) : (
+                  <span>{board.title}</span>
+                )}
               </div>
-              <StatusTag status={board.status} t={tc} />
-            </div>
-          </Link>
+              <div className="body">
+                <h3>{board.title}</h3>
+                <div className="sub">
+                  {board.type === "stationery"
+                    ? t("stationerySubs")
+                    : t("subBoards", { count: subsFor(board.id).length })}
+                </div>
+                <StatusTag status={board.status} t={tc} />
+              </div>
+            </Link>
+          </div>
         ))}
       </div>
+
+      {session.isTeam && <AddBoardBar weddingId={wedding.id} />}
 
       {session.isTeam && (
         <div className="ia team-only">

@@ -108,6 +108,19 @@ export async function updateSheet(target: SheetTarget, patch: Record<string, unk
   return { ok: true };
 }
 
+/**
+ * Remove a board — every wedding has its own geography (a pool party
+ * here, none there). Sub-boards and exchanges follow (cascade).
+ */
+export async function deleteBoard(boardId: string) {
+  const session = await requireHouseSession();
+  if (!session.isTeam) throw new Error("team only");
+  const supabase = await createClient();
+  await supabase.from("boards").delete().eq("id", boardId);
+  revalidatePath("/design");
+  return { ok: true };
+}
+
 /** Team enters a hex code; the app renders the square. */
 export async function addPaletteTone(boardId: string, hex: string) {
   const session = await requireHouseSession();

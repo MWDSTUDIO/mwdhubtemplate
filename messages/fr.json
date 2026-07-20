@@ -189,6 +189,14 @@
     "workflow": {
       "title": "Circuit d'approbation",
       "blurb": "Quand une planche passe « À valider », le client reçoit une notification par email. Il approuve ou commente directement sur la planche ; vous êtes prévenue de chaque réponse."
+    },
+    "manage": {
+      "add": "Ajouter une planche",
+      "addPlaceholder": "Une planche que ce mariage appelle — Pool party, Brunch du dimanche…",
+      "added": "La planche est au Studio, en création.",
+      "failed": "La planche n'a pas pu être ajoutée pour l'instant.",
+      "remove": "Retirer « {title} »",
+      "removeConfirm": "Retirer la planche « {title} » ? Sa feuille et ses échanges partent avec elle."
     }
   },
   "budget": {
