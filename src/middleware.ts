@@ -9,8 +9,11 @@ const intlMiddleware = createIntlMiddleware(routing);
 const PUBLIC = /^\/(?:[a-z]{2}\/)?(?:login|auth\/.*)?$/;
 
 export async function middleware(request: NextRequest) {
-  // 1. Locale negotiation / rewrite first.
-  const response = intlMiddleware(request);
+  const isApi = request.nextUrl.pathname.startsWith("/api");
+
+  // 1. Locale negotiation / rewrite — never for API routes, which have
+  //    no locale prefix (the intl middleware would rewrite them to 404).
+  const response = isApi ? NextResponse.next() : intlMiddleware(request);
 
   // 2. Keep the Supabase session fresh on every request.
   const supabase = createServerClient(
