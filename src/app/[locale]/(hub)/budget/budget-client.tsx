@@ -1,0 +1,266 @@
+"use client";
+
+import { type ReactNode, useRef, useState, useTransition } from "react";
+import { useTranslations } from "next-intl";
+import {
+  addLineViaMadame,
+  publishBudget,
+  saveEnvelopeNote,
+  publishEnvelopeNote,
+  saveInternalBudgetNote
+} from "@/app/actions/budget";
+
+export function BudgetTabs({ scope, mgmt }: { scope: ReactNode; mgmt: ReactNode }) {
+  const t = useTranslations("budget");
+  const [tab, setTab] = useState<"scope" | "mgmt">("scope");
+  return (
+    <>
+      <div className="tabs">
+        <button className={tab === "scope" ? "on" : undefined} onClick={() => setTab("scope")}>
+          {t("scopeTab")}
+        </button>
+        <button className={tab === "mgmt" ? "on" : undefined} onClick={() => setTab("mgmt")}>
+          {t("mgmtTab")}
+        </button>
+      </div>
+      <div style={{ display: tab === "scope" ? "block" : "none" }}>{scope}</div>
+      <div style={{ display: tab === "mgmt" ? "block" : "none" }}>{mgmt}</div>
+    </>
+  );
+}
+
+/** Team: edit or compose (via Madame) an envelope's note, then publish. */
+export function EnvelopeNoteEditor({
+  envelopeId,
+  weddingId,
+  envelopeLabel,
+  existing,
+  status
+}: {
+  envelopeId: string;
+  weddingId: string;
+  envelopeLabel: string;
+  existing: string | null;
+  status: "draft" | "published" | null;
+}) {
+  const t = useTranslations("budget.notes");
+  const tc = useTranslations("common");
+  const [open, setOpen] = useState(false);
+  const [body, setBody] = useState(existing ?? "");
+  const [busy, setBusy] = useState(false);
+  const [pending, startTransition] = useTransition();
+
+  async function compose() {
+    setBusy(true);
+    try {
+      const r = await fetch("/api/agents/envelope-note", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ weddingId, envelopeLabel, indications: body })
+      });
+      const d = await r.json();
+      if (d.text) setBody(d.text);
+    } catch {
+      /* leave as typed */
+    }
+    setBusy(false);
+  }
+
+  if (!open) {
+    return (
+      <button className="addnote team-only" style={{ marginLeft: 10 }} onClick={() => setOpen(true)}>
+        {existing ? t("editNote") : t("addNote")}
+        {status === "draft" && <span className="tag int" style={{ marginLeft: 6 }}>{tc("draft")}</span>}
+      </button>
+    );
+  }
+
+  return (
+    <div className="team-only" style={{ flexBasis: "100%", margin: "10px 0" }}>
+      <textarea
+        value={body}
+        onChange={(e) => setBody(e.target.value)}
+        rows={3}
+        style={{ width: "100%", padding: "10px 12px", border: "1px solid var(--champagne)", fontSize: 13.5 }}
+        placeholder={t("placeholder")}
+      />
+      <div style={{ display: "flex", gap: 8, marginTop: 8, flexWrap: "wrap" }}>
+        <button className="btn ghost sm" onClick={compose} disabled={busy}>
+          {busy ? "…" : t("letMadame")}
+        </button>
+        <button
+          className="btn ghost sm"
+          disabled={pending || !body.trim()}
+          onClick={() =>
+            startTransition(async () => {
+              await saveEnvelopeNote(envelopeId, weddingId, body.trim());
+              setOpen(false);
+            })
+          }
+        >
+          {t("saveDraft")}
+        </button>
+        <button
+          className="btn sm"
+          disabled={pending || !body.trim()}
+          onClick={() =>
+            startTransition(async () => {
+              await saveEnvelopeNote(envelopeId, weddingId, body.trim());
+              await publishEnvelopeNote(envelopeId);
+              setOpen(false);
+            })
+          }
+        >
+          {t("publish")}
+        </button>
+        <button className="btn ghost sm" onClick={() => setOpen(false)}>
+          {tc("cancel")}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/** "Add a line — via Madame", in the scope or the management view. */
+export function MadameBudgetAdd({ weddingId }: { weddingId: string }) {
+  const t = useTranslations("budget.madameAdd");
+  const tc = useTranslations("common");
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [note, setNote] = useState<string | null>(null);
+  const [pending, startTransition] = useTransition();
+
+  return (
+    <div className="ia team-only">
+      <div className="eyebrow">
+        {t("title")} <span className="tag int">{tc("internal")}</span>
+      </div>
+      <p style={{ marginTop: 8, fontSize: 13.5 }}>{t("blurb")}</p>
+      <div className="assist">
+        <input ref={inputRef} placeholder={t("placeholder")} />
+        <button
+          className="btn"
+          disabled={pending}
+          onClick={() => {
+            const instruction = inputRef.current?.value.trim();
+            if (!instruction) return;
+            startTransition(async () => {
+              const r = await addLineViaMadame(weddingId, instruction);
+              setNote(r.note ?? null);
+              if (r.ok && inputRef.current) inputRef.current.value = "";
+            });
+          }}
+        >
+          {pending ? "…" : t("go")}
+        </button>
+      </div>
+      {note && (
+        <p className="ia-quote" style={{ marginTop: 12 }} aria-live="polite">
+          &ldquo;{note}&rdquo; — <span style={{ fontStyle: "normal", fontSize: 12 }}>{t("draftNote")}</span>
+        </p>
+      )}
+    </div>
+  );
+}
+
+/** Draft bar — publish & notify the client in one word. */
+export function PublishBar({ weddingId, draftCount }: { weddingId: string; draftCount: number }) {
+  const t = useTranslations("budget");
+  const tc = useTranslations("common");
+  const [pending, startTransition] = useTransition();
+  if (draftCount === 0) return null;
+  return (
+    <div className="draftbar team-only">
+      <div>
+        <span className="tag int">{t("draftBar")}</span>{" "}
+        <span style={{ fontSize: 13, marginLeft: 8 }}>{t("draftCount", { count: draftCount })}</span>
+      </div>
+      <button className="btn" disabled={pending} onClick={() => startTransition(() => publishBudget(weddingId))}>
+        {pending ? "…" : t("publishNotify")}
+      </button>
+      <span className="sr-only">{tc("draft")}</span>
+    </div>
+  );
+}
+
+/** The budget expert — clients ask, the house answers in Estelle's name. */
+export function BudgetAsk({ weddingId }: { weddingId: string }) {
+  const t = useTranslations("budget.ask");
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [answer, setAnswer] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  async function ask() {
+    const q = inputRef.current?.value.trim();
+    if (!q || busy) return;
+    setBusy(true);
+    try {
+      const r = await fetch("/api/agents/budget-ask", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ weddingId, prompt: q })
+      });
+      const d = await r.json();
+      setAnswer(d.text ?? t("unreachable"));
+    } catch {
+      setAnswer(t("unreachable"));
+    }
+    setBusy(false);
+  }
+
+  return (
+    <>
+      {answer && (
+        <p className="ia-quote" style={{ marginTop: 14 }} aria-live="polite">
+          &ldquo;{answer}&rdquo;
+        </p>
+      )}
+      <div className="chat-in" style={{ border: "1px solid var(--line)", marginTop: 16, background: "#fff" }}>
+        <input ref={inputRef} placeholder={t("placeholder")} onKeyDown={(e) => e.key === "Enter" && ask()} />
+        <button className="btn" style={{ borderRadius: 0 }} onClick={ask} disabled={busy}>
+          {busy ? "…" : t("ask")}
+        </button>
+      </div>
+    </>
+  );
+}
+
+/** Behind the analysis — Estelle's notes, consulted but never revealed. */
+export function InternalNotes({ weddingId, latest }: { weddingId: string; latest: string | null }) {
+  const t = useTranslations("budget.internal");
+  const tc = useTranslations("common");
+  const [body, setBody] = useState("");
+  const [pending, startTransition] = useTransition();
+
+  return (
+    <div className="ia team-only" style={{ marginTop: 14 }}>
+      <div className="eyebrow">
+        {t("title")} <span className="tag int">{t("neverVisible")}</span>
+      </div>
+      <p style={{ marginTop: 8, fontSize: 13.5 }}>{t("blurb")}</p>
+      {latest && (
+        <p style={{ marginTop: 10, fontSize: 13, color: "var(--ink2)" }}>
+          {t("latest")}: {latest}
+        </p>
+      )}
+      <div className="assist">
+        <input
+          value={body}
+          onChange={(e) => setBody(e.target.value)}
+          placeholder={t("placeholder")}
+        />
+        <button
+          className="btn ghost"
+          disabled={pending || !body.trim()}
+          onClick={() =>
+            startTransition(async () => {
+              await saveInternalBudgetNote(weddingId, body.trim());
+              setBody("");
+            })
+          }
+        >
+          {tc("save")}
+        </button>
+      </div>
+    </div>
+  );
+}

@@ -147,6 +147,155 @@
       "hint": "Each attention the house entrusts to you appears here — and on your timeline, at its month."
     }
   },
+  "design": {
+    "eyebrow": "Design Studio",
+    "headline": "The boards",
+    "lead": "The global design sets the tone; each moment of the weekend has its own board, with rental and stationery details. Every board exports to a PDF signed with the house's mark.",
+    "globalDesign": "Global design",
+    "exportPdf": "Export as PDF",
+    "subBoards": "Sub-boards: Rental · Stationery",
+    "stationerySubs": "Wedding invitations · Day-of stationery",
+    "boardDetail": "Board detail",
+    "palette": "Palette",
+    "noTones": "The palette is being composed.",
+    "addTone": "Add a tone",
+    "removeTone": "Remove {tone}",
+    "hexHint": "enter a colour code, the square is generated",
+    "subBoardsTitle": "Sub-boards",
+    "kinds": {
+      "rental": "Rental",
+      "stationery": "Stationery",
+      "invitations": "Wedding invitations",
+      "day_of": "Day-of stationery"
+    },
+    "yourWord": "Your word",
+    "approve": "Approve this board",
+    "commentPlaceholder": "A remark, a wish, a hesitation…",
+    "sendComment": "Send to the house",
+    "sendToReview": "Send to the client for review",
+    "backToCreation": "Back to creation",
+    "exchangesOnBoard": "Exchanges on this board",
+    "workflow": {
+      "title": "Approval workflow",
+      "blurb": "When a board moves to “To review”, the client receives an email notification. They approve or comment directly on the board; you are notified of every response."
+    }
+  },
+  "budget": {
+    "eyebrow": "Production",
+    "headline": "Budget",
+    "lead": "Complete transparency, in two movements: understand first, then steer.",
+    "scopeTab": "Scope budget",
+    "mgmtTab": "Budget management",
+    "draftBar": "Draft — not visible to the client",
+    "draftCount": "{count, plural, one {# line updated since last publication} other {# lines updated since last publication}}",
+    "publishNotify": "Publish & notify the client",
+    "scope": {
+      "title": "Understanding your budget",
+      "blurb": "Before the numbers, the landmarks: what each line covers, what drives costs for a multi-day wedding in {destination}, and where the house recommends concentrating the investment."
+    },
+    "notes": {
+      "editNote": "Edit note",
+      "addNote": "Add a note",
+      "placeholder": "The house's note for this envelope — or your indications for Madame…",
+      "letMadame": "Let Madame compose it",
+      "saveDraft": "Keep as draft",
+      "publish": "Publish"
+    },
+    "madameAdd": {
+      "title": "Add to the scope — with Madame",
+      "blurb": "Tell Madame what enters the budget and how to present it — she adds the line, sets the envelope, and writes the client-facing note in the house's voice. Draft until your word.",
+      "placeholder": "Add a fireworks artist for the reception — explain it as a finale over the gardens…",
+      "go": "Let Madame add & explain it",
+      "draftNote": "in draft, awaiting your word"
+    },
+    "mgmt": {
+      "total": "Total budget",
+      "paid": "Paid to date",
+      "remaining": "Remaining to pay",
+      "ofBudget": "{pct} % of budget",
+      "ofCommitted": "of {amount} committed",
+      "lineByLine": "Line by line",
+      "line": "Line",
+      "budgeted": "Budgeted",
+      "committed": "Committed",
+      "paidCol": "Paid",
+      "remainingCol": "Remaining",
+      "nextPayment": "Next payment"
+    },
+    "ask": {
+      "title": "The house's analysis — your budget expert",
+      "blurb": "Each time your budget moves, the house explains where you stand and what every euro is building. Ask it anything about your payments.",
+      "placeholder": "Ask a question about your budget…",
+      "ask": "Ask",
+      "unreachable": "The house could not be reached just now — do try again in a moment."
+    },
+    "docs": {
+      "title": "Automatic document analysis",
+      "blurb": "Drop a vendor proposal, contract or invoice: the agent extracts the amounts, schedule and terms, updates the budget and sets the payment reminders by email."
+    },
+    "internal": {
+      "title": "Behind the analysis",
+      "neverVisible": "Internal — never visible to clients",
+      "blurb": "Your notes, negotiation margins and method live here. The agent draws on them to answer the client in your name — without ever revealing them.",
+      "latest": "Latest note",
+      "placeholder": "A margin, a method, a thing to keep quiet…"
+    }
+  },
+  "vendors": {
+    "eyebrow": "Production",
+    "headline": "Vendors",
+    "lead": "Each talent's curation, followed end to end — with every proposal, contract and invoice in its place.",
+    "vendor": "Vendor",
+    "category": "Category",
+    "status": "Status",
+    "documents": "Documents",
+    "pipeline": "Pipeline",
+    "stages": {
+      "label": "Stage",
+      "scouted": "Scouted",
+      "contacted": "Contacted",
+      "proposal": "Proposal",
+      "proposalReceived": "Proposal received",
+      "contracted": "Contracted"
+    },
+    "docTypes": {
+      "proposal": "Proposal",
+      "contract": "Contract",
+      "invoice": "Invoice"
+    },
+    "add": {
+      "name": "Vendor name…",
+      "category": "Category…",
+      "go": "Add"
+    },
+    "reading": {
+      "title": "Document reading",
+      "blurb": "Drop any vendor document — proposal, contract or invoice. The agent identifies its type, extracts amounts, schedules and terms, and feeds the budget automatically."
+    },
+    "docs": {
+      "dropTitle": "Hand a document to Madame",
+      "autoDetect": "Let Madame match the vendor",
+      "choose": "Choose a file",
+      "failed": "The document could not be read just now."
+    },
+    "outreach": {
+      "title": "Email templates by category",
+      "blurb": "Availability request, proposal request, negotiation, confirmation — pre-written per vendor category, sent from your inbox via Netlify Forms.",
+      "new": "New vendor request",
+      "templates": {
+        "availability": "Availability request",
+        "proposal": "Proposal request",
+        "negotiation": "Negotiation",
+        "confirmation": "Confirmation"
+      },
+      "letAgentDraft": "Let the agent draft it",
+      "to": "Vendor email…",
+      "subject": "Subject…",
+      "body": "Body…",
+      "send": "Send from the house's inbox",
+      "sentNote": "Sent — it leaves from Estelle's inbox."
+    }
+  },
   "process": {
     "eyebrow": "The house's method",
     "headline": "The Madame Wedding Design process",
