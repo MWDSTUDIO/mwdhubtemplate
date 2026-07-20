@@ -89,16 +89,27 @@ export async function entrustAttention(input: {
   title: string;
   due?: string;
   status: "awaiting_word" | "at_leisure";
+  link?: string;
 }) {
   await teamSession();
   const supabase = await createClient();
-  await supabase.from("attentions").insert({
+  const row: Record<string, unknown> = {
     wedding_id: input.weddingId,
     title: input.title,
     due_date: input.due || null,
     status: input.status
-  });
+  };
+  if (input.link?.trim()) row.link_url = input.link.trim();
+  let { error } = await supabase.from("attentions").insert(row);
+  // Before migration 0010 the column is absent — the attention stands,
+  // its link folded into the title.
+  if (error && row.link_url) {
+    delete row.link_url;
+    row.title = `${input.title} — ${input.link!.trim()}`;
+    ({ error } = await supabase.from("attentions").insert(row));
+  }
   revalidatePath("/timeline");
+  return { ok: !error };
 }
 
 /** The couple marks an attention attended to (guarded by trigger + RLS). */

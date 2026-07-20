@@ -3,6 +3,8 @@ import { requireHouseSession } from "@/lib/session";
 import { createClient } from "@/lib/supabase/server";
 import { AskHouse } from "@/components/AskHouse";
 import { ProposeMoment } from "@/components/ProposeMoment";
+import { ProposedMoments } from "@/components/ProposedMoments";
+import type { AvailabilityProposal } from "@/lib/types";
 import { Link } from "@/i18n/navigation";
 import type { Attention, InternalTask } from "@/lib/types";
 
@@ -57,6 +59,24 @@ export default async function HomePage({
         .eq("wedding_id", wedding.id)
         .eq("internal", false)
     ]);
+
+  // The moments the couple proposed — for the house to confirm.
+  let proposals: AvailabilityProposal[] = [];
+  let proposerNames: Record<string, string> = {};
+  if (session.isTeam) {
+    const { data } = await supabase
+      .from("availability_proposals")
+      .select("*")
+      .eq("wedding_id", wedding.id)
+      .order("created_at", { ascending: false })
+      .limit(5);
+    proposals = (data ?? []) as AvailabilityProposal[];
+    const ids = [...new Set(proposals.map((p) => p.proposed_by).filter(Boolean))] as string[];
+    if (ids.length) {
+      const { data: profs } = await supabase.from("profiles").select("id, full_name").in("id", ids);
+      proposerNames = Object.fromEntries((profs ?? []).map((p) => [p.id, p.full_name]));
+    }
+  }
 
   const days = wedding.first_toast_at
     ? Math.max(
@@ -119,6 +139,8 @@ export default async function HomePage({
           </Link>
         </div>
       </div>
+
+      {session.isTeam && <ProposedMoments proposals={proposals} names={proposerNames} />}
 
       <AskHouse weddingId={wedding.id} />
 

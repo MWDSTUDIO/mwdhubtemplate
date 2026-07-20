@@ -118,6 +118,15 @@
       "tzNote": "Heures affichées dans votre fuseau ({tz}). Choisissez-en autant qu'il vous plaît — la maison en confirme une.",
       "send": "Envoyer à la maison",
       "sent": "Envoyé — la maison confirmera un moment."
+    },
+    "moments": {
+      "title": "Moments proposés",
+      "internalTag": "Interne",
+      "blurb": "Les mariés ont marqué les heures qui leur conviennent — choisissez-en une, et l'invitation Google Meet part des deux côtés.",
+      "proposedBy": "{name} a proposé — {minutes} minutes",
+      "theCouple": "Les mariés",
+      "joinMeet": "Ouvrir le Meet",
+      "hint": "La confirmation crée l'événement avec les adresses des mariés et la boîte de la maison — dès que Google est connecté."
     }
   },
   "timeline": {
@@ -163,7 +172,9 @@
       "attended": "Accompli",
       "settled": "Réglé",
       "markAttended": "Marquer comme accompli",
-      "hint": "Chaque attention que la maison vous confie paraît ici — et sur votre chronologie, à son mois."
+      "hint": "Chaque attention que la maison vous confie paraît ici — et sur votre chronologie, à son mois.",
+      "linkPlaceholder": "Un lien, s'il y en a un — un document à signer, une page à visiter…",
+      "openLink": "Ouvrir"
     }
   },
   "design": {

@@ -118,6 +118,15 @@
       "tzNote": "时间按您的时区（{tz}）显示。可任意多选 — 本馆将确认其一。",
       "send": "送呈本馆",
       "sent": "已送出 — 本馆将确认一个时刻。"
+    },
+    "moments": {
+      "title": "新人提议的时刻",
+      "internalTag": "内部",
+      "blurb": "新人标记了合适的时段——选定其一，Google Meet 邀请将同时送达双方。",
+      "proposedBy": "{name} 提议——{minutes} 分钟",
+      "theCouple": "新人",
+      "joinMeet": "打开 Meet",
+      "hint": "确认后将以新人的地址与本馆信箱创建日历邀请——待 Google 连接完成。"
     }
   },
   "timeline": {
@@ -163,7 +172,9 @@
       "attended": "已办妥",
       "settled": "已了",
       "markAttended": "标为已办妥",
-      "hint": "本馆托付于您的每一件事都会在此呈现 — 亦见于您的时间线，各归其月。"
+      "hint": "本馆托付于您的每一件事都会在此呈现 — 亦见于您的时间线，各归其月。",
+      "linkPlaceholder": "如有链接——待签署的文件、需查看的页面…",
+      "openLink": "打开"
     }
   },
   "design": {

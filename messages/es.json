@@ -118,6 +118,15 @@
       "tzNote": "Horas mostradas en su zona horaria ({tz}). Elijan cuantas deseen — la casa confirma una.",
       "send": "Enviar a la casa",
       "sent": "Enviado — la casa confirmará un momento."
+    },
+    "moments": {
+      "title": "Momentos propuestos",
+      "internalTag": "Interno",
+      "blurb": "La pareja marcó las horas que le convienen — elija una, y la invitación de Google Meet parte hacia ambos lados.",
+      "proposedBy": "{name} propuso — {minutes} minutos",
+      "theCouple": "La pareja",
+      "joinMeet": "Abrir el Meet",
+      "hint": "Confirmar crea el evento con las direcciones de la pareja y el buzón de la casa — en cuanto Google esté conectado."
     }
   },
   "timeline": {
@@ -163,7 +172,9 @@
       "attended": "Atendido",
       "settled": "Resuelto",
       "markAttended": "Marcar como atendido",
-      "hint": "Cada atención que la casa les confía aparece aquí — y en su cronología, en su mes."
+      "hint": "Cada atención que la casa les confía aparece aquí — y en su cronología, en su mes.",
+      "linkPlaceholder": "Un enlace, si lo hay — un documento por firmar, una página por visitar…",
+      "openLink": "Abrir"
     }
   },
   "design": {

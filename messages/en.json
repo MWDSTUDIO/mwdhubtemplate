@@ -118,6 +118,15 @@
       "tzNote": "Hours shown in your time zone ({tz}). Choose as many as you wish — the house confirms one.",
       "send": "Send to the house",
       "sent": "Sent — the house will confirm a moment."
+    },
+    "moments": {
+      "title": "Proposed moments",
+      "internalTag": "Internal",
+      "blurb": "The couple marked the hours that suit them — choose one, and the Google Meet invitation leaves for both sides.",
+      "proposedBy": "{name} proposed — {minutes} minutes",
+      "theCouple": "The couple",
+      "joinMeet": "Open the Meet",
+      "hint": "Confirming creates the calendar event with the couple's addresses and the house's inbox — once Google is connected."
     }
   },
   "timeline": {
@@ -163,7 +172,9 @@
       "attended": "Attended to",
       "settled": "Settled",
       "markAttended": "Mark as attended to",
-      "hint": "Each attention the house entrusts to you appears here — and on your timeline, at its month."
+      "hint": "Each attention the house entrusts to you appears here — and on your timeline, at its month.",
+      "linkPlaceholder": "A link, should there be one — a document to sign, a page to visit…",
+      "openLink": "Open"
     }
   },
   "design": {

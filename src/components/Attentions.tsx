@@ -23,6 +23,7 @@ export function Attentions({
   const [adding, setAdding] = useState(false);
   const [title, setTitle] = useState("");
   const [due, setDue] = useState("");
+  const [link, setLink] = useState("");
   const [status, setStatus] = useState<"awaiting_word" | "at_leisure">("at_leisure");
   const [pending, startTransition] = useTransition();
 
@@ -72,15 +73,23 @@ export function Attentions({
             disabled={pending || !title.trim()}
             onClick={() =>
               startTransition(async () => {
-                await entrustAttention({ weddingId, title: title.trim(), due, status });
+                await entrustAttention({ weddingId, title: title.trim(), due, status, link });
                 setTitle("");
                 setDue("");
+                setLink("");
                 setAdding(false);
               })
             }
           >
             {t("entrustGo")}
           </button>
+          <input
+            type="url"
+            value={link}
+            onChange={(e) => setLink(e.target.value)}
+            placeholder={t("linkPlaceholder")}
+            style={{ flexBasis: "100%" }}
+          />
         </div>
       )}
       <ul className="steps" style={{ marginTop: 12 }}>
@@ -95,6 +104,16 @@ export function Attentions({
             </span>
             <span style={a.status === "attended" ? { color: "var(--ink2)" } : undefined}>
               {a.title}
+              {a.link_url && (
+                <a
+                  href={a.link_url}
+                  target="_blank"
+                  rel="noreferrer"
+                  style={{ marginLeft: 10, fontSize: 12, color: "var(--bronze)" }}
+                >
+                  {t("openLink")}
+                </a>
+              )}
             </span>
             {isClient && a.status !== "attended" ? (
               <button

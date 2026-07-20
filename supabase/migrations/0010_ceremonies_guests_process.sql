@@ -45,6 +45,9 @@ alter table guests add column if not exists party_children int not null default 
 alter table documents add column if not exists storage_path text;
 alter table messages add column if not exists subject text;
 
+-- ── 2c. an attention may carry a link (a document to sign, a page) ───
+alter table attentions add column if not exists link_url text;
+
 -- ── 3. the process, per wedding ──────────────────────────────────────
 create table if not exists process_steps (
   id uuid primary key default gen_random_uuid(),

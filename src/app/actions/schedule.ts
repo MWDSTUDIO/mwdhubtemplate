@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { requireHouseSession } from "@/lib/session";
 import { notifyTeam, notifyCouple } from "@/lib/notify";
 import { createMeetEvent } from "@/lib/google/calendar";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 export async function proposeMoment(input: {
   weddingId: string;
@@ -46,6 +47,25 @@ export async function confirmMoment(proposalId: string, slot: { date: string; ti
     .single();
   if (!proposal) return { ok: false };
 
+  // The invitation goes to both sides: the couple's addresses and the
+  // house's inbox — never a personal box.
+  const attendees: string[] = [];
+  if (process.env.HOUSE_INBOX) attendees.push(process.env.HOUSE_INBOX);
+  try {
+    const admin = createAdminClient();
+    const { data: members } = await admin
+      .from("wedding_members")
+      .select("profile_id, relation")
+      .eq("wedding_id", proposal.wedding_id)
+      .eq("relation", "couple");
+    for (const m of members ?? []) {
+      const { data: u } = await admin.auth.admin.getUserById(m.profile_id);
+      if (u?.user?.email) attendees.push(u.user.email);
+    }
+  } catch {
+    // Emails unavailable — the event still stands.
+  }
+
   let meetUrl: string | null = null;
   let eventId: string | null = null;
   try {
@@ -54,7 +74,8 @@ export async function confirmMoment(proposalId: string, slot: { date: string; ti
       date: slot.date,
       time: slot.time,
       durationMinutes: proposal.duration_minutes,
-      timezone: proposal.weddings?.timezone ?? "Europe/Paris"
+      timezone: proposal.weddings?.timezone ?? "Europe/Paris",
+      attendees
     });
     meetUrl = event.meetUrl;
     eventId = event.id;

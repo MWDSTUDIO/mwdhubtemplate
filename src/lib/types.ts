@@ -86,6 +86,8 @@ export interface Attention {
   due_date: string | null;
   status: AttentionStatus;
   milestone_id: string | null;
+  /** A document to sign, a page to visit (migration 0010). */
+  link_url?: string | null;
 }
 
 export interface InternalTask {
