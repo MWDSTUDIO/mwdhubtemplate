@@ -49,13 +49,15 @@
       "exchanges": "Exchanges",
       "house": "The House"
     },
-    "tagline": "A Parisian house of wedding planning and production"
+    "tagline": "A Parisian house of wedding planning and production",
+    "ceremony": "The Ceremony"
   },
   "topbar": {
     "meta": "Wedding · {date} · {destination}",
     "metaBare": "Wedding",
     "teamView": "Team view",
-    "clientView": "Client view"
+    "clientView": "Client view",
+    "signOut": "Leave the house"
   },
   "madame": {
     "tagline": "The house's agent — for the team only, on every page, even in client view.",
@@ -66,7 +68,8 @@
     "placeholder": "Ask, or instruct…",
     "you": "You",
     "go": "Go",
-    "unreachable": "Madame could not be reached — verify the ANTHROPIC_API_KEY on the server."
+    "unreachable": "Madame could not be reached — verify the ANTHROPIC_API_KEY on the server.",
+    "dictate": "Dictate"
   },
   "home": {
     "welcome": "Welcome",
@@ -91,7 +94,15 @@
     "propose": {
       "title": "Propose a moment",
       "blurb": "Should you wish to speak with the house outside your scheduled calls — mark the days and hours that suit you; we confirm, and the invitation follows.",
-      "weekdays": ["M", "T", "W", "T", "F", "S", "S"],
+      "weekdays": [
+        "M",
+        "T",
+        "W",
+        "T",
+        "F",
+        "S",
+        "S"
+      ],
       "prevMonth": "Previous month",
       "nextMonth": "Next month",
       "durationLabel": "Time you can give us",
@@ -320,7 +331,13 @@
       "addressField": "Mailing address",
       "addressPlaceholder": "14 rue de…, 75007 Paris",
       "localeField": "Language of correspondence",
-      "locales": { "en": "English", "fr": "Français", "zh": "中文", "ja": "日本語", "es": "Español" },
+      "locales": {
+        "en": "English",
+        "fr": "Français",
+        "zh": "中文",
+        "ja": "日本語",
+        "es": "Español"
+      },
       "invitedField": "Invited to",
       "travelField": "Travel & stay",
       "travelPlaceholder": "Arriving Fri · departing Sun · accommodation wished",
@@ -431,8 +448,12 @@
     "keep": "Keep"
   },
   "rooms": {
-    "teamwork": { "prompt": "Enter the shared code" },
-    "vault": { "prompt": "Enter your personal code" },
+    "teamwork": {
+      "prompt": "Enter the shared code"
+    },
+    "vault": {
+      "prompt": "Enter your personal code"
+    },
     "wrongCode": "The house does not recognise this code."
   },
   "desk": {
@@ -463,7 +484,13 @@
       "composing": "Composing…",
       "preview": "Preview before publishing",
       "done": "{count} milestones placed, in draft on your desk"
-    }
+    },
+    "eventsHint": "Free labels — a rehearsal dinner des hommes, a cocktail before the welcome dinner… one line per moment, its date beside it.",
+    "eventNamePlaceholder": "Moment — e.g. Welcome dinner",
+    "removeEvent": "Remove this moment",
+    "addEvent": "Add a moment",
+    "dictate": "Dictate",
+    "ceremoniesTitle": "The ceremonies — the heart of the file"
   },
   "weddingDays": {
     "eyebrow": "Production — the days themselves",
@@ -525,7 +552,11 @@
     "keys": "Keys",
     "principal": "Principal",
     "allWeddings": "The whole house",
-    "roles": { "client": "Couple", "coordinator": "Coordinator", "team": "The house" },
+    "roles": {
+      "client": "Couple",
+      "coordinator": "Coordinator",
+      "team": "The house"
+    },
     "newKey": "New key",
     "remove": "Remove",
     "removeConfirm": "Remove {name}'s access?",
@@ -573,10 +604,69 @@
     "headline": "The Madame Wedding Design process",
     "lead": "What will happen, in the order it will happen — so every step feels inevitable, never a surprise.",
     "phases": [
-      { "title": "Listening.", "body": "We learn who you are, what this wedding should tell, and set the scope budget." },
-      { "title": "Design.", "body": "The global creative direction, then a board for each moment — from welcome to farewell." },
-      { "title": "Production.", "body": "Vendor curation, contracts, stationery, logistics. You approve, the house orchestrates." },
-      { "title": "The wedding days.", "body": "The house is on site, from the first arrival to the last departure." }
+      {
+        "title": "Listening.",
+        "body": "We learn who you are, what this wedding should tell, and set the scope budget."
+      },
+      {
+        "title": "Design.",
+        "body": "The global creative direction, then a board for each moment — from welcome to farewell."
+      },
+      {
+        "title": "Production.",
+        "body": "Vendor curation, contracts, stationery, logistics. You approve, the house orchestrates."
+      },
+      {
+        "title": "The wedding days.",
+        "body": "The house is on site, from the first arrival to the last departure."
+      }
     ]
+  },
+  "ceremony": {
+    "eyebrow": "The heart of the wedding",
+    "headline": "The Ceremony",
+    "lead": "Everything gathers around this hour. A wedding may hold several — civil, religious, symbolic — and the house keeps each one's kind, hour, place and hands.",
+    "empty": "The ceremony is being composed with the house — it will appear here the moment it settles.",
+    "untitled": "The ceremony",
+    "edit": "Edit",
+    "add": "Add a ceremony",
+    "when": "When",
+    "where": "Where",
+    "officiantLabel": "Officiant",
+    "toSettle": "To be settled",
+    "form": {
+      "addTitle": "A new ceremony",
+      "editTitle": "Edit the ceremony",
+      "kind": "Kind of ceremony",
+      "kindPlaceholder": "Civil, catholic, laïque, jewish, interfaith…",
+      "title": "Its name in the house",
+      "titlePlaceholder": "“Vows in the gardens”, “The blessing at dusk”…",
+      "dateTime": "Date & hour",
+      "venue": "Place",
+      "venuePlaceholder": "Chapel, gardens, town hall…",
+      "officiant": "Officiant",
+      "officiantPlaceholder": "Celebrant, priest, rabbi, registrar…",
+      "notes": "The house's note to the couple",
+      "notesPlaceholder": "A few lines in the house's voice — what this hour will be…",
+      "save": "Keep",
+      "remove": "Remove",
+      "cancel": "Cancel"
+    },
+    "kinds": {
+      "civil": "Civil",
+      "catholic": "Catholic",
+      "protestant": "Protestant",
+      "orthodox": "Orthodox",
+      "jewish": "Jewish",
+      "laique": "Laïque (symbolic)",
+      "interfaith": "Interfaith",
+      "hindu": "Hindu",
+      "muslim": "Muslim",
+      "buddhist": "Buddhist",
+      "shinto": "Shinto",
+      "humanist": "Humanist",
+      "vows": "Renewal of vows",
+      "blessing": "Blessing"
+    }
   }
 }

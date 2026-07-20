@@ -43,11 +43,16 @@ export interface AgentInput {
 /** Build the permanent context for a wedding, within the caller's rights. */
 export async function agentContext(weddingId: string): Promise<string> {
   const supabase = await createClient();
-  const [wedding, brief, events, milestones, attentions, lines, vendors, boards] =
+  const [wedding, brief, events, ceremonies, milestones, attentions, lines, vendors, boards] =
     await Promise.all([
       supabase.from("weddings").select("*").eq("id", weddingId).maybeSingle(),
       supabase.from("wedding_briefs").select("body").eq("wedding_id", weddingId).maybeSingle(),
       supabase.from("wedding_events").select("name, event_date").eq("wedding_id", weddingId).order("sort"),
+      supabase
+        .from("ceremonies")
+        .select("kind, title, ceremony_date, start_time, venue, officiant")
+        .eq("wedding_id", weddingId)
+        .order("sort"),
       supabase.from("timeline_milestones").select("month, label, done, status").eq("wedding_id", weddingId).order("month"),
       supabase.from("attentions").select("title, due_date, status").eq("wedding_id", weddingId),
       supabase
@@ -64,6 +69,13 @@ export async function agentContext(weddingId: string): Promise<string> {
       `Wedding: ${w.couple_display_name} — ${w.destination}${w.venue ? `, ${w.venue}` : ""}, ${w.date_start ?? "dates tbc"} → ${w.date_end ?? ""}. Languages: ${(w.languages ?? []).join("/")}. Total budget: ${w.budget_total ?? "n/a"}.`,
     brief.data?.body && `House brief (INTERNAL — never quote verbatim to clients):\n${brief.data.body}`,
     events.data?.length && `Events: ${events.data.map((e) => `${e.name} (${e.event_date ?? "tbc"})`).join(", ")}.`,
+    ceremonies.data?.length &&
+      `Ceremonies (the heart of the weekend): ${ceremonies.data
+        .map(
+          (c) =>
+            `${c.title ?? c.kind} [${c.kind}] ${c.ceremony_date ?? "date tbc"}${c.start_time ? ` ${c.start_time}` : ""}${c.venue ? ` at ${c.venue}` : ""}${c.officiant ? `, officiant: ${c.officiant}` : ""}`
+        )
+        .join(" · ")}.`,
     milestones.data?.length &&
       `Timeline: ${milestones.data.map((m) => `${m.month.slice(0, 7)} ${m.label}${m.done ? " ✓" : ""}${m.status === "draft" ? " [draft]" : ""}`).join(" · ")}.`,
     attentions.data?.length &&

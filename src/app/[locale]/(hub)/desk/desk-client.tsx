@@ -4,9 +4,21 @@ import { useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
 import type { Wedding, WeddingEvent } from "@/lib/types";
 import { composeTimeline, saveWedding } from "@/app/actions/desk";
+import { Dictate } from "@/components/Dictate";
 
-const DEFAULT_EVENTS = ["Welcome", "Rehearsal", "Cocktail", "Dinner", "Reception", "Farewell"];
+// Suggestions from the house's repertoire — never imposed: every event
+// is a free label (rehearsal dinner des hommes, cocktail d'avant-dîner…).
+const SUGGESTED_EVENTS = [
+  "Welcome", "Welcome dinner", "Rehearsal", "Rehearsal dinner",
+  "Cocktail", "Ceremony", "Wedding dinner", "Reception",
+  "Brunch", "Farewell", "After party", "Pool day"
+];
 const LOCALES = ["en", "fr", "zh", "ja", "es"];
+
+interface EventRow {
+  name: string;
+  date: string;
+}
 
 export function ClientSheet({
   wedding,
@@ -26,8 +38,10 @@ export function ClientSheet({
   const [dateEnd, setDateEnd] = useState(wedding?.date_end ?? "");
   const [locale, setLocale] = useState(wedding?.default_locale ?? "en");
   const [budget, setBudget] = useState(wedding?.budget_total?.toString() ?? "");
-  const [selEvents, setSelEvents] = useState<string[]>(
-    events.length ? events.map((e) => e.name) : DEFAULT_EVENTS
+  const [eventRows, setEventRows] = useState<EventRow[]>(
+    events.length
+      ? events.map((e) => ({ name: e.name, date: e.event_date ?? "" }))
+      : [{ name: "", date: "" }]
   );
   const [briefText, setBriefText] = useState(brief);
   const [creating, setCreating] = useState(!wedding);
@@ -35,10 +49,8 @@ export function ClientSheet({
   const [saved, setSaved] = useState(false);
   const [pending, startTransition] = useTransition();
 
-  const toggleEvent = (name: string) =>
-    setSelEvents((list) =>
-      list.includes(name) ? list.filter((x) => x !== name) : [...list, name]
-    );
+  const setRow = (i: number, patch: Partial<EventRow>) =>
+    setEventRows((rows) => rows.map((r, j) => (j === i ? { ...r, ...patch } : r)));
 
   async function readProposal(file: File) {
     setReading(true);
@@ -55,7 +67,8 @@ export function ClientSheet({
         if (s.date_start) setDateStart(s.date_start);
         if (s.date_end) setDateEnd(s.date_end);
         if (s.budget_total) setBudget(String(s.budget_total));
-        if (Array.isArray(s.events) && s.events.length) setSelEvents(s.events);
+        if (Array.isArray(s.events) && s.events.length)
+          setEventRows(s.events.map((name: string) => ({ name, date: "" })));
         if (s.brief_draft) setBriefText(s.brief_draft);
       }
     } catch {
@@ -80,7 +93,9 @@ export function ClientSheet({
         defaultLocale: locale,
         languages: [...new Set([locale, "en"])],
         budgetTotal: budget ? Number(budget) : null,
-        events: selEvents,
+        events: eventRows
+          .map((r) => ({ name: r.name.trim(), date: r.date }))
+          .filter((r) => r.name),
         brief: briefText
       });
       if (r.ok) {
@@ -116,22 +131,48 @@ export function ClientSheet({
             <input type="date" value={dateEnd} onChange={(e) => setDateEnd(e.target.value)} />
           </div>
         </div>
-        <div className="field">
+        <div className="field" style={{ gridColumn: "1 / -1" }}>
           <label className="eyebrow">{t("events")}</label>
-          <div style={{ display: "flex", gap: 6, flexWrap: "wrap", paddingTop: 4 }}>
-            {[...new Set([...DEFAULT_EVENTS, ...selEvents])].map((name) => (
+          <span style={{ display: "block", fontSize: 11.5, color: "var(--ink2)", margin: "2px 0 8px" }}>
+            {t("eventsHint")}
+          </span>
+          {eventRows.map((row, i) => (
+            <div key={i} style={{ display: "flex", gap: 8, marginBottom: 8 }}>
+              <input
+                list="event-suggestions"
+                value={row.name}
+                onChange={(e) => setRow(i, { name: e.target.value })}
+                placeholder={t("eventNamePlaceholder")}
+                style={{ flex: 1 }}
+              />
+              <input
+                type="date"
+                value={row.date}
+                onChange={(e) => setRow(i, { date: e.target.value })}
+                style={{ flex: "0 0 160px" }}
+              />
               <button
-                key={name}
                 type="button"
-                className={`tag${selEvents.includes(name) ? " ok" : ""}`}
-                style={{ cursor: "pointer" }}
-                aria-pressed={selEvents.includes(name)}
-                onClick={() => toggleEvent(name)}
+                className="addnote"
+                aria-label={t("removeEvent")}
+                onClick={() => setEventRows((rows) => rows.filter((_, j) => j !== i))}
               >
-                {name}
+                ×
               </button>
+            </div>
+          ))}
+          <datalist id="event-suggestions">
+            {SUGGESTED_EVENTS.map((s) => (
+              <option key={s} value={s} />
             ))}
-          </div>
+          </datalist>
+          <button
+            type="button"
+            className="addnote"
+            onClick={() => setEventRows((rows) => [...rows, { name: "", date: "" }])}
+          >
+            {t("addEvent")}
+          </button>
         </div>
         <div className="field">
           <label className="eyebrow">{t("defaultLanguage")}</label>
@@ -146,7 +187,10 @@ export function ClientSheet({
           <input type="number" value={budget} onChange={(e) => setBudget(e.target.value)} placeholder="720000" />
         </div>
         <div className="field" style={{ gridColumn: "1 / -1" }}>
-          <label className="eyebrow">{t("brief")}</label>
+          <label className="eyebrow" style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            {t("brief")}
+            <Dictate title={t("dictate")} onText={(text) => setBriefText((v) => (v ? `${v.trimEnd()} ${text}` : text))} />
+          </label>
           <textarea
             rows={5}
             value={briefText}

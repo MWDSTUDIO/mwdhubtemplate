@@ -49,13 +49,15 @@
       "exchanges": "Intercambios",
       "house": "La Casa"
     },
-    "tagline": "Casa parisina de wedding planning y producción"
+    "tagline": "Casa parisina de wedding planning y producción",
+    "ceremony": "La Ceremonia"
   },
   "topbar": {
     "meta": "Boda · {date} · {destination}",
     "metaBare": "Boda",
     "teamView": "Vista equipo",
-    "clientView": "Vista cliente"
+    "clientView": "Vista cliente",
+    "signOut": "Retirarse"
   },
   "madame": {
     "tagline": "El agente de la casa — solo para el equipo, en cada página, incluso en vista cliente.",
@@ -66,7 +68,8 @@
     "placeholder": "Pregunte, o dé una instrucción…",
     "you": "Usted",
     "go": "Ir",
-    "unreachable": "Madame no responde — verifique la clave ANTHROPIC_API_KEY en el servidor."
+    "unreachable": "Madame no responde — verifique la clave ANTHROPIC_API_KEY en el servidor.",
+    "dictate": "Dictar"
   },
   "home": {
     "welcome": "Bienvenidos",
@@ -91,7 +94,15 @@
     "propose": {
       "title": "Proponer un momento",
       "blurb": "Si desean hablar con la casa fuera de sus citas — marquen los días y horas que les convengan; confirmamos, y la invitación llega enseguida.",
-      "weekdays": ["L", "M", "X", "J", "V", "S", "D"],
+      "weekdays": [
+        "L",
+        "M",
+        "X",
+        "J",
+        "V",
+        "S",
+        "D"
+      ],
       "prevMonth": "Mes anterior",
       "nextMonth": "Mes siguiente",
       "durationLabel": "El tiempo que nos conceden",
@@ -320,7 +331,13 @@
       "addressField": "Dirección postal",
       "addressPlaceholder": "14 rue de…, 75007 Paris",
       "localeField": "Idioma de correspondencia",
-      "locales": { "en": "English", "fr": "Français", "zh": "中文", "ja": "日本語", "es": "Español" },
+      "locales": {
+        "en": "English",
+        "fr": "Français",
+        "zh": "中文",
+        "ja": "日本語",
+        "es": "Español"
+      },
       "invitedField": "Invitado a",
       "travelField": "Viaje y estancia",
       "travelPlaceholder": "Llegada vie · salida dom · alojamiento deseado",
@@ -431,8 +448,12 @@
     "keep": "Guardar"
   },
   "rooms": {
-    "teamwork": { "prompt": "Introduzca el código compartido" },
-    "vault": { "prompt": "Introduzca su código personal" },
+    "teamwork": {
+      "prompt": "Introduzca el código compartido"
+    },
+    "vault": {
+      "prompt": "Introduzca su código personal"
+    },
     "wrongCode": "La casa no reconoce este código."
   },
   "desk": {
@@ -463,7 +484,13 @@
       "composing": "Componiendo…",
       "preview": "Previsualizar antes de publicar",
       "done": "{count} hitos colocados, en borrador sobre su mesa"
-    }
+    },
+    "eventsHint": "Etiquetas libres — una cena de ensayo de los hombres, un cóctel antes de la welcome dinner… una línea por momento, con su fecha al lado.",
+    "eventNamePlaceholder": "Momento — ej. Welcome dinner",
+    "removeEvent": "Retirar este momento",
+    "addEvent": "Añadir un momento",
+    "dictate": "Dictar",
+    "ceremoniesTitle": "Las ceremonias — el corazón de la ficha"
   },
   "weddingDays": {
     "eyebrow": "Producción — los días mismos",
@@ -525,7 +552,11 @@
     "keys": "Llaves",
     "principal": "Principal",
     "allWeddings": "Toda la casa",
-    "roles": { "client": "Pareja", "coordinator": "Coordinadora", "team": "La casa" },
+    "roles": {
+      "client": "Pareja",
+      "coordinator": "Coordinadora",
+      "team": "La casa"
+    },
     "newKey": "Nueva llave",
     "remove": "Retirar",
     "removeConfirm": "¿Retirar el acceso de {name}?",
@@ -573,10 +604,69 @@
     "headline": "El método Madame Wedding Design",
     "lead": "Lo que sucederá, en el orden en que sucederá — para que cada paso parezca inevitable, jamás una sorpresa.",
     "phases": [
-      { "title": "La escucha.", "body": "Aprendemos quiénes son, qué debe contar esta boda, y fijamos el presupuesto de conjunto." },
-      { "title": "El diseño.", "body": "La dirección creativa global, y luego un panel para cada momento — de la bienvenida a la despedida." },
-      { "title": "La producción.", "body": "Curaduría de proveedores, contratos, papelería, logística. Ustedes aprueban, la casa orquesta." },
-      { "title": "Los días de la boda.", "body": "La casa está en el lugar, desde la primera llegada hasta la última partida." }
+      {
+        "title": "La escucha.",
+        "body": "Aprendemos quiénes son, qué debe contar esta boda, y fijamos el presupuesto de conjunto."
+      },
+      {
+        "title": "El diseño.",
+        "body": "La dirección creativa global, y luego un panel para cada momento — de la bienvenida a la despedida."
+      },
+      {
+        "title": "La producción.",
+        "body": "Curaduría de proveedores, contratos, papelería, logística. Ustedes aprueban, la casa orquesta."
+      },
+      {
+        "title": "Los días de la boda.",
+        "body": "La casa está en el lugar, desde la primera llegada hasta la última partida."
+      }
     ]
+  },
+  "ceremony": {
+    "eyebrow": "El corazón de la boda",
+    "headline": "La Ceremonia",
+    "lead": "Todo se reúne en torno a esta hora. Una boda puede tener varias — civil, religiosa, simbólica — y la casa guarda de cada una su naturaleza, su hora, su lugar y sus manos.",
+    "empty": "La ceremonia se está componiendo con la casa — aparecerá aquí en cuanto se asiente.",
+    "untitled": "La ceremonia",
+    "edit": "Editar",
+    "add": "Añadir una ceremonia",
+    "when": "Cuándo",
+    "where": "Dónde",
+    "officiantLabel": "Oficiante",
+    "toSettle": "Por fijar",
+    "form": {
+      "addTitle": "Una nueva ceremonia",
+      "editTitle": "Editar la ceremonia",
+      "kind": "Naturaleza de la ceremonia",
+      "kindPlaceholder": "Civil, católica, simbólica, judía, interconfesional…",
+      "title": "Su nombre en la casa",
+      "titlePlaceholder": "«Los votos en los jardines», «La bendición al atardecer»…",
+      "dateTime": "Fecha y hora",
+      "venue": "Lugar",
+      "venuePlaceholder": "Capilla, jardines, ayuntamiento…",
+      "officiant": "Oficiante",
+      "officiantPlaceholder": "Celebrante, sacerdote, rabino, oficial civil…",
+      "notes": "La nota de la casa a la pareja",
+      "notesPlaceholder": "Unas líneas con la voz de la casa — lo que será esta hora…",
+      "save": "Guardar",
+      "remove": "Retirar",
+      "cancel": "Cancelar"
+    },
+    "kinds": {
+      "civil": "Civil",
+      "catholic": "Católica",
+      "protestant": "Protestante",
+      "orthodox": "Ortodoxa",
+      "jewish": "Judía",
+      "laique": "Simbólica",
+      "interfaith": "Interconfesional",
+      "hindu": "Hindú",
+      "muslim": "Musulmana",
+      "buddhist": "Budista",
+      "shinto": "Sintoísta",
+      "humanist": "Humanista",
+      "vows": "Renovación de votos",
+      "blessing": "Bendición"
+    }
   }
 }

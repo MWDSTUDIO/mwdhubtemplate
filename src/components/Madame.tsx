@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import { useTranslations } from "next-intl";
+import { Dictate } from "@/components/Dictate";
 
 interface Exchange {
   who: "you" | "madame";
@@ -133,7 +134,13 @@ export function Madame({ weddingId }: { weddingId: string }) {
             ))}
             {busy && <p style={{ color: "var(--ink2)" }}>…</p>}
           </div>
-          <div className="chat-in" style={{ borderTop: "1px solid var(--line)" }}>
+          <div className="chat-in" style={{ borderTop: "1px solid var(--line)", alignItems: "center", paddingLeft: 8 }}>
+            <Dictate
+              title={t("dictate")}
+              onText={(text) => {
+                if (inputRef.current) inputRef.current.value += text;
+              }}
+            />
             <input
               ref={inputRef}
               placeholder={t("placeholder")}

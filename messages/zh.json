@@ -49,13 +49,15 @@
       "exchanges": "往来",
       "house": "馆内"
     },
-    "tagline": "立足巴黎的婚礼策划与制作之馆"
+    "tagline": "立足巴黎的婚礼策划与制作之馆",
+    "ceremony": "仪式"
   },
   "topbar": {
     "meta": "婚礼 · {date} · {destination}",
     "metaBare": "婚礼",
     "teamView": "团队视图",
-    "clientView": "宾客视图"
+    "clientView": "宾客视图",
+    "signOut": "退出本馆"
   },
   "madame": {
     "tagline": "本馆的常驻管家 — 仅供团队使用，每一页皆在，宾客视图下亦然。",
@@ -66,7 +68,8 @@
     "placeholder": "垂询，或吩咐…",
     "you": "您",
     "go": "去",
-    "unreachable": "Madame 暂时无法联络 — 请核查服务器端的 ANTHROPIC_API_KEY。"
+    "unreachable": "Madame 暂时无法联络 — 请核查服务器端的 ANTHROPIC_API_KEY。",
+    "dictate": "语音输入"
   },
   "home": {
     "welcome": "欢迎",
@@ -91,7 +94,15 @@
     "propose": {
       "title": "提议一个时刻",
       "blurb": "若您愿在既定通话之外与本馆一叙 — 请标出合宜的日子与时辰；本馆确认后，邀请随即奉上。",
-      "weekdays": ["一", "二", "三", "四", "五", "六", "日"],
+      "weekdays": [
+        "一",
+        "二",
+        "三",
+        "四",
+        "五",
+        "六",
+        "日"
+      ],
       "prevMonth": "上一月",
       "nextMonth": "下一月",
       "durationLabel": "您愿予我们的时间",
@@ -320,7 +331,13 @@
       "addressField": "邮寄地址",
       "addressPlaceholder": "14 rue de…, 75007 Paris",
       "localeField": "通信语言",
-      "locales": { "en": "English", "fr": "Français", "zh": "中文", "ja": "日本語", "es": "Español" },
+      "locales": {
+        "en": "English",
+        "fr": "Français",
+        "zh": "中文",
+        "ja": "日本語",
+        "es": "Español"
+      },
       "invitedField": "受邀出席",
       "travelField": "行程与下榻",
       "travelPlaceholder": "周五抵达 · 周日启程 · 盼予安排下榻",
@@ -431,8 +448,12 @@
     "keep": "保留"
   },
   "rooms": {
-    "teamwork": { "prompt": "请输入共用密码" },
-    "vault": { "prompt": "请输入您的私人密码" },
+    "teamwork": {
+      "prompt": "请输入共用密码"
+    },
+    "vault": {
+      "prompt": "请输入您的私人密码"
+    },
     "wrongCode": "本馆无法识别这一密码。"
   },
   "desk": {
@@ -463,7 +484,13 @@
       "composing": "谱写中…",
       "preview": "发布前预览",
       "done": "{count} 个里程碑已然就位，草稿呈于您的案头"
-    }
+    },
+    "eventsHint": "自由命名 — 男方家宴、迎宾晚宴前的酒会… 一行一个时刻，日期在旁。",
+    "eventNamePlaceholder": "时刻 — 例：迎宾晚宴",
+    "removeEvent": "移除此时刻",
+    "addEvent": "添一个时刻",
+    "dictate": "语音输入",
+    "ceremoniesTitle": "仪式 — 档案之心"
   },
   "weddingDays": {
     "eyebrow": "统筹 — 正日子",
@@ -525,7 +552,11 @@
     "keys": "钥匙",
     "principal": "主理人",
     "allWeddings": "全馆",
-    "roles": { "client": "新人", "coordinator": "现场统筹", "team": "本馆" },
+    "roles": {
+      "client": "新人",
+      "coordinator": "现场统筹",
+      "team": "本馆"
+    },
     "newKey": "换新钥匙",
     "remove": "收回",
     "removeConfirm": "收回 {name} 的门钥吗？",
@@ -573,10 +604,69 @@
     "headline": "Madame Wedding Design 的方法",
     "lead": "将要发生的一切，按它将要发生的次序 — 让每一步都水到渠成，绝无突兀。",
     "phases": [
-      { "title": "倾听。", "body": "我们了解您是谁，这场婚礼要诉说什么，并立定预算总览。" },
-      { "title": "设计。", "body": "先有整体的创作方向，再为每一时刻各作一版 — 自迎宾至道别。" },
-      { "title": "制作。", "body": "合作方甄选、合同、纸品、行程调度。您来认可，本馆来运筹。" },
-      { "title": "婚礼正日。", "body": "本馆亲临现场，自第一位宾客抵达，至最后一位离去。" }
+      {
+        "title": "倾听。",
+        "body": "我们了解您是谁，这场婚礼要诉说什么，并立定预算总览。"
+      },
+      {
+        "title": "设计。",
+        "body": "先有整体的创作方向，再为每一时刻各作一版 — 自迎宾至道别。"
+      },
+      {
+        "title": "制作。",
+        "body": "合作方甄选、合同、纸品、行程调度。您来认可，本馆来运筹。"
+      },
+      {
+        "title": "婚礼正日。",
+        "body": "本馆亲临现场，自第一位宾客抵达，至最后一位离去。"
+      }
     ]
+  },
+  "ceremony": {
+    "eyebrow": "婚礼之心",
+    "headline": "仪式",
+    "lead": "一切都围绕这一刻聚拢。一场婚礼可有数场仪式 — 世俗、宗教、象征 — 本馆为每一场记下其性质、时辰、场所与主礼之手。",
+    "empty": "仪式正与本馆一同酝酿 — 一旦落定，便在此呈现。",
+    "untitled": "仪式",
+    "edit": "修改",
+    "add": "添一场仪式",
+    "when": "何时",
+    "where": "何处",
+    "officiantLabel": "主礼人",
+    "toSettle": "待定",
+    "form": {
+      "addTitle": "新的仪式",
+      "editTitle": "修改仪式",
+      "kind": "仪式性质",
+      "kindPlaceholder": "世俗、天主教、象征、犹太、跨信仰…",
+      "title": "馆内之名",
+      "titlePlaceholder": "「花园誓言」「暮色祝祷」…",
+      "dateTime": "日期与时辰",
+      "venue": "场所",
+      "venuePlaceholder": "礼拜堂、花园、市政厅…",
+      "officiant": "主礼人",
+      "officiantPlaceholder": "司仪、神父、拉比、民事官员…",
+      "notes": "本馆致新人的小记",
+      "notesPlaceholder": "以本馆笔调写下数行 — 这一刻将是何等模样…",
+      "save": "存留",
+      "remove": "移除",
+      "cancel": "取消"
+    },
+    "kinds": {
+      "civil": "世俗（民事）",
+      "catholic": "天主教",
+      "protestant": "新教",
+      "orthodox": "东正教",
+      "jewish": "犹太",
+      "laique": "象征仪式",
+      "interfaith": "跨信仰",
+      "hindu": "印度教",
+      "muslim": "穆斯林",
+      "buddhist": "佛教",
+      "shinto": "神道",
+      "humanist": "人文",
+      "vows": "重申誓言",
+      "blessing": "祝祷"
+    }
   }
 }

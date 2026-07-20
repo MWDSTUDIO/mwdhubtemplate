@@ -49,13 +49,15 @@
       "exchanges": "お取り交わし",
       "house": "メゾン"
     },
-    "tagline": "パリのウェディング・プランニング＆プロダクションのメゾン"
+    "tagline": "パリのウェディング・プランニング＆プロダクションのメゾン",
+    "ceremony": "セレモニー"
   },
   "topbar": {
     "meta": "ご婚礼 · {date} · {destination}",
     "metaBare": "ご婚礼",
     "teamView": "チーム表示",
-    "clientView": "お客様表示"
+    "clientView": "お客様表示",
+    "signOut": "退館する"
   },
   "madame": {
     "tagline": "当館の常駐エージェント — チーム専用。どのページにも、お客様表示の際にも控えております。",
@@ -66,7 +68,8 @@
     "placeholder": "お尋ねください。ご指示も承ります…",
     "you": "あなた",
     "go": "実行",
-    "unreachable": "ただいまMadameと連絡が取れません — サーバー側の ANTHROPIC_API_KEY をご確認ください。"
+    "unreachable": "ただいまMadameと連絡が取れません — サーバー側の ANTHROPIC_API_KEY をご確認ください。",
+    "dictate": "音声で入力"
   },
   "home": {
     "welcome": "ようこそ",
@@ -91,7 +94,15 @@
     "propose": {
       "title": "ひとときのご提案",
       "blurb": "定例のお打ち合わせのほかに当館とお話しになりたいときは — ご都合のよい日と時間にしるしをお付けください。当館にて確認のうえ、ご招待状をお届けいたします。",
-      "weekdays": ["月", "火", "水", "木", "金", "土", "日"],
+      "weekdays": [
+        "月",
+        "火",
+        "水",
+        "木",
+        "金",
+        "土",
+        "日"
+      ],
       "prevMonth": "前の月",
       "nextMonth": "次の月",
       "durationLabel": "お割きいただけるお時間",
@@ -320,7 +331,13 @@
       "addressField": "ご住所",
       "addressPlaceholder": "14 rue de…, 75007 Paris",
       "localeField": "お便りの言語",
-      "locales": { "en": "English", "fr": "Français", "zh": "中文", "ja": "日本語", "es": "Español" },
+      "locales": {
+        "en": "English",
+        "fr": "Français",
+        "zh": "中文",
+        "ja": "日本語",
+        "es": "Español"
+      },
       "invitedField": "お招きの席",
       "travelField": "ご旅程とご滞在",
       "travelPlaceholder": "金曜ご到着 · 日曜ご出立 · ご滞在の手配を所望",
@@ -431,8 +448,12 @@
     "keep": "とどめる"
   },
   "rooms": {
-    "teamwork": { "prompt": "共有の符牒をご入力ください" },
-    "vault": { "prompt": "あなたの符牒をご入力ください" },
+    "teamwork": {
+      "prompt": "共有の符牒をご入力ください"
+    },
+    "vault": {
+      "prompt": "あなたの符牒をご入力ください"
+    },
     "wrongCode": "恐れ入りますが、この符牒は確認できませんでした。"
   },
   "desk": {
@@ -463,7 +484,13 @@
       "composing": "綴っております…",
       "preview": "公開の前に確かめる",
       "done": "{count} の節目が据わりました。下書きのまま、あなたの机上に"
-    }
+    },
+    "eventsHint": "自由な名札 — 男性方のリハーサルディナー、ウェルカムディナー前のカクテル… 一行にひとつのひととき、日付を添えて。",
+    "eventNamePlaceholder": "ひととき — 例：ウェルカムディナー",
+    "removeEvent": "このひとときを外す",
+    "addEvent": "ひとときを加える",
+    "dictate": "音声で入力",
+    "ceremoniesTitle": "セレモニー — この綴りの心臓"
   },
   "weddingDays": {
     "eyebrow": "プロダクション — 当日",
@@ -525,7 +552,11 @@
     "keys": "鍵",
     "principal": "主宰",
     "allWeddings": "館のすべて",
-    "roles": { "client": "お二人", "coordinator": "進行役", "team": "当館" },
+    "roles": {
+      "client": "お二人",
+      "coordinator": "進行役",
+      "team": "当館"
+    },
     "newKey": "新しい鍵",
     "remove": "引き上げる",
     "removeConfirm": "{name} の鍵を引き上げますか。",
@@ -573,10 +604,69 @@
     "headline": "Madame Wedding Design の流儀",
     "lead": "起こることを、起こる順に — どの一歩も、驚きではなく必然と感じられるように。",
     "phases": [
-      { "title": "傾聴。", "body": "お二人がどなたであるか、このご婚礼が何を語るべきかを識り、ご予算の見取り図を定めます。" },
-      { "title": "デザイン。", "body": "全体の創作の方位を、そしてひとときごとに一枚のボードを — お迎えから名残まで。" },
-      { "title": "プロダクション。", "body": "パートナーの目利き、ご契約、ステーショナリー、段取り。お二人がよしとし、当館が指揮を執ります。" },
-      { "title": "ご婚礼の日々。", "body": "当館は現地に — 最初のご到着から、最後のお見送りまで。" }
+      {
+        "title": "傾聴。",
+        "body": "お二人がどなたであるか、このご婚礼が何を語るべきかを識り、ご予算の見取り図を定めます。"
+      },
+      {
+        "title": "デザイン。",
+        "body": "全体の創作の方位を、そしてひとときごとに一枚のボードを — お迎えから名残まで。"
+      },
+      {
+        "title": "プロダクション。",
+        "body": "パートナーの目利き、ご契約、ステーショナリー、段取り。お二人がよしとし、当館が指揮を執ります。"
+      },
+      {
+        "title": "ご婚礼の日々。",
+        "body": "当館は現地に — 最初のご到着から、最後のお見送りまで。"
+      }
     ]
+  },
+  "ceremony": {
+    "eyebrow": "ご婚礼の心臓",
+    "headline": "セレモニー",
+    "lead": "すべてはこのひとときへ集います。ご婚礼はいくつものセレモニーを抱くことがあります — 人前、宗教、シンボリック — 当館はその性質、刻、場所、執り行う手を一つひとつお預かりします。",
+    "empty": "セレモニーは当館とともに整えられております — 定まり次第、ここに現れます。",
+    "untitled": "セレモニー",
+    "edit": "編集",
+    "add": "セレモニーを加える",
+    "when": "いつ",
+    "where": "どこで",
+    "officiantLabel": "司式者",
+    "toSettle": "これから",
+    "form": {
+      "addTitle": "新しいセレモニー",
+      "editTitle": "セレモニーの編集",
+      "kind": "セレモニーの性質",
+      "kindPlaceholder": "人前式、カトリック、シンボリック、ユダヤ、超宗派…",
+      "title": "館での呼び名",
+      "titlePlaceholder": "「庭園の誓い」「夕暮れの祝福」…",
+      "dateTime": "日付と刻",
+      "venue": "場所",
+      "venuePlaceholder": "礼拝堂、庭園、市庁舎…",
+      "officiant": "司式者",
+      "officiantPlaceholder": "セレブラント、司祭、ラビ、戸籍官…",
+      "notes": "お二人への当館の覚え書き",
+      "notesPlaceholder": "当館の声で数行 — このひとときが何になるのか…",
+      "save": "とどめる",
+      "remove": "取り除く",
+      "cancel": "取消"
+    },
+    "kinds": {
+      "civil": "人前・民事",
+      "catholic": "カトリック",
+      "protestant": "プロテスタント",
+      "orthodox": "正教会",
+      "jewish": "ユダヤ",
+      "laique": "シンボリック",
+      "interfaith": "超宗派",
+      "hindu": "ヒンドゥー",
+      "muslim": "イスラム",
+      "buddhist": "仏前",
+      "shinto": "神前",
+      "humanist": "ヒューマニスト",
+      "vows": "誓いの更新",
+      "blessing": "祝福"
+    }
   }
 }

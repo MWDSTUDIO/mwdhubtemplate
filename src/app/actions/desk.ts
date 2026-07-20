@@ -42,7 +42,7 @@ export async function saveWedding(input: {
   defaultLocale: string;
   languages: string[];
   budgetTotal: number | null;
-  events: string[];
+  events: { name: string; date: string }[];
   brief: string;
 }) {
   await teamSession();
@@ -133,22 +133,37 @@ export async function saveWedding(input: {
     }
   }
 
-  // Events: replace-and-insert keeps the order simple.
-  if (input.events.length) {
+  // Events are free labels, synced with the sheet: removed rows leave,
+  // dates follow, new labels arrive in order.
+  {
     const { data: existing } = await supabase
       .from("wedding_events")
       .select("id, name")
       .eq("wedding_id", weddingId);
-    const keep = new Set((existing ?? []).map((e) => e.name));
-    const toAdd = input.events.filter((name) => !keep.has(name));
-    if (toAdd.length) {
-      await supabase.from("wedding_events").insert(
-        toAdd.map((name, i) => ({
+    const wanted = input.events;
+    const wantedNames = new Set(wanted.map((e) => e.name));
+    const leftover = (existing ?? []).filter((e) => !wantedNames.has(e.name));
+    if (leftover.length) {
+      await supabase
+        .from("wedding_events")
+        .delete()
+        .in("id", leftover.map((e) => e.id));
+    }
+    for (const [i, event] of wanted.entries()) {
+      const match = (existing ?? []).find((e) => e.name === event.name);
+      if (match) {
+        await supabase
+          .from("wedding_events")
+          .update({ event_date: event.date || null, sort: i + 1 })
+          .eq("id", match.id);
+      } else {
+        await supabase.from("wedding_events").insert({
           wedding_id: weddingId,
-          name,
-          sort: (existing?.length ?? 0) + i + 1
-        }))
-      );
+          name: event.name,
+          event_date: event.date || null,
+          sort: i + 1
+        });
+      }
     }
   }
 

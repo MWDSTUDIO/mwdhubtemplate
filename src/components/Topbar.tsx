@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, useTransition } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { usePathname, useRouter } from "@/i18n/navigation";
 import { locales, localeNames, type Locale } from "@/i18n/routing";
-import { setActiveWedding } from "@/app/actions/auth";
+import { setActiveWedding, signOut } from "@/app/actions/auth";
 
 interface WeddingOption {
   id: string;
@@ -38,8 +38,26 @@ export function Topbar({
         )}
         <LangSwitcher />
         {isTeam && <ViewToggle labels={{ team: t("teamView"), client: t("clientView") }} />}
+        <SignOutButton label={t("signOut")} />
       </div>
     </div>
+  );
+}
+
+function SignOutButton({ label }: { label: string }) {
+  const [pending, startTransition] = useTransition();
+  return (
+    <button
+      className="lang"
+      title={label}
+      aria-label={label}
+      disabled={pending}
+      onClick={() => startTransition(() => signOut())}
+    >
+      <svg viewBox="0 0 24 24" fill="none" strokeWidth="1.4" stroke="currentColor" aria-hidden>
+        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" />
+      </svg>
+    </button>
   );
 }
 

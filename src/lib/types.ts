@@ -36,6 +36,19 @@ export interface Profile {
   timezone: string;
 }
 
+export interface Ceremony {
+  id: string;
+  wedding_id: string;
+  kind: string;
+  title: string | null;
+  ceremony_date: string | null;
+  start_time: string | null;
+  venue: string | null;
+  officiant: string | null;
+  notes: string | null;
+  sort: number;
+}
+
 export interface WeddingEvent {
   id: string;
   wedding_id: string;

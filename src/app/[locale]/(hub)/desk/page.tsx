@@ -6,6 +6,8 @@ import type { WeddingEvent } from "@/lib/types";
 import { ClientSheet, TimelineComposer } from "./desk-client";
 import { AccessPanel, TemplatesPanel } from "./access-client";
 import { listMembers } from "@/app/actions/access";
+import { CeremonyList } from "@/components/CeremonyEditor";
+import type { Ceremony } from "@/lib/types";
 
 export default async function DeskPage({
   params
@@ -20,13 +22,16 @@ export default async function DeskPage({
   const { wedding } = session;
 
   const supabase = await createClient();
-  const [{ data: events }, { data: brief }] = await Promise.all([
+  const [{ data: events }, { data: brief }, { data: ceremonies }] = await Promise.all([
     wedding
       ? supabase.from("wedding_events").select("*").eq("wedding_id", wedding.id).order("sort")
       : Promise.resolve({ data: [] as WeddingEvent[] }),
     wedding
       ? supabase.from("wedding_briefs").select("body").eq("wedding_id", wedding.id).maybeSingle()
-      : Promise.resolve({ data: null })
+      : Promise.resolve({ data: null }),
+    wedding
+      ? supabase.from("ceremonies").select("*").eq("wedding_id", wedding.id).order("sort")
+      : Promise.resolve({ data: [] as Ceremony[] })
   ]);
 
   return (
@@ -40,6 +45,19 @@ export default async function DeskPage({
         events={(events ?? []) as WeddingEvent[]}
         brief={brief?.body ?? ""}
       />
+
+      {wedding && (
+        <>
+          <div className="eyebrow" style={{ margin: "26px 0 12px" }}>
+            {t("ceremoniesTitle")}
+          </div>
+          <CeremonyList
+            ceremonies={(ceremonies ?? []) as Ceremony[]}
+            weddingId={wedding.id}
+            isTeam={session.isTeam}
+          />
+        </>
+      )}
 
       {wedding && <TimelineComposer weddingId={wedding.id} />}
 
