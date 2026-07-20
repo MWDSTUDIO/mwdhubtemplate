@@ -328,10 +328,10 @@ ul.steps { list-style: none; }
 .steps .d { font-size: 11px; letter-spacing: 0.1em; color: var(--ink2); min-width: 74px; }
 
 /* ── timeline frise ────────────────────────────────────────────── */
-.frise { position: relative; padding: 46px 0 12px; overflow-x: auto; }
+.frise { position: relative; padding: 46px 0 16px; overflow-x: auto; }
 .frise-line { position: absolute; top: 88px; left: 0; right: 0; height: 1px; background: var(--champagne); }
 .frise-in { display: flex; gap: 0; min-width: 900px; }
-.mo { flex: 1; position: relative; padding-top: 58px; min-width: 110px; }
+.mo { flex: 1; position: relative; padding-top: 58px; min-width: 132px; padding-right: 16px; }
 .mo::before {
   content: "";
   position: absolute;

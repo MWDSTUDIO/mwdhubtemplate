@@ -2,7 +2,7 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { requireHouseSession } from "@/lib/session";
 import { createClient } from "@/lib/supabase/server";
 import type { Guest, GuestEvent, WeddingEvent } from "@/lib/types";
-import { AddGuestForm, StationerReview } from "./guests-client";
+import { AddGuestForm, GuestList, StationerReview } from "./guests-client";
 
 export default async function GuestsPage({
   params
@@ -32,19 +32,6 @@ export default async function GuestsPage({
     confirmed: links.filter((l) => l.event_id === eventId && l.rsvp === "confirmed").length,
     invited: links.filter((l) => l.event_id === eventId).length
   });
-  const eventsFor = (guestId: string) =>
-    links
-      .filter((l) => l.guest_id === guestId)
-      .map((l) => allEvents.find((e) => e.id === l.event_id)?.name)
-      .filter(Boolean)
-      .join(" · ");
-  const statusFor = (guestId: string) => {
-    const mine = links.filter((l) => l.guest_id === guestId);
-    if (mine.length && mine.every((l) => l.rsvp === "confirmed")) return "confirmed";
-    if (mine.some((l) => l.rsvp === "declined")) return "declined";
-    return "awaiting";
-  };
-
   const heroEvents = allEvents.filter((e) =>
     ["welcome", "dinner", "farewell"].includes(e.name.toLowerCase().split(" ")[0])
   );
@@ -75,39 +62,13 @@ export default async function GuestsPage({
 
       <AddGuestForm weddingId={wedding.id} events={allEvents} languages={wedding.languages} />
 
-      <div className="card">
-        <div className="eyebrow" style={{ marginBottom: 14 }}>{t("theList")}</div>
-        <div style={{ overflowX: "auto" }}>
-          <table className="sheet-table">
-            <thead>
-              <tr>
-                <th>{t("invitationLine")}</th>
-                <th>{t("invitedTo")}</th>
-                <th>{t("travel")}</th>
-                <th>{t("status")}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {allGuests.map((guest) => (
-                <tr key={guest.id}>
-                  <td className="serif" style={{ fontSize: 16 }}>{guest.invitation_line}</td>
-                  <td>{eventsFor(guest.id) || "—"}</td>
-                  <td>{guest.travel ?? t("toArrange")}</td>
-                  <td>
-                    {statusFor(guest.id) === "confirmed" ? (
-                      <span className="tag ok">{t("confirmed")}</span>
-                    ) : statusFor(guest.id) === "declined" ? (
-                      <span className="tag">{t("declined")}</span>
-                    ) : (
-                      <span className="tag wait">{t("awaitingReply")}</span>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
+      <GuestList
+        weddingId={wedding.id}
+        guests={allGuests}
+        events={allEvents}
+        links={links}
+        canManage={!session.isCoordinator}
+      />
 
       <StationerReview weddingId={wedding.id} latestFlag={latestFlag} />
 

@@ -34,6 +34,7 @@ export function CeremonyForm({
   const [venue, setVenue] = useState(ceremony?.venue ?? "");
   const [officiant, setOfficiant] = useState(ceremony?.officiant ?? "");
   const [notes, setNotes] = useState(ceremony?.notes ?? "");
+  const [failed, setFailed] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
   return (
@@ -86,8 +87,12 @@ export function CeremonyForm({
           disabled={pending || !kind.trim()}
           onClick={() =>
             startTransition(async () => {
-              await saveCeremony({ id: ceremony?.id, weddingId, kind, title, date, time, venue, officiant, notes });
-              onClose();
+              const r = await saveCeremony({ id: ceremony?.id, weddingId, kind, title, date, time, venue, officiant, notes });
+              if (r.ok) {
+                onClose();
+              } else {
+                setFailed(r.message ?? "");
+              }
             })
           }
         >
@@ -109,6 +114,12 @@ export function CeremonyForm({
         )}
         <button className="btn ghost" onClick={onClose}>{t("cancel")}</button>
       </div>
+      {failed !== null && (
+        <p role="alert" style={{ marginTop: 12, fontSize: 13, color: "var(--bronze)" }}>
+          {t("saveFailed")}
+          {failed && <span style={{ display: "block", fontSize: 11.5 }}>{failed}</span>}
+        </p>
+      )}
     </div>
   );
 }

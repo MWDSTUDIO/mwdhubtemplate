@@ -125,7 +125,8 @@ export function ClientSheet({
         dateEnd,
         defaultLocale: locale,
         languages: [...new Set([locale, "en"])],
-        budgetTotal: budget ? Number(budget) : null,
+        // "120 000", "120.000 €", "120,000" — every notation lands whole.
+        budgetTotal: budget.replace(/\D/g, "") ? Number(budget.replace(/\D/g, "")) : null,
         events: eventRows
           .map((r) => ({ name: r.name.trim(), date: r.date }))
           .filter((r) => r.name),

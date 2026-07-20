@@ -94,11 +94,20 @@ export async function POST(request: Request) {
           .eq("vendor_id", matchedVendor);
       }
     } else {
-      await supabase.from("documents").insert({
+      const { error: docErr } = await supabase.from("documents").insert({
         wedding_id: weddingId,
         label: parsed.label ?? file.name,
-        internal: true
+        internal: true,
+        storage_path: `internal/${path}`
       });
+      // Before migration 0010 the column is absent — keep the register.
+      if (docErr) {
+        await supabase.from("documents").insert({
+          wedding_id: weddingId,
+          label: parsed.label ?? file.name,
+          internal: true
+        });
+      }
     }
 
     return NextResponse.json({ text: parsed.summary ?? "Read and filed.", extraction: parsed });

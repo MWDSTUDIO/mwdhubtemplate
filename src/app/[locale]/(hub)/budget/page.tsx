@@ -8,6 +8,7 @@ import {
   MadameBudgetAdd,
   PublishBar,
   BudgetAsk,
+  BudgetDocDrop,
   InternalNotes
 } from "./budget-client";
 
@@ -106,6 +107,14 @@ export default async function BudgetPage({
         <div className="card" style={{ marginBottom: 0 }}>
           <div className="eyebrow">{t("mgmt.total")}</div>
           <div className="serif num" style={{ fontSize: 30 }}>{money(total)}</div>
+          {total > 0 && (
+            <span style={{ fontSize: 12, color: "var(--ink2)" }}>
+              {t("mgmt.leftToAllot", { amount: money(total - committed) })}
+            </span>
+          )}
+          {total === 0 && session.isTeam && (
+            <span style={{ fontSize: 12, color: "var(--bronze)" }}>{t("mgmt.setInDesk")}</span>
+          )}
         </div>
         <div className="card" style={{ marginBottom: 0 }}>
           <div className="eyebrow">{t("mgmt.paid")}</div>
@@ -180,6 +189,7 @@ export default async function BudgetPage({
       <div className="ia" style={{ marginTop: 14 }}>
         <div className="eyebrow">{t("docs.title")}</div>
         <p style={{ marginTop: 8, fontSize: 13.5 }}>{t("docs.blurb")}</p>
+        <BudgetDocDrop weddingId={wedding.id} />
       </div>
 
       {session.isTeam && (

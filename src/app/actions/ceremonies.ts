@@ -32,20 +32,22 @@ export async function saveCeremony(input: {
     officiant: input.officiant.trim() || null,
     notes: input.notes.trim() || null
   };
+  let error;
   if (input.id) {
-    await supabase.from("ceremonies").update(row).eq("id", input.id);
+    ({ error } = await supabase.from("ceremonies").update(row).eq("id", input.id));
   } else {
     const { count } = await supabase
       .from("ceremonies")
       .select("id", { count: "exact", head: true })
       .eq("wedding_id", input.weddingId);
-    await supabase
+    ({ error } = await supabase
       .from("ceremonies")
-      .insert({ wedding_id: input.weddingId, ...row, sort: (count ?? 0) + 1 });
+      .insert({ wedding_id: input.weddingId, ...row, sort: (count ?? 0) + 1 }));
   }
+  if (error) return { ok: false as const, message: error.message };
   revalidatePath("/ceremony");
   revalidatePath("/desk");
-  return { ok: true };
+  return { ok: true as const };
 }
 
 export async function deleteCeremony(id: string) {

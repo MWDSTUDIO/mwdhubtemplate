@@ -12,7 +12,12 @@
     "open": "打开",
     "send": "发送",
     "close": "关闭",
-    "dictate": "语音输入"
+    "dictate": "语音输入",
+    "dictation": {
+      "denied": "麦克风未获许可——请在浏览器中允许后再试。",
+      "noSpeech": "本馆未听到声音——请在话筒变深色后开口。",
+      "failed": "听写未能完成——请再试一次。"
+    }
   },
   "auth": {
     "motto": "本馆恭候您的光临。",
@@ -242,7 +247,9 @@
       "committed": "已承诺",
       "paidCol": "已付",
       "remainingCol": "余款",
-      "nextPayment": "下期付款"
+      "nextPayment": "下期付款",
+      "leftToAllot": "尚待分配 {amount}",
+      "setInDesk": "新人预算请在 The Desk 客户档案中填写"
     },
     "ask": {
       "title": "本馆的分析 — 您的预算专家",
@@ -253,7 +260,9 @@
     },
     "docs": {
       "title": "文件自动研读",
-      "blurb": "放入合作方的报价、合同或发票：管家提取金额、付款节奏与条款，更新预算，并以邮件安排付款提醒。"
+      "blurb": "放入合作方的报价、合同或发票：管家提取金额、付款节奏与条款，更新预算，并以邮件安排付款提醒。",
+      "choose": "把文件交给预算",
+      "failed": "未能完成读取——请再试一次。"
     },
     "internal": {
       "title": "分析之后",
@@ -302,7 +311,7 @@
     },
     "outreach": {
       "title": "分类邮件底稿",
-      "blurb": "询档、询价、磋商、确认 — 依类别预先写就，经 Netlify Forms 自您的邮箱发出。",
+      "blurb": "档期询问、方案邀请、洽谈、确认——按供应商类别预先写好。本馆记录该请求，并由本馆的信箱发出——绝不经个人信箱。",
       "new": "新的合作方去函",
       "templates": {
         "availability": "档期询问",
@@ -315,7 +324,7 @@
       "subject": "主题…",
       "body": "正文…",
       "send": "自本馆邮箱发出",
-      "sentNote": "已发出 — 由 Estelle 的邮箱送达。"
+      "sentNote": "已记录——由本馆信箱发出，回复亦送达该处。"
     }
   },
   "guests": {
@@ -352,7 +361,12 @@
       "invitedField": "受邀出席",
       "travelField": "行程与下榻",
       "travelPlaceholder": "周五抵达 · 周日启程 · 盼予安排下榻",
-      "submit": "录入名单"
+      "submit": "录入名单",
+      "partyField": "随行人数",
+      "adults": "成人",
+      "children": "孩童",
+      "dietaryField": "餐饮备注",
+      "dietaryPlaceholder": "素食 · 不食贝类 · 坚果过敏…"
     },
     "stationer": {
       "title": "纸品师之眼",
@@ -362,7 +376,14 @@
     "travelPlanning": {
       "title": "行程统筹",
       "blurb": "抵离信息自动归拢：按下榻处的房单、车站与机场接驳、分时段的抵达 — 可导出交予承运方。"
-    }
+    },
+    "party": "随行",
+    "partySummary": "成人 {adults} 位{children, plural, =0 {} other { · 孩童 # 位}}",
+    "cycleHint": "轻点切换——等待回复、已确认、已辞谢",
+    "edit": "修改",
+    "close": "收起",
+    "save": "保存",
+    "remove": "从名单中移除"
   },
   "communication": {
     "eyebrow": "统筹",
@@ -433,7 +454,17 @@
     "lead": "与本馆的直通之线 — 一切都在此处，无一遗落。",
     "placeholder": "写下想说的话…",
     "send": "发送",
-    "theHouse": "本馆"
+    "theHouse": "本馆",
+    "subjects": {
+      "label": "对话",
+      "general": "综合",
+      "new": "开启新话题",
+      "open": "开启",
+      "placeholder": "花艺、酒店、时间安排…",
+      "inputIn": "在「{subject}」下书写…",
+      "emptyThread": "「{subject}」之下尚无一言——请开启对话。",
+      "emptyGeneral": "综合话题静候着——请写下第一句。"
+    }
   },
   "forms": {
     "eyebrow": "往来",
@@ -631,7 +662,22 @@
         "title": "婚礼正日。",
         "body": "本馆亲临现场，自第一位宾客抵达，至最后一位离去。"
       }
-    ]
+    ],
+    "editor": {
+      "personalise": "为这场婚礼谱写专属乐章",
+      "add": "添加一个乐章",
+      "edit": "修改",
+      "editTitle": "修改此乐章",
+      "addTitle": "新的乐章",
+      "stepTitle": "标题",
+      "stepBody": "下方一行",
+      "titlePlaceholder": "试菜周末。",
+      "bodyPlaceholder": "将要发生的事，一句道来。",
+      "save": "保存",
+      "remove": "移除",
+      "cancel": "取消",
+      "failed": "本馆未能记录——或许尚需执行 0010 迁移。"
+    }
   },
   "ceremony": {
     "eyebrow": "婚礼之心",
@@ -661,7 +707,8 @@
       "notesPlaceholder": "以本馆笔调写下数行 — 这一刻将是何等模样…",
       "save": "存留",
       "remove": "移除",
-      "cancel": "取消"
+      "cancel": "取消",
+      "saveFailed": "本馆未能记录这场仪式。若是首次使用，或许尚需在 Supabase 中执行 0010 迁移文件。"
     },
     "kinds": {
       "civil": "世俗（民事）",

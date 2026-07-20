@@ -12,7 +12,12 @@
     "open": "Open",
     "send": "Send",
     "close": "Close",
-    "dictate": "Dictate"
+    "dictate": "Dictate",
+    "dictation": {
+      "denied": "The microphone is not allowed — permit it in your browser and try again.",
+      "noSpeech": "The house heard nothing — speak once the mic darkens.",
+      "failed": "Dictation faltered — try again."
+    }
   },
   "auth": {
     "motto": "The house is expecting you.",
@@ -242,7 +247,9 @@
       "committed": "Committed",
       "paidCol": "Paid",
       "remainingCol": "Remaining",
-      "nextPayment": "Next payment"
+      "nextPayment": "Next payment",
+      "leftToAllot": "{amount} still to allot",
+      "setInDesk": "The couple's budget is set in The Desk — client sheet"
     },
     "ask": {
       "title": "The house's analysis — your budget expert",
@@ -253,7 +260,9 @@
     },
     "docs": {
       "title": "Automatic document analysis",
-      "blurb": "Drop a vendor proposal, contract or invoice: the agent extracts the amounts, schedule and terms, updates the budget and sets the payment reminders by email."
+      "blurb": "Drop a vendor proposal, contract or invoice: the agent extracts the amounts, schedule and terms, updates the budget and sets the payment reminders by email.",
+      "choose": "Hand a document to the budget",
+      "failed": "The reading did not settle — try once more."
     },
     "internal": {
       "title": "Behind the analysis",
@@ -302,7 +311,7 @@
     },
     "outreach": {
       "title": "Email templates by category",
-      "blurb": "Availability request, proposal request, negotiation, confirmation — pre-written per vendor category, sent from your inbox via Netlify Forms.",
+      "blurb": "Availability request, proposal request, negotiation, confirmation — pre-written per vendor category. The house records the request and it leaves from the house's own inbox — never from a personal one.",
       "new": "New vendor request",
       "templates": {
         "availability": "Availability request",
@@ -315,7 +324,7 @@
       "subject": "Subject…",
       "body": "Body…",
       "send": "Send from the house's inbox",
-      "sentNote": "Sent — it leaves from Estelle's inbox."
+      "sentNote": "Recorded — it leaves from the house's inbox, and replies arrive there too."
     }
   },
   "guests": {
@@ -352,7 +361,12 @@
       "invitedField": "Invited to",
       "travelField": "Travel & stay",
       "travelPlaceholder": "Arriving Fri · departing Sun · accommodation wished",
-      "submit": "Add to the list"
+      "submit": "Add to the list",
+      "partyField": "The household",
+      "adults": "adults",
+      "children": "children",
+      "dietaryField": "Dietary notes",
+      "dietaryPlaceholder": "Vegetarian · no shellfish · a nut allergy…"
     },
     "stationer": {
       "title": "The stationer's eye",
@@ -362,7 +376,14 @@
     "travelPlanning": {
       "title": "Travel planning",
       "blurb": "Arrivals and departures consolidated automatically: room list per accommodation, station and airport shuttles, arrivals by time slot — exportable for transport vendors."
-    }
+    },
+    "party": "Household",
+    "partySummary": "{adults, plural, one {# adult} other {# adults}}{children, plural, =0 {} one { · # child} other { · # children}}",
+    "cycleHint": "Press to change — awaiting, confirmed, declined",
+    "edit": "Rework",
+    "close": "Close",
+    "save": "Save",
+    "remove": "Remove from the list"
   },
   "communication": {
     "eyebrow": "Production",
@@ -433,7 +454,17 @@
     "lead": "A direct line to the house — everything in one place, nothing lost.",
     "placeholder": "Write a message…",
     "send": "Send",
-    "theHouse": "The house"
+    "theHouse": "The house",
+    "subjects": {
+      "label": "Conversations",
+      "general": "General",
+      "new": "Open a subject",
+      "open": "Open",
+      "placeholder": "Flowers, hotel, timing…",
+      "inputIn": "Write under “{subject}”…",
+      "emptyThread": "Nothing under “{subject}” yet — open the conversation.",
+      "emptyGeneral": "The general thread is quiet — write the first word."
+    }
   },
   "forms": {
     "eyebrow": "Exchanges",
@@ -631,7 +662,22 @@
         "title": "The wedding days.",
         "body": "The house is on site, from the first arrival to the last departure."
       }
-    ]
+    ],
+    "editor": {
+      "personalise": "Give this wedding its own movements",
+      "add": "Add a movement",
+      "edit": "Rework",
+      "editTitle": "Rework this movement",
+      "addTitle": "A new movement",
+      "stepTitle": "Title",
+      "stepBody": "A line beneath",
+      "titlePlaceholder": "The tasting weekend.",
+      "bodyPlaceholder": "What will happen, said in one sentence.",
+      "save": "Save",
+      "remove": "Remove",
+      "cancel": "Cancel",
+      "failed": "The house could not record this — the 0010 migration may still need to be run."
+    }
   },
   "ceremony": {
     "eyebrow": "The heart of the wedding",
@@ -661,7 +707,8 @@
       "notesPlaceholder": "A few lines in the house's voice — what this hour will be…",
       "save": "Keep",
       "remove": "Remove",
-      "cancel": "Cancel"
+      "cancel": "Cancel",
+      "saveFailed": "The house could not record this ceremony. If it is the first, the 0010 migration file may still need to be run in Supabase."
     },
     "kinds": {
       "civil": "Civil",

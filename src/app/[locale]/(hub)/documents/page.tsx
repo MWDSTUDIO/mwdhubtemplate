@@ -30,17 +30,33 @@ export default async function DocumentsPage({
     ? `https://drive.google.com/drive/folders/${wedding.drive_folder_shared_id}`
     : null;
 
-  const item = (doc: DocumentRow) => (
-    <li key={doc.id}>
-      {doc.url ? (
-        <a href={doc.url} target="_blank" rel="noreferrer">
-          {doc.label}
-        </a>
-      ) : (
-        <span>{doc.label}</span>
-      )}
-    </li>
+  // Filed originals live in Storage — a signed hour-long link each,
+  // minted under the caller's own rights (RLS holds at the bucket).
+  const signedUrls = new Map<string, string>();
+  await Promise.all(
+    all
+      .filter((d) => d.storage_path)
+      .map(async (d) => {
+        const [bucket, ...rest] = d.storage_path!.split("/");
+        const { data } = await supabase.storage.from(bucket).createSignedUrl(rest.join("/"), 3600);
+        if (data?.signedUrl) signedUrls.set(d.id, data.signedUrl);
+      })
   );
+
+  const item = (doc: DocumentRow) => {
+    const href = doc.url ?? signedUrls.get(doc.id);
+    return (
+      <li key={doc.id}>
+        {href ? (
+          <a href={href} target="_blank" rel="noreferrer">
+            {doc.label}
+          </a>
+        ) : (
+          <span>{doc.label}</span>
+        )}
+      </li>
+    );
+  };
 
   return (
     <section className="sheet">

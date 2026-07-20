@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { useLocale } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 
 /**
  * Dictation — the browser's own speech recognition (Chrome, Safari,
@@ -18,7 +18,7 @@ type SpeechRecognitionLike = {
   stop(): void;
   onresult: ((e: { resultIndex: number; results: { isFinal: boolean; 0: { transcript: string } }[] }) => void) | null;
   onend: (() => void) | null;
-  onerror: (() => void) | null;
+  onerror: ((e: { error?: string }) => void) | null;
 };
 
 const LANGS: Record<string, string> = {
@@ -33,8 +33,10 @@ export function Dictate({
   title: string;
 }) {
   const locale = useLocale();
+  const t = useTranslations("common.dictation");
   const [supported, setSupported] = useState(false);
   const [listening, setListening] = useState(false);
+  const [trouble, setTrouble] = useState<string | null>(null);
   const recRef = useRef<SpeechRecognitionLike | null>(null);
 
   useEffect(() => {
@@ -69,13 +71,26 @@ export function Dictate({
       }
     };
     rec.onend = () => setListening(false);
-    rec.onerror = () => setListening(false);
+    rec.onerror = (e) => {
+      setListening(false);
+      // Say why, briefly — a silent mic reads as a broken house.
+      setTrouble(
+        e.error === "not-allowed" || e.error === "service-not-allowed"
+          ? t("denied")
+          : e.error === "no-speech"
+            ? t("noSpeech")
+            : t("failed")
+      );
+      setTimeout(() => setTrouble(null), 6000);
+    };
     recRef.current = rec;
+    setTrouble(null);
     rec.start();
     setListening(true);
   }
 
   return (
+    <>
     <button
       type="button"
       onClick={toggle}
@@ -102,5 +117,11 @@ export function Dictate({
         <path d="M5 11a7 7 0 0 0 14 0M12 18v3" />
       </svg>
     </button>
+    {trouble && (
+      <span role="status" style={{ fontSize: 11.5, color: "var(--bronze)", marginLeft: 8 }}>
+        {trouble}
+      </span>
+    )}
+    </>
   );
 }

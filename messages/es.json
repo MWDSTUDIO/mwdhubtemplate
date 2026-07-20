@@ -12,7 +12,12 @@
     "open": "Abrir",
     "send": "Enviar",
     "close": "Cerrar",
-    "dictate": "Dictar"
+    "dictate": "Dictar",
+    "dictation": {
+      "denied": "El micrófono no está permitido — autorícelo en su navegador e inténtelo de nuevo.",
+      "noSpeech": "La casa no oyó nada — hable en cuanto el micrófono se oscurezca.",
+      "failed": "El dictado vaciló — inténtelo de nuevo."
+    }
   },
   "auth": {
     "motto": "La casa les espera.",
@@ -242,7 +247,9 @@
       "committed": "Comprometido",
       "paidCol": "Pagado",
       "remainingCol": "Pendiente",
-      "nextPayment": "Próximo pago"
+      "nextPayment": "Próximo pago",
+      "leftToAllot": "{amount} aún por repartir",
+      "setInDesk": "El presupuesto de la pareja se define en The Desk — ficha del cliente"
     },
     "ask": {
       "title": "El análisis de la casa — su experto en presupuesto",
@@ -253,7 +260,9 @@
     },
     "docs": {
       "title": "Análisis automático de documentos",
-      "blurb": "Deje un presupuesto, contrato o factura de proveedor: el agente extrae importes, calendario y condiciones, actualiza el presupuesto y programa los recordatorios de pago por correo."
+      "blurb": "Deje un presupuesto, contrato o factura de proveedor: el agente extrae importes, calendario y condiciones, actualiza el presupuesto y programa los recordatorios de pago por correo.",
+      "choose": "Confiar un documento al presupuesto",
+      "failed": "La lectura no se completó — inténtelo de nuevo."
     },
     "internal": {
       "title": "Detrás del análisis",
@@ -302,7 +311,7 @@
     },
     "outreach": {
       "title": "Plantillas de correo por categoría",
-      "blurb": "Consulta de disponibilidad, petición de presupuesto, negociación, confirmación — redactadas de antemano por categoría, enviadas desde su buzón vía Netlify Forms.",
+      "blurb": "Solicitud de disponibilidad, de propuesta, negociación, confirmación — preescritas por categoría. La casa registra la solicitud y parte del buzón de la casa — nunca de uno personal.",
       "new": "Nueva solicitud a proveedor",
       "templates": {
         "availability": "Consulta de disponibilidad",
@@ -315,7 +324,7 @@
       "subject": "Asunto…",
       "body": "Cuerpo…",
       "send": "Enviar desde el buzón de la casa",
-      "sentNote": "Enviado — sale del buzón de Estelle."
+      "sentNote": "Registrado — parte del buzón de la casa, y las respuestas llegan allí también."
     }
   },
   "guests": {
@@ -352,7 +361,12 @@
       "invitedField": "Invitado a",
       "travelField": "Viaje y estancia",
       "travelPlaceholder": "Llegada vie · salida dom · alojamiento deseado",
-      "submit": "Añadir a la lista"
+      "submit": "Añadir a la lista",
+      "partyField": "El hogar",
+      "adults": "adultos",
+      "children": "niños",
+      "dietaryField": "Notas de mesa",
+      "dietaryPlaceholder": "Vegetariano · sin mariscos · alergia a los frutos secos…"
     },
     "stationer": {
       "title": "El ojo del papelero",
@@ -362,7 +376,14 @@
     "travelPlanning": {
       "title": "Organización de viajes",
       "blurb": "Llegadas y salidas consolidadas por sí solas: room list por alojamiento, traslados de estación y aeropuerto, llegadas por franjas — exportable para los transportistas."
-    }
+    },
+    "party": "Hogar",
+    "partySummary": "{adults, plural, one {# adulto} other {# adultos}}{children, plural, =0 {} one { · # niño} other { · # niños}}",
+    "cycleHint": "Pulse para cambiar — en espera, confirmado, declinado",
+    "edit": "Retocar",
+    "close": "Cerrar",
+    "save": "Guardar",
+    "remove": "Retirar de la lista"
   },
   "communication": {
     "eyebrow": "Producción",
@@ -433,7 +454,17 @@
     "lead": "Una línea directa con la casa — todo en un mismo lugar, nada se pierde.",
     "placeholder": "Escribir un mensaje…",
     "send": "Enviar",
-    "theHouse": "La casa"
+    "theHouse": "La casa",
+    "subjects": {
+      "label": "Conversaciones",
+      "general": "General",
+      "new": "Abrir un tema",
+      "open": "Abrir",
+      "placeholder": "Flores, hotel, horarios…",
+      "inputIn": "Escribir bajo «{subject}»…",
+      "emptyThread": "Nada aún bajo «{subject}» — abra la conversación.",
+      "emptyGeneral": "El hilo general está en calma — escriba la primera palabra."
+    }
   },
   "forms": {
     "eyebrow": "Intercambios",
@@ -631,7 +662,22 @@
         "title": "Los días de la boda.",
         "body": "La casa está en el lugar, desde la primera llegada hasta la última partida."
       }
-    ]
+    ],
+    "editor": {
+      "personalise": "Dar a esta boda sus propios movimientos",
+      "add": "Añadir un movimiento",
+      "edit": "Retocar",
+      "editTitle": "Retocar este movimiento",
+      "addTitle": "Un nuevo movimiento",
+      "stepTitle": "Título",
+      "stepBody": "Una línea debajo",
+      "titlePlaceholder": "El fin de semana de pruebas.",
+      "bodyPlaceholder": "Lo que sucederá, dicho en una frase.",
+      "save": "Guardar",
+      "remove": "Retirar",
+      "cancel": "Cancelar",
+      "failed": "La casa no pudo registrarlo — quizá falte ejecutar la migración 0010."
+    }
   },
   "ceremony": {
     "eyebrow": "El corazón de la boda",
@@ -661,7 +707,8 @@
       "notesPlaceholder": "Unas líneas con la voz de la casa — lo que será esta hora…",
       "save": "Guardar",
       "remove": "Retirar",
-      "cancel": "Cancelar"
+      "cancel": "Cancelar",
+      "saveFailed": "La casa no pudo registrar esta ceremonia. Si es la primera, quizá falte ejecutar la migración 0010 en Supabase."
     },
     "kinds": {
       "civil": "Civil",

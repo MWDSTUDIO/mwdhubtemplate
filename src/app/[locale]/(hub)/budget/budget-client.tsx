@@ -228,6 +228,73 @@ export function BudgetAsk({ weddingId }: { weddingId: string }) {
   );
 }
 
+/** The budget reads documents too — right where the analysis lives. */
+export function BudgetDocDrop({ weddingId }: { weddingId: string }) {
+  const t = useTranslations("budget.docs");
+  const [summary, setSummary] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [over, setOver] = useState(false);
+
+  async function handle(file: File) {
+    if (busy) return;
+    setBusy(true);
+    setSummary(null);
+    try {
+      const form = new FormData();
+      form.append("weddingId", weddingId);
+      form.append("file", file);
+      const r = await fetch("/api/agents/document", { method: "POST", body: form });
+      const d = await r.json();
+      setSummary(d.text ?? t("failed"));
+    } catch {
+      setSummary(t("failed"));
+    }
+    setBusy(false);
+  }
+
+  return (
+    <>
+      <label
+        className="btn ghost"
+        style={{
+          cursor: "pointer",
+          marginTop: 12,
+          display: "inline-flex",
+          alignItems: "center",
+          gap: 8,
+          borderStyle: over ? "solid" : undefined,
+          background: over ? "var(--parchment)" : undefined
+        }}
+        onDragOver={(e) => { e.preventDefault(); setOver(true); }}
+        onDragLeave={() => setOver(false)}
+        onDrop={(e) => {
+          e.preventDefault();
+          setOver(false);
+          const f = e.dataTransfer.files?.[0];
+          if (f) void handle(f);
+        }}
+      >
+        {busy ? "…" : t("choose")}
+        <input
+          type="file"
+          hidden
+          accept=".pdf,.png,.jpg,.jpeg"
+          onChange={(e) => {
+            const f = e.target.files?.[0];
+            if (f) void handle(f);
+            e.target.value = "";
+          }}
+        />
+      </label>
+      {summary && (
+        <p className="ia-quote" style={{ marginTop: 12 }} aria-live="polite">
+          {summary}
+        </p>
+      )}
+    </>
+  );
+}
+
 /** Behind the analysis — Estelle's notes, consulted but never revealed. */
 export function InternalNotes({ weddingId, latest }: { weddingId: string; latest: string | null }) {
   const t = useTranslations("budget.internal");

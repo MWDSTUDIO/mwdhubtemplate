@@ -105,9 +105,6 @@ export function Frise({
             <div key={m.id} className={`mo${m.done ? " done" : ""}`}>
               <span className="m">
                 {format.dateTime(new Date(m.month), { month: "short", year: "2-digit" })}
-                {isTeam && m.status === "draft" && (
-                  <span className="tag int" style={{ marginLeft: 6 }}>{tc("draft")}</span>
-                )}
               </span>
               {isTeam ? (
                 <button className="edit" onClick={() => setEditing(m)}>
@@ -115,6 +112,9 @@ export function Frise({
                 </button>
               ) : (
                 <p>{m.label}</p>
+              )}
+              {isTeam && m.status === "draft" && (
+                <span className="tag int" style={{ marginTop: 7, display: "inline-block" }}>{tc("draft")}</span>
               )}
             </div>
           ))}

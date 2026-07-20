@@ -207,6 +207,9 @@ export interface Guest {
   travel: string | null;
   dietary: string | null;
   stationer_flag: string | null;
+  /** Household composition (migration 0010). */
+  party_adults: number | null;
+  party_children: number | null;
 }
 
 export type Rsvp = "pending" | "confirmed" | "declined";
@@ -235,6 +238,8 @@ export interface Message {
   author_id: string;
   body: string;
   created_at: string;
+  /** Conversation subject (migration 0010) — null = the general thread. */
+  subject?: string | null;
 }
 
 export interface FormRow {
@@ -307,4 +312,6 @@ export interface DocumentRow {
   label: string;
   url: string | null;
   internal: boolean;
+  /** "bucket/path…" of the filed original (migration 0010). */
+  storage_path?: string | null;
 }
