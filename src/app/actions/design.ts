@@ -64,6 +64,50 @@ export async function respondToBoard(
   revalidatePath("/design");
 }
 
+export interface SheetTarget {
+  boardId: string;
+  weddingId: string;
+  sub?: "rental" | "stationery" | "invitations" | "day_of";
+}
+
+/**
+ * Save the editorial sheet of a board (or of one of its sub-boards,
+ * whose sheet lives in sub_boards.content). Team only — the couple
+ * receives the sheet finished, never the mould.
+ */
+export async function updateSheet(target: SheetTarget, patch: Record<string, unknown>) {
+  const session = await requireHouseSession();
+  if (!session.isTeam) throw new Error("team only");
+  const supabase = await createClient();
+
+  if (target.sub) {
+    const { data: sub } = await supabase
+      .from("sub_boards")
+      .select("id, content")
+      .eq("board_id", target.boardId)
+      .eq("kind", target.sub)
+      .maybeSingle();
+    if (!sub) return { ok: false };
+    await supabase
+      .from("sub_boards")
+      .update({ content: { ...(sub.content ?? {}), ...patch } })
+      .eq("id", sub.id);
+  } else {
+    const allowed = [
+      "eyebrow", "concept_title", "concept_text", "materials",
+      "photos", "backdrop_path", "footer_ref", "palette"
+    ];
+    const row = Object.fromEntries(
+      Object.entries(patch).filter(([k]) => allowed.includes(k))
+    );
+    if (Object.keys(row).length) {
+      await supabase.from("boards").update(row).eq("id", target.boardId);
+    }
+  }
+  revalidatePath("/design");
+  return { ok: true };
+}
+
 /** Team enters a hex code; the app renders the square. */
 export async function addPaletteTone(boardId: string, hex: string) {
   const session = await requireHouseSession();

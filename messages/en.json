@@ -668,5 +668,20 @@
       "vows": "Renewal of vows",
       "blessing": "Blessing"
     }
+  },
+  "boardSheet": {
+    "backdrop": "Background photo",
+    "letMadame": "Let Madame compose the concept",
+    "savePdf": "Save as PDF",
+    "composePlaceholder": "Your indications — olive trees at dusk, loose linen, silver…",
+    "compose": "Compose",
+    "titlePlaceholder": "Three evocative words…",
+    "textPlaceholder": "The concept, in the house's voice…",
+    "signature": "— Estelle · Madame Wedding Design",
+    "partOfGlobal": "Part of the Global design",
+    "rentalDetails": "Rental details",
+    "stationeryDetails": "Stationery details",
+    "backToBoard": "Back to the board",
+    "newMaterial": "New material"
   }
 }

@@ -668,5 +668,20 @@
       "vows": "Renouvellement de vœux",
       "blessing": "Bénédiction"
     }
+  },
+  "boardSheet": {
+    "backdrop": "Photo de fond",
+    "letMadame": "Laisser Madame composer le concept",
+    "savePdf": "Enregistrer en PDF",
+    "composePlaceholder": "Vos indications — oliviers au couchant, lin relâché, argenterie…",
+    "compose": "Composer",
+    "titlePlaceholder": "Trois mots évocateurs…",
+    "textPlaceholder": "Le concept, dans la voix de la maison…",
+    "signature": "— Estelle · Madame Wedding Design",
+    "partOfGlobal": "Part du Design global",
+    "rentalDetails": "Détails de location",
+    "stationeryDetails": "Détails papeterie",
+    "backToBoard": "Retour à la planche",
+    "newMaterial": "Nouvelle matière"
   }
 }

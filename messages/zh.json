@@ -668,5 +668,20 @@
       "vows": "重申誓言",
       "blessing": "祝祷"
     }
+  },
+  "boardSheet": {
+    "backdrop": "背景照片",
+    "letMadame": "交由 Madame 撰写概念",
+    "savePdf": "存为 PDF",
+    "composePlaceholder": "您的提点 — 暮色橄榄树、松弛的亚麻、银器…",
+    "compose": "撰写",
+    "titlePlaceholder": "三个意韵之词…",
+    "textPlaceholder": "概念，以本馆笔调…",
+    "signature": "— Estelle · Madame Wedding Design",
+    "partOfGlobal": "隶属整体设计",
+    "rentalDetails": "租赁细节",
+    "stationeryDetails": "纸品细节",
+    "backToBoard": "回到图版",
+    "newMaterial": "新材质"
   }
 }

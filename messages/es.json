@@ -668,5 +668,20 @@
       "vows": "Renovación de votos",
       "blessing": "Bendición"
     }
+  },
+  "boardSheet": {
+    "backdrop": "Foto de fondo",
+    "letMadame": "Dejar que Madame componga el concepto",
+    "savePdf": "Guardar en PDF",
+    "composePlaceholder": "Sus indicaciones — olivos al atardecer, lino suelto, plata…",
+    "compose": "Componer",
+    "titlePlaceholder": "Tres palabras evocadoras…",
+    "textPlaceholder": "El concepto, con la voz de la casa…",
+    "signature": "— Estelle · Madame Wedding Design",
+    "partOfGlobal": "Parte del Diseño global",
+    "rentalDetails": "Detalles de alquiler",
+    "stationeryDetails": "Detalles de papelería",
+    "backToBoard": "Volver al panel",
+    "newMaterial": "Nueva materia"
   }
 }

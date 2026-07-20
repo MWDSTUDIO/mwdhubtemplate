@@ -112,6 +112,14 @@ export interface Board {
   palette: string[];
   cover_url: string | null;
   sort: number;
+  /* editorial sheet (migration 0008) */
+  eyebrow?: string | null;
+  concept_title?: string | null;
+  concept_text?: string | null;
+  materials?: string[];
+  photos?: Record<string, string>;
+  backdrop_path?: string | null;
+  footer_ref?: string | null;
 }
 
 export interface SubBoard {

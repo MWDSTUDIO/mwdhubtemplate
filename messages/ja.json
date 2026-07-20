@@ -668,5 +668,20 @@
       "vows": "誓いの更新",
       "blessing": "祝福"
     }
+  },
+  "boardSheet": {
+    "backdrop": "背景の写真",
+    "letMadame": "Madameにコンセプトを綴らせる",
+    "savePdf": "PDFで保存",
+    "composePlaceholder": "お含み — 夕暮れのオリーブ、ゆるいリネン、銀器…",
+    "compose": "綴る",
+    "titlePlaceholder": "三つの言葉…",
+    "textPlaceholder": "コンセプトを、当館の声で…",
+    "signature": "— Estelle · Madame Wedding Design",
+    "partOfGlobal": "全体デザインの一部",
+    "rentalDetails": "レンタルの仔細",
+    "stationeryDetails": "ステーショナリーの仔細",
+    "backToBoard": "ボードへ戻る",
+    "newMaterial": "新しい素材"
   }
 }
