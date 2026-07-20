@@ -41,6 +41,7 @@ export default async function DeskPage({
       <p className="lead">{t("lead")}</p>
 
       <ClientSheet
+        key={wedding?.id ?? "blank"}
         wedding={wedding}
         events={(events ?? []) as WeddingEvent[]}
         brief={brief?.body ?? ""}

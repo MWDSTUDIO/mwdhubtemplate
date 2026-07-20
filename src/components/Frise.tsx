@@ -2,8 +2,10 @@
 
 import { useState, useTransition } from "react";
 import { useFormatter, useTranslations } from "next-intl";
+import { useRouter } from "@/i18n/navigation";
 import type { Milestone } from "@/lib/types";
 import { saveMilestone, deleteMilestone, publishTimeline } from "@/app/actions/timeline";
+import { composeTimeline } from "@/app/actions/desk";
 import { Dictate } from "@/components/Dictate";
 
 /**
@@ -29,6 +31,7 @@ export function Frise({
   const [agentNote, setAgentNote] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [, startTransition] = useTransition();
+  const router = useRouter();
 
   const hasDrafts = milestones.some((m) => m.status === "draft");
 
@@ -51,6 +54,46 @@ export function Frise({
       setAgentNote(t("agentFailed"));
     }
     setBusy(false);
+  }
+
+  // A wedding just set in motion has no frise yet — the house says so
+  // gracefully, and the team may let Madame compose it on the spot.
+  if (milestones.length === 0) {
+    return (
+      <div className="card" style={{ textAlign: "center", padding: "44px 28px" }}>
+        <p className="serif" style={{ fontSize: 21, fontStyle: "italic", color: "var(--ink2)" }}>
+          {t("empty")}
+        </p>
+        {isTeam && (
+          <div className="team-only" style={{ marginTop: 18 }}>
+            <button
+              className="btn"
+              disabled={busy}
+              onClick={() => {
+                setBusy(true);
+                startTransition(async () => {
+                  try {
+                    const r = await composeTimeline(weddingId);
+                    setAgentNote(r.note ?? null);
+                    router.refresh();
+                  } catch {
+                    setAgentNote(t("agentFailed"));
+                  }
+                  setBusy(false);
+                });
+              }}
+            >
+              {busy ? "…" : t("compose")}
+            </button>
+            {agentNote && (
+              <p className="ia-quote" style={{ marginTop: 12 }} aria-live="polite">
+                {agentNote}
+              </p>
+            )}
+          </div>
+        )}
+      </div>
+    );
   }
 
   return (

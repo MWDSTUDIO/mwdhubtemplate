@@ -121,6 +121,8 @@
     "lead": "Chaque jalon approuvé ensemble. La chronologie s'ajuste au fil de la production.",
     "internalTasks": "Tâches internes",
     "frise": {
+      "empty": "La frise de ce mariage reste à composer — chaque jalon trouvera son mois.",
+      "compose": "Laisser Madame composer la frise",
       "correct": "Corriger la frise",
       "add": "Ajouter un jalon",
       "publish": "Publier les corrections",

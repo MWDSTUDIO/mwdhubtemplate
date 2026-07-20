@@ -121,6 +121,8 @@
     "lead": "Cada hito aprobado juntos. La cronología se ajusta al compás de la producción.",
     "internalTasks": "Tareas internas",
     "frise": {
+      "empty": "El friso de esta boda está aún por componer — cada hito encontrará su mes.",
+      "compose": "Dejar que Madame componga el friso",
       "correct": "Corregir la cronología",
       "add": "Añadir un hito",
       "publish": "Publicar las correcciones",

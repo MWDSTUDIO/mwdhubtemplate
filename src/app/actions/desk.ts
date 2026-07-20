@@ -181,7 +181,8 @@ export async function saveWedding(input: {
   cookieStore.set("mwd_wedding", weddingId!, {
     httpOnly: true,
     sameSite: "lax",
-    path: "/"
+    path: "/",
+    maxAge: 60 * 60 * 24 * 365
   });
 
   revalidatePath("/", "layout");

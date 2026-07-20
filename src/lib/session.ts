@@ -40,10 +40,12 @@ export const getHouseSession = cache(async (): Promise<HouseSession | null> => {
     await Promise.all([
       supabase.from("profiles").select("*").eq("id", user.id).single<Profile>(),
       supabase.from("wedding_members").select("wedding_id").eq("profile_id", user.id),
+      // Newest first: without a stored choice, the team lands on the
+      // wedding most recently set in motion, not the oldest file.
       supabase
         .from("weddings")
         .select("id, slug, couple_display_name")
-        .order("created_at", { ascending: true })
+        .order("created_at", { ascending: false })
     ]);
   if (!profile) return null;
 

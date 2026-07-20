@@ -121,6 +121,8 @@
     "lead": "Every milestone approved together. The timeline adjusts as production unfolds.",
     "internalTasks": "Internal tasks",
     "frise": {
+      "empty": "The frise of this wedding is yet to be composed — every milestone will find its month.",
+      "compose": "Let Madame compose the frise",
       "correct": "Correct the frise",
       "add": "Add a milestone",
       "publish": "Publish the corrections",

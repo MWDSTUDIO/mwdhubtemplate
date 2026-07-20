@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
+import { useRouter } from "@/i18n/navigation";
 import type { Wedding, WeddingEvent } from "@/lib/types";
 import { composeTimeline, saveWedding } from "@/app/actions/desk";
 import { Dictate } from "@/components/Dictate";
@@ -48,6 +49,7 @@ export function ClientSheet({
   const [reading, setReading] = useState(false);
   const [saved, setSaved] = useState(false);
   const [pending, startTransition] = useTransition();
+  const router = useRouter();
 
   // "Nouveau mariage" opens a truly blank sheet; coming back restores
   // the current wedding's values.
@@ -131,7 +133,12 @@ export function ClientSheet({
       });
       if (r.ok) {
         setSaved(true);
+        const wasCreating = creating;
         setCreating(false);
+        router.refresh();
+        // A newly created wedding deserves its entrance: the whole hub
+        // turns to it, starting at the home.
+        if (wasCreating) router.push("/");
       }
     });
   }
