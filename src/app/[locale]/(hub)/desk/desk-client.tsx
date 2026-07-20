@@ -49,6 +49,37 @@ export function ClientSheet({
   const [saved, setSaved] = useState(false);
   const [pending, startTransition] = useTransition();
 
+  // "Nouveau mariage" opens a truly blank sheet; coming back restores
+  // the current wedding's values.
+  function toggleCreating() {
+    if (creating && wedding) {
+      setCouple(wedding.couple_display_name);
+      setDestination(`${wedding.destination}${wedding.venue ? ` — ${wedding.venue}` : ""}`);
+      setDateStart(wedding.date_start ?? "");
+      setDateEnd(wedding.date_end ?? "");
+      setLocale(wedding.default_locale);
+      setBudget(wedding.budget_total?.toString() ?? "");
+      setEventRows(
+        events.length
+          ? events.map((e) => ({ name: e.name, date: e.event_date ?? "" }))
+          : [{ name: "", date: "" }]
+      );
+      setBriefText(brief);
+      setCreating(false);
+    } else {
+      setCouple("");
+      setDestination("");
+      setDateStart("");
+      setDateEnd("");
+      setLocale("en");
+      setBudget("");
+      setEventRows([{ name: "", date: "" }]);
+      setBriefText("");
+      setCreating(true);
+    }
+    setSaved(false);
+  }
+
   const setRow = (i: number, patch: Partial<EventRow>) =>
     setEventRows((rows) => rows.map((r, j) => (j === i ? { ...r, ...patch } : r)));
 
@@ -110,7 +141,7 @@ export function ClientSheet({
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", flexWrap: "wrap", gap: 12 }}>
         <div className="eyebrow" style={{ marginBottom: 16 }}>{t("clientSetup")}</div>
         {wedding && (
-          <button className="addnote" onClick={() => setCreating((v) => !v)}>
+          <button className="addnote" onClick={toggleCreating}>
             {creating ? t("editExisting") : t("newWedding")}
           </button>
         )}

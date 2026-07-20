@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { requireHouseSession } from "@/lib/session";
 import { runAgent } from "@/lib/agents/run";
@@ -174,6 +175,14 @@ export async function saveWedding(input: {
       updated_at: new Date().toISOString()
     });
   }
+
+  // The whole hub turns to the wedding just set in motion.
+  const cookieStore = await cookies();
+  cookieStore.set("mwd_wedding", weddingId!, {
+    httpOnly: true,
+    sameSite: "lax",
+    path: "/"
+  });
 
   revalidatePath("/", "layout");
   return { ok: true as const, weddingId };
