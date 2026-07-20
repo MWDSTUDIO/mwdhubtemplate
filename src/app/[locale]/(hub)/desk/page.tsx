@@ -4,6 +4,8 @@ import { requireHouseSession } from "@/lib/session";
 import { createClient } from "@/lib/supabase/server";
 import type { WeddingEvent } from "@/lib/types";
 import { ClientSheet, TimelineComposer } from "./desk-client";
+import { AccessPanel, TemplatesPanel } from "./access-client";
+import { listMembers } from "@/app/actions/access";
 
 export default async function DeskPage({
   params
@@ -40,6 +42,15 @@ export default async function DeskPage({
       />
 
       {wedding && <TimelineComposer weddingId={wedding.id} />}
+
+      {wedding && <TemplatesPanel weddingId={wedding.id} />}
+
+      <AccessPanel
+        members={await listMembers()}
+        weddings={session.weddings}
+        activeWeddingId={wedding?.id ?? null}
+        isPrincipal={session.isPrincipal}
+      />
     </section>
   );
 }

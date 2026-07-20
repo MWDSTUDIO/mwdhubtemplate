@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { requireHouseSession } from "@/lib/session";
 import { runAgent } from "@/lib/agents/run";
 import { createWeddingFolders } from "@/lib/google/drive";
+import { DEFAULT_FORMS } from "@/lib/templates";
 
 const MOMENT_BOARDS: { type: string; title: string; sort: number }[] = [
   { type: "global", title: "Global design", sort: 0 },
@@ -103,6 +104,18 @@ export async function saveWedding(input: {
     if (subs.length) await supabase.from("sub_boards").insert(subs);
     await supabase.from("rooming_list_state").insert({ wedding_id: weddingId, opened: false });
 
+    // The house's form templates, ready to send at the right moment.
+    await supabase.from("forms").insert(
+      DEFAULT_FORMS.map((f) => ({
+        wedding_id: weddingId,
+        title: f.title,
+        status: f.status,
+        due_label: f.due_label ?? null,
+        schema: f.schema,
+        sort: f.sort
+      }))
+    );
+
     // One Drive folder per client (shared / internal) — best effort.
     try {
       const folders = await createWeddingFolders(input.coupleDisplayName);
@@ -149,6 +162,57 @@ export async function saveWedding(input: {
 
   revalidatePath("/", "layout");
   return { ok: true as const, weddingId };
+}
+
+/** Add a bespoke form to a wedding (title + fields, from The Desk). */
+export async function addForm(input: {
+  weddingId: string;
+  title: string;
+  fields: { label: string; type: "text" | "textarea" }[];
+}) {
+  await teamSession();
+  const supabase = await createClient();
+  const { count } = await supabase
+    .from("forms")
+    .select("id", { count: "exact", head: true })
+    .eq("wedding_id", input.weddingId);
+  await supabase.from("forms").insert({
+    wedding_id: input.weddingId,
+    title: input.title,
+    status: "awaiting",
+    schema: input.fields.map((f, i) => ({ name: `field_${i + 1}`, label: f.label, type: f.type })),
+    sort: (count ?? 0) + 1
+  });
+  revalidatePath("/forms");
+  revalidatePath("/desk");
+  return { ok: true };
+}
+
+/**
+ * Add a supplementary board beyond the house's standard moments
+ * (requires migration 0006 — 'custom' board type).
+ */
+export async function addCustomBoard(weddingId: string, title: string) {
+  await teamSession();
+  const supabase = await createClient();
+  const { count } = await supabase
+    .from("boards")
+    .select("id", { count: "exact", head: true })
+    .eq("wedding_id", weddingId);
+  const { data: board, error } = await supabase
+    .from("boards")
+    .insert({ wedding_id: weddingId, type: "custom", title, sort: (count ?? 0) + 1 })
+    .select("id")
+    .single();
+  if (error || !board) {
+    return { ok: false as const, needsMigration: /invalid input value|unique/.test(error?.message ?? "") };
+  }
+  await supabase.from("sub_boards").insert([
+    { board_id: board.id, wedding_id: weddingId, kind: "rental" },
+    { board_id: board.id, wedding_id: weddingId, kind: "stationery" }
+  ]);
+  revalidatePath("/design");
+  return { ok: true as const };
 }
 
 /**

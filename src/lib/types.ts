@@ -86,7 +86,7 @@ export interface InternalTask {
 
 export type BoardType =
   | "global" | "floral" | "tablescape" | "welcome" | "cocktail"
-  | "dinner" | "reception" | "farewell" | "stationery";
+  | "dinner" | "reception" | "farewell" | "stationery" | "custom";
 export type BoardStatus = "in_creation" | "to_review" | "approved";
 
 export interface Board {
