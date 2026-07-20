@@ -1,6 +1,8 @@
 [build]
   command = "npm run build"
-  publish = ".next"
+  # No publish dir: the Next runtime v5 plugin manages output itself
+  # (.netlify/static + server handler). Setting .next here would make
+  # CLI --no-build deploys upload the wrong directory.
 
 [[plugins]]
   package = "@netlify/plugin-nextjs"
