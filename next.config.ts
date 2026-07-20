@@ -11,16 +11,9 @@ const nextConfig: NextConfig = {
       { protocol: "https", hostname: "mwdwebsitec.netlify.app" }
     ]
   },
-  headers: async () => [
-    {
-      // The service worker must be served from the root scope.
-      source: "/sw.js",
-      headers: [
-        { key: "Cache-Control", value: "no-cache, no-store, must-revalidate" },
-        { key: "Service-Worker-Allowed", value: "/" }
-      ]
-    }
-  ]
+  // Service-worker caching headers live in public/_headers (Netlify CDN):
+  // a headers() rule here would route /sw.js through the server handler,
+  // which does not carry public/ assets on Netlify.
 };
 
 export default withNextIntl(nextConfig);

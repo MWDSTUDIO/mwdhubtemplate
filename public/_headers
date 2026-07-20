@@ -1,0 +1,5 @@
+# Netlify CDN headers — the service worker must never be cached and
+# must be allowed to control the root scope.
+/sw.js
+  Cache-Control: no-cache, no-store, must-revalidate
+  Service-Worker-Allowed: /
