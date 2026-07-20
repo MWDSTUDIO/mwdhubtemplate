@@ -1,0 +1,161 @@
+{
+  "common": {
+    "internal": "Internal",
+    "draft": "Draft",
+    "published": "Published",
+    "approved": "Approved",
+    "toReview": "To review",
+    "inCreation": "In creation",
+    "save": "Save",
+    "cancel": "Cancel",
+    "edit": "Edit",
+    "open": "Open",
+    "send": "Send",
+    "close": "Close"
+  },
+  "auth": {
+    "motto": "The house is expecting you.",
+    "subtitle": "The Inner House",
+    "email": "Email",
+    "password": "Password",
+    "enter": "Enter",
+    "error": "The house does not recognise these details."
+  },
+  "gate": {
+    "motto": "The house is expecting you.",
+    "of": "The Inner House of {couple}",
+    "enter": "Enter"
+  },
+  "nav": {
+    "theInnerHouse": "The Inner House",
+    "home": "Home",
+    "timeline": "Timeline",
+    "process": "The Process",
+    "design": "Design Studio",
+    "vendors": "Vendors",
+    "budget": "Budget",
+    "guests": "Guests",
+    "communication": "Communication",
+    "documents": "Documents",
+    "messages": "Messages",
+    "forms": "Forms",
+    "weddingDays": "The Wedding Days",
+    "desk": "The Desk",
+    "teamwork": "Teamwork",
+    "vault": "The Vault",
+    "groups": {
+      "creation": "Creation",
+      "production": "Production",
+      "exchanges": "Exchanges",
+      "house": "The House"
+    },
+    "tagline": "A Parisian house of wedding planning and production"
+  },
+  "topbar": {
+    "meta": "Wedding · {date} · {destination}",
+    "metaBare": "Wedding",
+    "teamView": "Team view",
+    "clientView": "Client view"
+  },
+  "madame": {
+    "tagline": "The house's agent — for the team only, on every page, even in client view.",
+    "drop": "Drop any document here — contract, proposal, invoice, guest list.",
+    "dropStrong": "I read it and place it where it belongs.",
+    "dropped": "Document handed over — {name}",
+    "examples": "“What remains unapproved?” · “What should we prepare before the tasting?”",
+    "placeholder": "Ask, or instruct…",
+    "you": "You",
+    "go": "Go",
+    "unreachable": "Madame could not be reached — verify the ANTHROPIC_API_KEY on the server."
+  },
+  "home": {
+    "welcome": "Welcome",
+    "headline": "Your wedding is taking shape",
+    "countdown": "days until the first toast",
+    "noWedding": "No wedding is set for this account yet.",
+    "nextSteps": "Next steps",
+    "thisWeek": "This week at the house",
+    "weekBoards": "{count, plural, =0 {The design boards are quietly advancing} one {# design board updated} other {# design boards updated}}",
+    "weekBudget": "Your budget was reviewed by the house",
+    "weekDocs": "{count, plural, =0 {Your Drive is ready} one {# document shared in your Drive} other {# documents shared in your Drive}}",
+    "viewTimeline": "View the timeline",
+    "ask": {
+      "title": "Ask the house",
+      "blurb": "Your assistant knows your wedding by heart — next steps, your timeline, your budget, your guests.",
+      "placeholder": "What should we be deciding this month?",
+      "ask": "Ask",
+      "scheduleCall": "Schedule a video call",
+      "meetNote": "Video calls open directly in Google Meet.",
+      "unreachable": "The house could not be reached just now — do try again in a moment."
+    },
+    "propose": {
+      "title": "Propose a moment",
+      "blurb": "Should you wish to speak with the house outside your scheduled calls — mark the days and hours that suit you; we confirm, and the invitation follows.",
+      "weekdays": ["M", "T", "W", "T", "F", "S", "S"],
+      "prevMonth": "Previous month",
+      "nextMonth": "Next month",
+      "durationLabel": "Time you can give us",
+      "min30": "30 minutes",
+      "hour1": "1 hour",
+      "hoursLabel": "Hours that suit you — {date}",
+      "tzNote": "Hours shown in your time zone ({tz}). Choose as many as you wish — the house confirms one.",
+      "send": "Send to the house",
+      "sent": "Sent — the house will confirm a moment."
+    }
+  },
+  "timeline": {
+    "eyebrow": "Timeline",
+    "headline": "Month by month",
+    "lead": "Every milestone approved together. The timeline adjusts as production unfolds.",
+    "internalTasks": "Internal tasks",
+    "frise": {
+      "correct": "Correct the frise",
+      "add": "Add a milestone",
+      "publish": "Publish the corrections",
+      "instructPlaceholder": "Move venues to August · mark the global design done · add the fireworks trial in June…",
+      "letMadame": "Let Madame correct it",
+      "agentFailed": "Madame could not correct the frise just now.",
+      "hint": "Click any milestone to edit it in place, or instruct Madame. Corrections stay in draft until you publish — the client's frise never moves before your word.",
+      "editTitle": "Edit the milestone",
+      "labelField": "Milestone",
+      "monthField": "Month",
+      "doneField": "Attended to — behind us",
+      "saveDraft": "Save as draft",
+      "remove": "Remove",
+      "cancel": "Cancel"
+    },
+    "monthly": {
+      "title": "This month at the house — {month}",
+      "titleBare": "This month at the house",
+      "composeNext": "Compose next month",
+      "subjectsPlaceholder": "Give the subjects: tasting, proof, floral direction…",
+      "letAgentWrite": "Let the agent write it",
+      "keepDraft": "Keep as draft",
+      "publish": "Publish to the client",
+      "hint": "You give the subjects; the agent composes the note in the house's voice. Nothing reaches the client before your word."
+    },
+    "attentions": {
+      "title": "Your attentions",
+      "entrust": "Entrust an attention to the client",
+      "entrustPlaceholder": "What the house entrusts…",
+      "entrustGo": "Entrust",
+      "awaiting": "Awaiting your word",
+      "leisure": "At your leisure",
+      "attended": "Attended to",
+      "settled": "Settled",
+      "markAttended": "Mark as attended to",
+      "hint": "Each attention the house entrusts to you appears here — and on your timeline, at its month."
+    }
+  },
+  "process": {
+    "eyebrow": "The house's method",
+    "headline": "The Madame Wedding Design process",
+    "lead": "What will happen, in the order it will happen — so every step feels inevitable, never a surprise.",
+    "phases": [
+      { "title": "Listening.", "body": "We learn who you are, what this wedding should tell, and set the scope budget." },
+      { "title": "Design.", "body": "The global creative direction, then a board for each moment — from welcome to farewell." },
+      { "title": "Production.", "body": "Vendor curation, contracts, stationery, logistics. You approve, the house orchestrates." },
+      { "title": "The wedding days.", "body": "The house is on site, from the first arrival to the last departure." }
+    ]
+  }
+}

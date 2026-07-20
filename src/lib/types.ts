@@ -1,0 +1,286 @@
+// Row types for the Inner House schema (hand-kept, matching supabase/migrations).
+
+export type PublishStatus = "draft" | "published";
+export type AppRole = "client" | "coordinator" | "team";
+
+export interface Wedding {
+  id: string;
+  slug: string;
+  couple_display_name: string;
+  partner_a: string;
+  partner_b: string;
+  destination: string;
+  venue: string | null;
+  date_start: string | null;
+  date_end: string | null;
+  timezone: string;
+  default_locale: string;
+  languages: string[];
+  entrance_media_url: string | null;
+  entrance_plaque_url: string | null;
+  budget_total: number | null;
+  drive_folder_shared_id: string | null;
+  drive_folder_internal_id: string | null;
+  first_toast_at: string | null;
+}
+
+export interface Profile {
+  id: string;
+  full_name: string;
+  role: AppRole;
+  is_principal: boolean;
+  is_teamwork: boolean;
+  locale: string;
+  timezone: string;
+}
+
+export interface WeddingEvent {
+  id: string;
+  wedding_id: string;
+  name: string;
+  event_date: string | null;
+  sort: number;
+}
+
+export interface Milestone {
+  id: string;
+  wedding_id: string;
+  month: string;
+  label: string;
+  done: boolean;
+  status: PublishStatus;
+  sort: number;
+}
+
+export interface MonthlyNote {
+  id: string;
+  wedding_id: string;
+  month: string;
+  subjects_raw: string | null;
+  composed_text: string | null;
+  preview_text: string | null;
+  status: PublishStatus;
+}
+
+export type AttentionStatus = "awaiting_word" | "at_leisure" | "attended";
+
+export interface Attention {
+  id: string;
+  wedding_id: string;
+  title: string;
+  due_date: string | null;
+  status: AttentionStatus;
+  milestone_id: string | null;
+}
+
+export interface InternalTask {
+  id: string;
+  wedding_id: string;
+  assignee: string | null;
+  title: string;
+  due_date: string | null;
+  done: boolean;
+}
+
+export type BoardType =
+  | "global" | "floral" | "tablescape" | "welcome" | "cocktail"
+  | "dinner" | "reception" | "farewell" | "stationery";
+export type BoardStatus = "in_creation" | "to_review" | "approved";
+
+export interface Board {
+  id: string;
+  wedding_id: string;
+  type: BoardType;
+  title: string;
+  subtitle: string | null;
+  status: BoardStatus;
+  palette: string[];
+  cover_url: string | null;
+  sort: number;
+}
+
+export interface SubBoard {
+  id: string;
+  board_id: string;
+  wedding_id: string;
+  kind: "rental" | "stationery" | "invitations" | "day_of";
+  title: string | null;
+  status: BoardStatus;
+  content: Record<string, unknown>;
+}
+
+export type VendorStage = "scouted" | "contacted" | "proposal" | "contracted";
+
+export interface Vendor {
+  id: string;
+  wedding_id: string;
+  name: string;
+  category: string;
+  stage: VendorStage;
+  client_visible: boolean;
+}
+
+export interface VendorDocument {
+  id: string;
+  vendor_id: string;
+  wedding_id: string;
+  type: "proposal" | "contract" | "invoice";
+  label: string;
+  storage_path: string | null;
+  extraction: Record<string, unknown> | null;
+  client_visible: boolean;
+}
+
+export interface BudgetEnvelope {
+  id: string;
+  wedding_id: string;
+  label: string;
+  percent: number | null;
+  sort: number;
+}
+
+export interface EnvelopeNote {
+  envelope_id: string;
+  wedding_id: string;
+  body: string;
+  status: PublishStatus;
+}
+
+export interface BudgetLine {
+  id: string;
+  wedding_id: string;
+  envelope_id: string | null;
+  vendor_id: string | null;
+  label: string;
+  budgeted: number | null;
+  committed: number | null;
+  committed_note: string | null;
+  paid: number;
+  next_payment_label: string | null;
+  status: PublishStatus;
+  sort: number;
+}
+
+export interface Payment {
+  id: string;
+  wedding_id: string;
+  budget_line_id: string | null;
+  label: string;
+  amount: number;
+  due_date: string | null;
+  paid_at: string | null;
+  reminder_sent_at: string | null;
+}
+
+export interface Guest {
+  id: string;
+  wedding_id: string;
+  title: string | null;
+  first_names: string | null;
+  surname: string | null;
+  invitation_line: string | null;
+  address: string | null;
+  locale: string;
+  travel: string | null;
+  dietary: string | null;
+  stationer_flag: string | null;
+}
+
+export type Rsvp = "pending" | "confirmed" | "declined";
+
+export interface GuestEvent {
+  guest_id: string;
+  event_id: string;
+  wedding_id: string;
+  rsvp: Rsvp;
+}
+
+export interface HotelBlock {
+  id: string;
+  wedding_id: string;
+  hotel: string;
+  rooms_held: number;
+  cutoff_date: string | null;
+  booking_code: string | null;
+  active: boolean;
+}
+
+export interface Message {
+  id: string;
+  wedding_id: string;
+  channel: "client" | "teamwork";
+  author_id: string;
+  body: string;
+  created_at: string;
+}
+
+export interface FormRow {
+  id: string;
+  wedding_id: string;
+  title: string;
+  status: "completed" | "awaiting" | "to_come";
+  due_label: string | null;
+  sort: number;
+}
+
+export interface AvailabilityProposal {
+  id: string;
+  wedding_id: string;
+  proposed_by: string | null;
+  duration_minutes: 30 | 60;
+  slots: { date: string; time: string }[];
+  status: "sent" | "confirmed" | "declined";
+  confirmed_slot: { date: string; time: string } | null;
+  meet_url: string | null;
+}
+
+export interface RunSheet {
+  id: string;
+  wedding_id: string;
+  event_id: string | null;
+  title: string;
+  items: { time: string; label: string }[];
+}
+
+export interface ContactSheet {
+  id: string;
+  wedding_id: string;
+  rows: { vendor: string; on_site: string; reach: string }[];
+}
+
+export interface VaultContract {
+  id: string;
+  wedding_id: string | null;
+  label: string;
+  storage_path: string | null;
+  schedule_label: string | null;
+  instalments: { label: string; amount: number; due_date: string; paid: boolean }[];
+}
+
+export interface Correspondence {
+  id: string;
+  wedding_id: string;
+  kind: "save_the_date" | "travel_booklet" | "week_of_letter" | "custom";
+  title: string;
+  body_by_locale: Record<string, string>;
+  status: "draft" | "scheduled" | "sent";
+  scheduled_label: string | null;
+  sent_at: string | null;
+}
+
+export interface HospitalityItem {
+  id: string;
+  wedding_id: string;
+  label: string;
+  scope: string | null;
+  status: string;
+  sort: number;
+}
+
+export interface DocumentRow {
+  id: string;
+  wedding_id: string;
+  label: string;
+  url: string | null;
+  internal: boolean;
+}
