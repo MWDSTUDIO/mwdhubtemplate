@@ -296,6 +296,140 @@
       "sentNote": "Sent — it leaves from Estelle's inbox."
     }
   },
+  "guests": {
+    "eyebrow": "Production",
+    "headline": "Guests",
+    "lead": "You build your list; the house watches over every line with a master stationer's exactness, and arranges your guests' travel.",
+    "confirmedOf": "confirmed of {total}",
+    "theList": "The list",
+    "invitationLine": "Invitation line",
+    "invitedTo": "Invited to",
+    "travel": "Travel",
+    "status": "Status",
+    "toArrange": "To arrange",
+    "confirmed": "Confirmed",
+    "declined": "Declined",
+    "awaitingReply": "Awaiting reply",
+    "add": {
+      "title": "Add a guest household",
+      "titleField": "Title & form of address",
+      "namesField": "First names & surname",
+      "namesPlaceholder": "Henri and Louise de Valcourt",
+      "lineField": "Invitation line — as it will appear on the envelope",
+      "lineHint": "Suggested by the house per stationery conventions — editable",
+      "addressField": "Mailing address",
+      "addressPlaceholder": "14 rue de…, 75007 Paris",
+      "localeField": "Language of correspondence",
+      "locales": { "en": "English", "fr": "Français", "zh": "中文", "ja": "日本語", "es": "Español" },
+      "invitedField": "Invited to",
+      "travelField": "Travel & stay",
+      "travelPlaceholder": "Arriving Fri · departing Sun · accommodation wished",
+      "submit": "Add to the list"
+    },
+    "stationer": {
+      "title": "The stationer's eye",
+      "blurb": "Before any invitation leaves the house, the agent reads every line as a ceremonial stationer would — titles and honourifics, order of names, French and British usage — and flags anything to perfect.",
+      "run": "Review the list now"
+    },
+    "travelPlanning": {
+      "title": "Travel planning",
+      "blurb": "Arrivals and departures consolidated automatically: room list per accommodation, station and airport shuttles, arrivals by time slot — exportable for transport vendors."
+    }
+  },
+  "communication": {
+    "eyebrow": "Production",
+    "headline": "Wedding communication",
+    "lead": "Every word your guests receive — from the first envelope to the last farewell — composed, sent and followed by the house, in each guest's own language.",
+    "suite": {
+      "title": "The invitation suite",
+      "onPaper": "On paper",
+      "blurb": "Save the date, invitation, reply card, travel booklet — designed in the Studio, addressed with the stationer's exactness.",
+      "approved": "Approved",
+      "inProof": "In proof"
+    },
+    "correspondence": {
+      "title": "Guest correspondence",
+      "byWord": "By word",
+      "sent": "Sent"
+    },
+    "hospitality": {
+      "title": "Hospitality & guest logistics",
+      "attention": "Attention",
+      "scope": "Scope",
+      "status": "Status",
+      "statuses": {
+        "in_creation": "In creation",
+        "awaiting_rsvps": "Awaiting RSVPs",
+        "to_come": "To come"
+      }
+    },
+    "accommodation": {
+      "title": "Accommodation",
+      "blurb": "Two regimes, and the house speaks each hotel's language.",
+      "blocking": "Room blocking — guests reserve",
+      "blockingBlurb": "Blocks negotiated by the house; guests book with a courtesy code.",
+      "hotel": "Hotel",
+      "held": "Held",
+      "cutoff": "Cut-off",
+      "active": "Active",
+      "rooming": "Rooming list — the house assigns",
+      "roomingBlurb": "When accommodation is offered by the couple: rooms assigned guest by guest, billing held by the house.",
+      "opensOnWord": "Opens on the house's word",
+      "open": "Open",
+      "openRooming": "Open the rooming list",
+      "yourGoOnly": "your go only"
+    },
+    "hotelDesk": {
+      "title": "The hotel desk",
+      "blurb": "The agent drafts your hotel correspondence in the industry's own terms — courtesy blocks, attrition, cut-off dates, comp ratios, release clauses — ready to send from your inbox.",
+      "sample": "Dear Reservations Manager — further to our call, Madame Wedding Design wishes to secure a courtesy block of 18 rooms across your Classic and Deluxe categories for the nights of September 10–12, 2027, with a release date of June 15 and no attrition liability…",
+      "placeholder": "Ask for a block, a release extension, a comp ratio…",
+      "draft": "Draft the letter"
+    },
+    "desk": {
+      "title": "The correspondence desk",
+      "blurb": "Every guest communication leaves the house in the guest's language of correspondence, in the house's voice — announcements, travel notes, reminders — and every send is tracked here."
+    }
+  },
+  "documents": {
+    "eyebrow": "Exchanges",
+    "headline": "Documents",
+    "lead": "Connected to your dedicated Google Drive folder.",
+    "shared": "Shared with you",
+    "internal": "Internal documents",
+    "openDrive": "Open in Google Drive"
+  },
+  "messages": {
+    "eyebrow": "Exchanges",
+    "headline": "Messages",
+    "lead": "A direct line to the house — everything in one place, nothing lost.",
+    "placeholder": "Write a message…",
+    "send": "Send",
+    "theHouse": "The house"
+  },
+  "forms": {
+    "eyebrow": "Exchanges",
+    "headline": "Forms",
+    "lead": "The information the house needs, asked for at the right moment.",
+    "form": "Form",
+    "status": "Status",
+    "statuses": {
+      "completed": "Completed",
+      "awaiting": "Awaiting",
+      "toCome": "To come"
+    },
+    "complete": "Complete now",
+    "yourAnswer": "Your answer",
+    "send": "Send to the house",
+    "cancel": "Not now",
+    "agent": {
+      "title": "The house's agent",
+      "blurb": "With every client submission, you are notified by email with a reply pre-written in the house's voice — to approve or refine before sending."
+    },
+    "approveSend": "Approve & send",
+    "edit": "Edit",
+    "keep": "Keep"
+  },
   "process": {
     "eyebrow": "The house's method",
     "headline": "The Madame Wedding Design process",

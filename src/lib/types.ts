@@ -220,6 +220,7 @@ export interface FormRow {
   title: string;
   status: "completed" | "awaiting" | "to_come";
   due_label: string | null;
+  schema: { name: string; label: string; type?: "text" | "textarea" }[];
   sort: number;
 }
 
