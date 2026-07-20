@@ -235,11 +235,22 @@ export async function GET(
     )
   );
 
-  const buffer = await renderToBuffer(doc);
-  return new NextResponse(new Uint8Array(buffer), {
-    headers: {
-      "Content-Type": "application/pdf",
-      "Content-Disposition": `inline; filename="MWD — ${conceptTitle}.pdf"`
-    }
-  });
+  try {
+    const buffer = await renderToBuffer(doc);
+    // HTTP headers are latin-1: ASCII fallback + RFC 5987 for the true name.
+    const ascii = `MWD-${conceptTitle}`.replace(/[^\x20-\x7E]/g, "-").replace(/["\\]/g, "");
+    const utf8 = encodeURIComponent(`MWD — ${conceptTitle}.pdf`);
+    return new NextResponse(new Uint8Array(buffer), {
+      headers: {
+        "Content-Type": "application/pdf",
+        "Content-Disposition": `inline; filename="${ascii}.pdf"; filename*=UTF-8''${utf8}`
+      }
+    });
+  } catch (e) {
+    console.error("board pdf render failed", e);
+    return NextResponse.json(
+      { error: e instanceof Error ? e.message : "pdf render failed" },
+      { status: 500 }
+    );
+  }
 }

@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { createClient } from "@/lib/supabase/client";
 import { sendMessage } from "@/app/actions/messages";
 import type { Message } from "@/lib/types";
+import { Dictate } from "@/components/Dictate";
 
 /**
  * Realtime chat over Supabase Realtime. Used for the client↔house line
@@ -93,7 +94,8 @@ export function Chat({
           );
         })}
       </div>
-      <div className="chat-in">
+      <div className="chat-in" style={{ alignItems: "center", paddingLeft: 8 }}>
+        <Dictate title={t("send")} onText={(x) => setDraft((v) => (v ? v.trimEnd() + " " + x : x))} />
         <input
           value={draft}
           onChange={(e) => setDraft(e.target.value)}

@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { useFormatter, useTranslations } from "next-intl";
 import type { Attention } from "@/lib/types";
 import { entrustAttention, settleAttention } from "@/app/actions/timeline";
+import { Dictate } from "@/components/Dictate";
 
 /** Your attentions — never "tasks", never "pending". */
 export function Attentions({
@@ -46,6 +47,7 @@ export function Attentions({
       </div>
       {adding && (
         <div className="assist team-only">
+          <Dictate title={t("entrust")} onText={(x) => setTitle((v) => (v ? v.trimEnd() + " " + x : x))} />
           <input
             value={title}
             onChange={(e) => setTitle(e.target.value)}

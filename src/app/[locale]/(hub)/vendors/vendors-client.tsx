@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
 import type { Vendor } from "@/lib/types";
 import { addVendor, draftOutreach, sendOutreach, setVendorStage } from "@/app/actions/vendors";
+import { Dictate } from "@/components/Dictate";
 
 const STAGES = ["scouted", "contacted", "proposal", "contracted"] as const;
 const TEMPLATES = ["availability", "proposal", "negotiation", "confirmation"] as const;
@@ -202,6 +203,7 @@ export function OutreachComposer({ weddingId, vendors }: { weddingId: string; ve
             placeholder={t("subject")}
             style={{ padding: "10px 12px", border: "1px solid var(--line)" }}
           />
+          <div><Dictate title={t("body")} onText={(x) => setBody((v) => (v ? v.trimEnd() + " " + x : x))} /></div>
           <textarea
             value={body}
             onChange={(e) => setBody(e.target.value)}

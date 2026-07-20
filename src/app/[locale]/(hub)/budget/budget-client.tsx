@@ -9,6 +9,7 @@ import {
   publishEnvelopeNote,
   saveInternalBudgetNote
 } from "@/app/actions/budget";
+import { Dictate } from "@/components/Dictate";
 
 export function BudgetTabs({ scope, mgmt }: { scope: ReactNode; mgmt: ReactNode }) {
   const t = useTranslations("budget");
@@ -77,6 +78,7 @@ export function EnvelopeNoteEditor({
 
   return (
     <div className="team-only" style={{ flexBasis: "100%", margin: "10px 0" }}>
+      <div style={{ marginBottom: 6 }}><Dictate title={t("letMadame")} onText={(x) => setBody((v) => (v ? v.trimEnd() + " " + x : x))} /></div>
       <textarea
         value={body}
         onChange={(e) => setBody(e.target.value)}
@@ -136,6 +138,7 @@ export function MadameBudgetAdd({ weddingId }: { weddingId: string }) {
       </div>
       <p style={{ marginTop: 8, fontSize: 13.5 }}>{t("blurb")}</p>
       <div className="assist">
+        <Dictate title={t("go")} onText={(x) => { if (inputRef.current) inputRef.current.value += x; }} />
         <input ref={inputRef} placeholder={t("placeholder")} />
         <button
           className="btn"
@@ -214,7 +217,8 @@ export function BudgetAsk({ weddingId }: { weddingId: string }) {
           &ldquo;{answer}&rdquo;
         </p>
       )}
-      <div className="chat-in" style={{ border: "1px solid var(--line)", marginTop: 16, background: "#fff" }}>
+      <div className="chat-in" style={{ border: "1px solid var(--line)", marginTop: 16, background: "#fff", alignItems: "center", paddingLeft: 8 }}>
+        <Dictate title={t("ask")} onText={(x) => { if (inputRef.current) inputRef.current.value += x; }} />
         <input ref={inputRef} placeholder={t("placeholder")} onKeyDown={(e) => e.key === "Enter" && ask()} />
         <button className="btn" style={{ borderRadius: 0 }} onClick={ask} disabled={busy}>
           {busy ? "…" : t("ask")}
@@ -243,6 +247,7 @@ export function InternalNotes({ weddingId, latest }: { weddingId: string; latest
         </p>
       )}
       <div className="assist">
+        <Dictate title={t("title")} onText={(x) => setBody((v) => (v ? v.trimEnd() + " " + x : x))} />
         <input
           value={body}
           onChange={(e) => setBody(e.target.value)}

@@ -30,49 +30,41 @@ export const getHouseSession = cache(async (): Promise<HouseSession | null> => {
   } = await supabase.auth.getUser();
   if (!user) return null;
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("*")
-    .eq("id", user.id)
-    .single<Profile>();
+  // One parallel burst instead of a chain of round-trips: profile,
+  // memberships and the wedding list travel together (RLS trims the
+  // list to what the caller may see).
+  const cookieStore = await cookies();
+  const wanted = cookieStore.get(WEDDING_COOKIE)?.value;
+
+  const [{ data: profile }, { data: memberships }, { data: allWeddings }] =
+    await Promise.all([
+      supabase.from("profiles").select("*").eq("id", user.id).single<Profile>(),
+      supabase.from("wedding_members").select("wedding_id").eq("profile_id", user.id),
+      supabase
+        .from("weddings")
+        .select("id, slug, couple_display_name")
+        .order("created_at", { ascending: true })
+    ]);
   if (!profile) return null;
 
   const isTeam = profile.role === "team";
 
-  let weddings: Pick<Wedding, "id" | "slug" | "couple_display_name">[] = [];
+  let weddings: Pick<Wedding, "id" | "slug" | "couple_display_name">[] = allWeddings ?? [];
   let wedding: Wedding | null = null;
 
-  if (isTeam) {
-    const { data } = await supabase
+  const chosenId = isTeam
+    ? (weddings.find((w) => w.id === wanted) ?? weddings[0])?.id
+    : memberships?.[0]?.wedding_id;
+
+  if (chosenId) {
+    const { data: full } = await supabase
       .from("weddings")
-      .select("id, slug, couple_display_name")
-      .order("created_at", { ascending: true });
-    weddings = data ?? [];
-    const cookieStore = await cookies();
-    const wanted = cookieStore.get(WEDDING_COOKIE)?.value;
-    const chosen = weddings.find((w) => w.id === wanted) ?? weddings[0];
-    if (chosen) {
-      const { data: full } = await supabase
-        .from("weddings")
-        .select("*")
-        .eq("id", chosen.id)
-        .single<Wedding>();
-      wedding = full;
-    }
-  } else {
-    const { data: memberships } = await supabase
-      .from("wedding_members")
-      .select("wedding_id")
-      .eq("profile_id", user.id);
-    const first = memberships?.[0];
-    if (first) {
-      const { data: full } = await supabase
-        .from("weddings")
-        .select("*")
-        .eq("id", first.wedding_id)
-        .single<Wedding>();
-      wedding = full;
-      if (full) weddings = [{ id: full.id, slug: full.slug, couple_display_name: full.couple_display_name }];
+      .select("*")
+      .eq("id", chosenId)
+      .single<Wedding>();
+    wedding = full;
+    if (!isTeam && full) {
+      weddings = [{ id: full.id, slug: full.slug, couple_display_name: full.couple_display_name }];
     }
   }
 

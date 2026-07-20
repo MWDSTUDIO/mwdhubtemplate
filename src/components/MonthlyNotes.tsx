@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { useFormatter, useTranslations } from "next-intl";
 import type { MonthlyNote } from "@/lib/types";
 import { saveMonthlyNoteDraft, publishMonthlyNote } from "@/app/actions/timeline";
+import { Dictate } from "@/components/Dictate";
 
 /**
  * "This month at the house" — Estelle gives raw subjects, the agent
@@ -89,6 +90,7 @@ export function MonthlyNotes({
             {t("composeNext")} <span className="tag int">{tc("internal")}</span>
           </div>
           <div className="assist">
+            <Dictate title={t("letAgentWrite")} onText={(x) => setSubjects((v) => (v ? v.trimEnd() + " " + x : x))} />
             <input
               value={subjects}
               onChange={(e) => setSubjects(e.target.value)}

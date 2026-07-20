@@ -11,7 +11,8 @@
     "edit": "Modifier",
     "open": "Ouvrir",
     "send": "Envoyer",
-    "close": "Fermer"
+    "close": "Fermer",
+    "dictate": "Dicter"
   },
   "auth": {
     "motto": "La maison vous attend.",
@@ -690,6 +691,15 @@
     "rentalDetails": "Détails de location",
     "stationeryDetails": "Détails papeterie",
     "backToBoard": "Retour à la planche",
-    "newMaterial": "Nouvelle matière"
+    "newMaterial": "Nouvelle matière",
+    "dictate": "Dicter",
+    "relatedLabel": "Planche liée",
+    "relatedAuto": "Automatique (planche suivante)",
+    "statusCtl": {
+      "label": "Statut de la planche",
+      "inCreation": "En création",
+      "toReview": "Au client",
+      "approved": "Approuvée"
+    }
   }
 }

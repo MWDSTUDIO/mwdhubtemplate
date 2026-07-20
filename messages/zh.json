@@ -11,7 +11,8 @@
     "edit": "修改",
     "open": "打开",
     "send": "发送",
-    "close": "关闭"
+    "close": "关闭",
+    "dictate": "语音输入"
   },
   "auth": {
     "motto": "本馆恭候您的光临。",
@@ -690,6 +691,15 @@
     "rentalDetails": "租赁细节",
     "stationeryDetails": "纸品细节",
     "backToBoard": "回到图版",
-    "newMaterial": "新材质"
+    "newMaterial": "新材质",
+    "dictate": "语音输入",
+    "relatedLabel": "关联图版",
+    "relatedAuto": "自动（下一图版）",
+    "statusCtl": {
+      "label": "图版状态",
+      "inCreation": "创作中",
+      "toReview": "呈予宾客",
+      "approved": "已认可"
+    }
   }
 }

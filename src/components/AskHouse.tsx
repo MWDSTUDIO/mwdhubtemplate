@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import { useTranslations } from "next-intl";
+import { Dictate } from "@/components/Dictate";
 
 /**
  * "Ask the house" — the client-facing assistant. It only ever sees the
@@ -38,6 +39,7 @@ export function AskHouse({ weddingId }: { weddingId: string }) {
       <div className="eyebrow">{t("title")}</div>
       <p style={{ marginTop: 8, fontSize: 13.5 }}>{t("blurb")}</p>
       <div className="assist">
+        <Dictate title={t("ask")} onText={(x) => { if (inputRef.current) inputRef.current.value += x; }} />
         <input ref={inputRef} placeholder={t("placeholder")} onKeyDown={(e) => e.key === "Enter" && ask()} />
         <button className="btn" onClick={ask} disabled={busy}>
           {busy ? "…" : t("ask")}

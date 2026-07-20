@@ -95,7 +95,7 @@ export async function updateSheet(target: SheetTarget, patch: Record<string, unk
   } else {
     const allowed = [
       "eyebrow", "concept_title", "concept_text", "materials",
-      "photos", "backdrop_path", "footer_ref", "palette"
+      "photos", "backdrop_path", "footer_ref", "palette", "related_board_id"
     ];
     const row = Object.fromEntries(
       Object.entries(patch).filter(([k]) => allowed.includes(k))

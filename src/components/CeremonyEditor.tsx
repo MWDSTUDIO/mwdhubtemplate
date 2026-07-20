@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
 import type { Ceremony } from "@/lib/types";
 import { deleteCeremony, saveCeremony } from "@/app/actions/ceremonies";
+import { Dictate } from "@/components/Dictate";
 
 /**
  * The ceremonial knowledge of the house — offered as suggestions,
@@ -75,7 +76,7 @@ export function CeremonyForm({
           <input value={officiant} onChange={(e) => setOfficiant(e.target.value)} placeholder={t("officiantPlaceholder")} />
         </div>
         <div className="field" style={{ gridColumn: "1 / -1" }}>
-          <label className="eyebrow">{t("notes")}</label>
+          <label className="eyebrow" style={{ display: "flex", alignItems: "center", gap: 10 }}>{t("notes")}<Dictate title={t("notes")} onText={(x) => setNotes((v) => (v ? v.trimEnd() + " " + x : x))} /></label>
           <textarea rows={3} value={notes} onChange={(e) => setNotes(e.target.value)} placeholder={t("notesPlaceholder")} />
         </div>
       </div>

@@ -3,6 +3,7 @@
 import { useRef, useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
 import { openRoomingList } from "@/app/actions/communication";
+import { Dictate } from "@/components/Dictate";
 
 export function OpenRoomingButton({ weddingId }: { weddingId: string }) {
   const t = useTranslations("communication.accommodation");
@@ -61,6 +62,7 @@ export function HotelDesk({ weddingId, sample }: { weddingId: string; sample: st
         &ldquo;{letter ?? sample}&rdquo;
       </p>
       <div className="assist">
+        <Dictate title={t("draft")} onText={(x) => { if (inputRef.current) inputRef.current.value += x; }} />
         <input ref={inputRef} placeholder={t("placeholder")} onKeyDown={(e) => e.key === "Enter" && draft()} />
         <button className="btn ghost" onClick={draft} disabled={busy}>
           {busy ? "…" : t("draft")}

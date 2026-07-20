@@ -4,6 +4,7 @@ import { useRef, useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
 import type { WeddingEvent } from "@/lib/types";
 import { addGuest, stationerReview } from "@/app/actions/guests";
+import { Dictate } from "@/components/Dictate";
 
 const TITLES = [
   "Mr. and Mrs.", "Mrs.", "Mr.", "Ms.",
@@ -173,7 +174,7 @@ export function AddGuestForm({
           </div>
         </div>
         <div className="field">
-          <label className="eyebrow">{t("travelField")}</label>
+          <label className="eyebrow" style={{ display: "flex", alignItems: "center", gap: 8 }}>{t("travelField")}<Dictate title={t("travelField")} onText={(x) => setTravel((v) => (v ? v.trimEnd() + " " + x : x))} /></label>
           <input value={travel} onChange={(e) => setTravel(e.target.value)} placeholder={t("travelPlaceholder")} />
         </div>
       </div>

@@ -11,7 +11,8 @@
     "edit": "編集",
     "open": "開く",
     "send": "送信",
-    "close": "閉じる"
+    "close": "閉じる",
+    "dictate": "音声で入力"
   },
   "auth": {
     "motto": "当館は、お二人をお待ちしております。",
@@ -690,6 +691,15 @@
     "rentalDetails": "レンタルの仔細",
     "stationeryDetails": "ステーショナリーの仔細",
     "backToBoard": "ボードへ戻る",
-    "newMaterial": "新しい素材"
+    "newMaterial": "新しい素材",
+    "dictate": "音声で入力",
+    "relatedLabel": "縁のボード",
+    "relatedAuto": "自動（次のボード）",
+    "statusCtl": {
+      "label": "ボードの状態",
+      "inCreation": "制作中",
+      "toReview": "お客様へ",
+      "approved": "ご承認済み"
+    }
   }
 }

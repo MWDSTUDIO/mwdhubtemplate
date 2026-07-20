@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { useFormatter, useTranslations } from "next-intl";
 import type { Milestone } from "@/lib/types";
 import { saveMilestone, deleteMilestone, publishTimeline } from "@/app/actions/timeline";
+import { Dictate } from "@/components/Dictate";
 
 /**
  * The frise — month by month. For the team it is correctable in place:
@@ -97,6 +98,7 @@ export function Frise({
             )}
           </div>
           <div className="assist" style={{ marginTop: 0 }}>
+            <Dictate title={t("letMadame")} onText={(x) => setInstruct((v) => (v ? v.trimEnd() + " " + x : x))} />
             <input
               value={instruct}
               onChange={(e) => setInstruct(e.target.value)}

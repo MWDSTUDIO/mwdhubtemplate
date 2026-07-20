@@ -11,7 +11,8 @@
     "edit": "Editar",
     "open": "Abrir",
     "send": "Enviar",
-    "close": "Cerrar"
+    "close": "Cerrar",
+    "dictate": "Dictar"
   },
   "auth": {
     "motto": "La casa les espera.",
@@ -690,6 +691,15 @@
     "rentalDetails": "Detalles de alquiler",
     "stationeryDetails": "Detalles de papelería",
     "backToBoard": "Volver al panel",
-    "newMaterial": "Nueva materia"
+    "newMaterial": "Nueva materia",
+    "dictate": "Dictar",
+    "relatedLabel": "Panel vinculado",
+    "relatedAuto": "Automático (panel siguiente)",
+    "statusCtl": {
+      "label": "Estado del panel",
+      "inCreation": "En creación",
+      "toReview": "Al cliente",
+      "approved": "Aprobado"
+    }
   }
 }

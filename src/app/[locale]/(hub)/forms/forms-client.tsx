@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
 import type { FormRow } from "@/lib/types";
 import { approveReply, saveReply, submitForm } from "@/app/actions/forms";
+import { Dictate } from "@/components/Dictate";
 
 interface FieldDef {
   name: string;
@@ -41,7 +42,7 @@ export function FormFill({
     <div style={{ margin: "12px 0", display: "grid", gap: 10 }}>
       {fields.map((field) => (
         <div className="field" key={field.name}>
-          <label className="eyebrow">{field.label}</label>
+          <label className="eyebrow" style={{ display: "flex", alignItems: "center", gap: 8 }}>{field.label}<Dictate title={field.label} onText={(x) => setValues((v) => ({ ...v, [field.name]: (v[field.name] ? v[field.name].trimEnd() + " " : "") + x }))} /></label>
           {field.type === "textarea" ? (
             <textarea
               rows={4}
@@ -93,12 +94,15 @@ export function ReplyReview({
   return (
     <>
       {editing ? (
+        <>
+        <div style={{ marginBottom: 6 }}><Dictate title={t("edit")} onText={(x) => setBody((v) => (v ? v.trimEnd() + " " + x : x))} /></div>
         <textarea
           rows={4}
           value={body}
           onChange={(e) => setBody(e.target.value)}
           style={{ width: "100%", padding: "10px 12px", border: "1px solid var(--champagne)", fontSize: 14, fontFamily: "var(--font-display)", fontStyle: "italic" }}
         />
+        </>
       ) : (
         <p className="ia-quote">&ldquo;{body}&rdquo;</p>
       )}

@@ -107,15 +107,28 @@ export default async function BoardPage({
     (b) => b.type === "global"
   );
 
+  // The kinship link: the house's explicit choice first, else the next
+  // board in the studio's order.
+  const relatedId = (board as unknown as { related_board_id?: string | null }).related_board_id ?? null;
+  const related = relatedId
+    ? ((siblings ?? []) as Pick<Board, "id" | "title">[]).find((b) => b.id === relatedId)
+    : null;
+
   const links: SheetLinks = {
     globalId: board.type !== "global" ? globalBoard?.id ?? null : null,
-    neighbor:
-      neighbor && neighbor.id !== boardId
+    neighbor: related
+      ? { id: related.id, title: related.title }
+      : neighbor && neighbor.id !== boardId
         ? { id: neighbor.id, title: neighbor.title }
         : null,
     hasSubs: ((subBoards ?? []) as SubBoard[]).some(
       (s) => s.kind === "rental" || s.kind === "stationery"
-    )
+    ),
+    options: ((siblings ?? []) as Pick<Board, "id" | "title">[]).map((b) => ({
+      id: b.id,
+      title: b.title
+    })),
+    relatedId
   };
 
   const pdfHref = `/api/pdf/board/${boardId}${sub ? `?sub=${sub}` : ""}`;
@@ -141,6 +154,7 @@ export default async function BoardPage({
         links={links}
         isTeam={session.isTeam}
         pdfHref={pdfHref}
+        status={sub ? null : board.status}
       />
 
       {!sub && (

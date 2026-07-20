@@ -3,8 +3,10 @@
 import { useEffect, useRef, useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
 import { createClient } from "@/lib/supabase/client";
-import { updateSheet, type SheetTarget } from "@/app/actions/design";
+import { setBoardStatus, updateSheet, type SheetTarget } from "@/app/actions/design";
 import { Link } from "@/i18n/navigation";
+import { Dictate } from "@/components/Dictate";
+import type { BoardStatus } from "@/lib/types";
 
 export interface SheetData {
   eyebrow: string;
@@ -23,6 +25,9 @@ export interface SheetLinks {
   globalId: string | null;
   neighbor: { id: string; title: string } | null;
   hasSubs: boolean;
+  /** Every board of the wedding — the house chooses the kinship link. */
+  options: { id: string; title: string }[];
+  relatedId: string | null;
 }
 
 const SLOTS = [0, 1, 2, 3, 4, 5, 6];
@@ -37,13 +42,15 @@ export function BoardSheet({
   data,
   links,
   isTeam,
-  pdfHref
+  pdfHref,
+  status
 }: {
   target: SheetTarget;
   data: SheetData;
   links: SheetLinks;
   isTeam: boolean;
   pdfHref: string;
+  status: BoardStatus | null;
 }) {
   const t = useTranslations("boardSheet");
   const [palette, setPalette] = useState<string[]>(
@@ -160,7 +167,8 @@ export function BoardSheet({
   return (
     <div className="bsheet-stage">
       {isTeam && (
-        <div className="bsheet-bar team-only">
+        <div className="bsheet-bar team-only" style={{ alignItems: "center" }}>
+          {status && !target.sub && <StatusControl boardId={target.boardId} status={status} />}
           <label className="btn ghost sm" style={{ cursor: "pointer" }}>
             {busySlot === -1 ? "…" : t("backdrop")}
             <input
@@ -246,6 +254,29 @@ export function BoardSheet({
                 <Link href={`/design/${links.neighbor.id}`}>{links.neighbor.title}</Link>
               )}
             </div>
+            {isTeam && !target.sub && (
+              <div className="team-only" style={{ marginTop: 10, display: "flex", justifyContent: "center", alignItems: "center", gap: 8 }}>
+                <span style={{ fontSize: 9, letterSpacing: "0.16em", textTransform: "uppercase", color: "var(--ink2)" }}>
+                  {t("relatedLabel")}
+                </span>
+                <select
+                  value={links.relatedId ?? ""}
+                  onChange={(e) =>
+                    persist({ related_board_id: e.target.value || null })
+                  }
+                  style={{ border: "1px solid var(--line)", background: "none", fontSize: 10, padding: "3px 6px", color: "var(--ink2)" }}
+                >
+                  <option value="">{t("relatedAuto")}</option>
+                  {links.options
+                    .filter((o) => o.id !== target.boardId)
+                    .map((o) => (
+                      <option key={o.id} value={o.id}>
+                        {o.title}
+                      </option>
+                    ))}
+                </select>
+              </div>
+            )}
           </div>
 
           <div className="bodygrid">
@@ -332,6 +363,10 @@ function ComposeBox({ onCompose }: { onCompose: (s: string) => Promise<void> }) 
   const [busy, setBusy] = useState(false);
   return (
     <div className="assist team-only" style={{ maxWidth: 720, marginBottom: 14 }}>
+      <Dictate
+        title={t("dictate")}
+        onText={(text) => setValue((v) => (v ? `${v.trimEnd()} ${text}` : text))}
+      />
       <input
         value={value}
         onChange={(e) => setValue(e.target.value)}
@@ -355,6 +390,38 @@ function ComposeBox({ onCompose }: { onCompose: (s: string) => Promise<void> }) 
       >
         {busy ? "…" : t("compose")}
       </button>
+    </div>
+  );
+}
+
+/**
+ * The board's status, right where the work happens: in creation →
+ * submit to the client's word → approved. Sending to review notifies
+ * the couple; approval usually arrives from their own hand below.
+ */
+function StatusControl({ boardId, status }: { boardId: string; status: BoardStatus }) {
+  const t = useTranslations("boardSheet.statusCtl");
+  const [pending, startTransition] = useTransition();
+  const set = (s: BoardStatus) =>
+    startTransition(() => setBoardStatus(boardId, s).then(() => undefined));
+
+  const seg = (s: BoardStatus, label: string) => (
+    <button
+      key={s}
+      className={status === s ? "on" : undefined}
+      disabled={pending}
+      onClick={() => status !== s && set(s)}
+      style={{ padding: "8px 14px", background: status === s ? "var(--hunter)" : "none", color: status === s ? "var(--cream)" : "var(--ink2)", border: "none", cursor: "pointer", fontSize: 10, letterSpacing: "0.14em", textTransform: "uppercase" }}
+    >
+      {label}
+    </button>
+  );
+
+  return (
+    <div className="toggle" role="group" aria-label={t("label")}>
+      {seg("in_creation", t("inCreation"))}
+      {seg("to_review", t("toReview"))}
+      {seg("approved", t("approved"))}
     </div>
   );
 }

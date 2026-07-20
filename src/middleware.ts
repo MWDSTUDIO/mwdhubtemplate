@@ -33,9 +33,15 @@ export async function middleware(request: NextRequest) {
     }
   );
 
-  const {
-    data: { user }
-  } = await supabase.auth.getUser();
+  // No auth cookie → no network round-trip: anonymous visitors go
+  // straight to their answer (redirect or public page).
+  const hasAuthCookie = request.cookies
+    .getAll()
+    .some((c) => c.name.startsWith("sb-") && c.name.includes("-auth-token"));
+
+  const user = hasAuthCookie
+    ? (await supabase.auth.getUser()).data.user
+    : null;
 
   const path = request.nextUrl.pathname;
   const isPublic = PUBLIC.test(path) || path.startsWith("/api/public");

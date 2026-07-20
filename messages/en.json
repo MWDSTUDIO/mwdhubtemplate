@@ -11,7 +11,8 @@
     "edit": "Edit",
     "open": "Open",
     "send": "Send",
-    "close": "Close"
+    "close": "Close",
+    "dictate": "Dictate"
   },
   "auth": {
     "motto": "The house is expecting you.",
@@ -690,6 +691,15 @@
     "rentalDetails": "Rental details",
     "stationeryDetails": "Stationery details",
     "backToBoard": "Back to the board",
-    "newMaterial": "New material"
+    "newMaterial": "New material",
+    "dictate": "Dictate",
+    "relatedLabel": "Kinship link",
+    "relatedAuto": "Automatic (next board)",
+    "statusCtl": {
+      "label": "Board status",
+      "inCreation": "In creation",
+      "toReview": "To the client",
+      "approved": "Approved"
+    }
   }
 }
