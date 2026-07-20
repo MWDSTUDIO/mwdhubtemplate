@@ -2,6 +2,7 @@
 
 import { type ReactNode, useRef, useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
+import { useRouter } from "@/i18n/navigation";
 import {
   addLineViaMadame,
   publishBudget,
@@ -231,6 +232,7 @@ export function BudgetAsk({ weddingId }: { weddingId: string }) {
 /** The budget reads documents too — right where the analysis lives. */
 export function BudgetDocDrop({ weddingId }: { weddingId: string }) {
   const t = useTranslations("budget.docs");
+  const router = useRouter();
   const [summary, setSummary] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [over, setOver] = useState(false);
@@ -246,6 +248,8 @@ export function BudgetDocDrop({ weddingId }: { weddingId: string }) {
       const r = await fetch("/api/agents/document", { method: "POST", body: form });
       const d = await r.json();
       setSummary(d.text ?? t("failed"));
+      // The line-by-line and the totals follow at once.
+      router.refresh();
     } catch {
       setSummary(t("failed"));
     }

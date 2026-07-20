@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
+import { useRouter } from "@/i18n/navigation";
 import type { Vendor } from "@/lib/types";
 import { addVendor, draftOutreach, sendOutreach, setVendorStage } from "@/app/actions/vendors";
 import { Dictate } from "@/components/Dictate";
@@ -68,6 +69,7 @@ export function VendorDocDrop({ weddingId, vendors }: { weddingId: string; vendo
   const [vendorId, setVendorId] = useState("");
   const [summary, setSummary] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const router = useRouter();
 
   async function handle(file: File) {
     if (busy) return;
@@ -81,6 +83,7 @@ export function VendorDocDrop({ weddingId, vendors }: { weddingId: string; vendo
       const r = await fetch("/api/agents/document", { method: "POST", body: form });
       const d = await r.json();
       setSummary(d.text ?? t("failed"));
+      router.refresh();
     } catch {
       setSummary(t("failed"));
     }

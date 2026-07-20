@@ -77,6 +77,15 @@ async function fanOut(recipientIds: string[], weddingId: string | null, notice: 
   await sendEmail(emails, notice.title, `${notice.body ?? ""}\n\n— Madame Wedding Design`);
 }
 
+/** Notify specific profiles — used for @citations in Messages. */
+export async function notifyProfiles(
+  profileIds: string[],
+  weddingId: string | null,
+  notice: Notice
+) {
+  await fanOut(profileIds, weddingId, notice);
+}
+
 /** Notify every team profile (Estelle, Jordane, collaborators). */
 export async function notifyTeam(weddingId: string, notice: Notice) {
   const admin = createAdminClient();

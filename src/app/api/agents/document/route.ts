@@ -175,7 +175,14 @@ export async function POST(request: Request) {
       }
     }
 
-    return NextResponse.json({ text: parsed.summary ?? "Read and filed.", extraction: parsed });
+    // State plainly what was implanted — the narration must match the act.
+    let text = parsed.summary ?? "Read and filed.";
+    if (["proposal", "contract", "invoice"].includes(parsed.doc_type) && matchedVendor) {
+      text += parsed.total_amount
+        ? ` — The vendor and a draft budget line of ${parsed.total_amount} are in place below; publish when you are ready.`
+        : ` — The vendor record is in place.`;
+    }
+    return NextResponse.json({ text, extraction: parsed });
   } catch (e) {
     return agentError(e);
   }
