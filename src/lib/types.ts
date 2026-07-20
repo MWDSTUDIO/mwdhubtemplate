@@ -212,6 +212,8 @@ export interface Guest {
   /** Household composition (migration 0010). */
   party_adults: number | null;
   party_children: number | null;
+  /** The household's own word — set by hand or by phone (migration 0010). */
+  rsvp?: Rsvp | null;
 }
 
 export type Rsvp = "pending" | "confirmed" | "declined";

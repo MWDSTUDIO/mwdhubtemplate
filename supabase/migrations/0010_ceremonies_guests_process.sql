@@ -40,6 +40,8 @@ create policy "coordinator read" on ceremonies
 -- ── 2. guest households ──────────────────────────────────────────────
 alter table guests add column if not exists party_adults int not null default 2;
 alter table guests add column if not exists party_children int not null default 0;
+-- The household's word, holdable by hand (a phone call to the house):
+alter table guests add column if not exists rsvp rsvp_status not null default 'pending';
 
 -- ── 2b. documents keep their file; messages gain subjects ────────────
 alter table documents add column if not exists storage_path text;

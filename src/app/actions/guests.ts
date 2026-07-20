@@ -38,11 +38,23 @@ function guestRow(input: GuestFields) {
 export async function addGuest(input: GuestFields) {
   await requireHouseSession();
   const supabase = await createClient();
-  const { data: guest, error } = await supabase
+  let { data: guest, error } = await supabase
     .from("guests")
     .insert({ wedding_id: input.weddingId, ...guestRow(input) })
     .select("id")
     .single();
+  // Before migration 0010 the household columns are absent — the
+  // guest still takes their place at the table.
+  if (error) {
+    const { party_adults, party_children, ...bare } = guestRow(input);
+    void party_adults;
+    void party_children;
+    ({ data: guest, error } = await supabase
+      .from("guests")
+      .insert({ wedding_id: input.weddingId, ...bare })
+      .select("id")
+      .single());
+  }
   if (error || !guest) return { ok: false as const };
 
   if (input.eventIds.length) {
@@ -62,7 +74,13 @@ export async function addGuest(input: GuestFields) {
 export async function updateGuest(guestId: string, input: GuestFields) {
   await requireHouseSession();
   const supabase = await createClient();
-  const { error } = await supabase.from("guests").update(guestRow(input)).eq("id", guestId);
+  let { error } = await supabase.from("guests").update(guestRow(input)).eq("id", guestId);
+  if (error) {
+    const { party_adults, party_children, ...bare } = guestRow(input);
+    void party_adults;
+    void party_children;
+    ({ error } = await supabase.from("guests").update(bare).eq("id", guestId));
+  }
   if (error) return { ok: false as const };
 
   const { data: existing } = await supabase
@@ -108,9 +126,14 @@ export async function setHouseholdRsvp(
 ) {
   await requireHouseSession();
   const supabase = await createClient();
-  await supabase.from("guest_events").update({ rsvp }).eq("guest_id", guestId);
+  // The household's own word first (a phone call to the house counts,
+  // events or not) — then every event it is invited to follows.
+  const { error } = await supabase.from("guests").update({ rsvp }).eq("id", guestId);
+  const perEvent = await supabase.from("guest_events").update({ rsvp }).eq("guest_id", guestId);
   revalidatePath("/guests");
-  return { ok: true as const };
+  // Before migration 0010 guests.rsvp is absent: the press still lands
+  // when the household is linked to at least one event.
+  return { ok: !error || !perEvent.error };
 }
 
 export async function setRsvp(

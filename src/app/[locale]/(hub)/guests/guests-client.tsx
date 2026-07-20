@@ -252,8 +252,11 @@ export function GuestList({
   const [editingId, setEditingId] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
-  const statusFor = (guestId: string): "pending" | "confirmed" | "declined" => {
-    const mine = links.filter((l) => l.guest_id === guestId);
+  const statusFor = (guest: Guest): "pending" | "confirmed" | "declined" => {
+    // The household's own word (a phone call) stands first; otherwise
+    // the events speak.
+    if (guest.rsvp && guest.rsvp !== "pending") return guest.rsvp;
+    const mine = links.filter((l) => l.guest_id === guest.id);
     if (mine.length && mine.every((l) => l.rsvp === "confirmed")) return "confirmed";
     if (mine.some((l) => l.rsvp === "declined")) return "declined";
     return "pending";
@@ -282,7 +285,7 @@ export function GuestList({
           </thead>
           <tbody>
             {guests.map((guest) => {
-              const status = statusFor(guest.id);
+              const status = statusFor(guest);
               const label =
                 status === "confirmed" ? t("confirmed") : status === "declined" ? t("declined") : t("awaitingReply");
               return (
