@@ -117,8 +117,14 @@ create policy "own update" on profiles
 -- change role / is_principal / is_teamwork.
 create or replace function app.protect_profile_flags() returns trigger
 language plpgsql security definer set search_path = public as $$
+declare
+  jwt_role text := coalesce(
+    nullif(current_setting('request.jwt.claims', true), '')::json ->> 'role',
+    current_setting('request.jwt.claim.role', true)
+  );
 begin
-  if current_setting('request.jwt.claim.role', true) is distinct from 'service_role'
+  if current_user = 'authenticated'
+     and jwt_role is distinct from 'service_role'
      and (new.role is distinct from old.role
           or new.is_principal is distinct from old.is_principal
           or new.is_teamwork is distinct from old.is_teamwork) then
