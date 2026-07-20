@@ -1,0 +1,10 @@
+[build]
+  command = "npm run build"
+  publish = ".next"
+
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
+
+# Vendor outreach leaves from Estelle's inbox through Netlify Forms.
+# The static form definition lives in public/netlify-forms.html so the
+# build bot registers it; submissions post to /vendor-outreach.
