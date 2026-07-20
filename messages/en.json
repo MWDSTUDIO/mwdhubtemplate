@@ -281,6 +281,21 @@
       "blurb": "Your notes, negotiation margins and method live here. The agent draws on them to answer the client in your name — without ever revealing them.",
       "latest": "Latest note",
       "placeholder": "A margin, a method, a thing to keep quiet…"
+    },
+    "lines": {
+      "edit": "Rework",
+      "addLine": "Open a line by hand",
+      "open": "Open",
+      "hint": "Team only — clients see this table read-only, published lines alone. A reworked line returns to draft until you publish.",
+      "label": "Line",
+      "budgeted": "Budgeted",
+      "committed": "Committed",
+      "paid": "Paid",
+      "nextPayment": "Next payment",
+      "nextPh": "€8,000 · 1 Aug 2026 — or leave blank to follow the schedule",
+      "remove": "Remove the line",
+      "labelPh": "Photography, Floral design, Transport…",
+      "budgetedPh": "Budgeted — 12 000"
     }
   },
   "vendors": {

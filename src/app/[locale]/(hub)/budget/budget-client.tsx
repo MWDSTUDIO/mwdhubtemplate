@@ -1,14 +1,18 @@
 "use client";
 
-import { type ReactNode, useRef, useState, useTransition } from "react";
-import { useTranslations } from "next-intl";
+import React, { type ReactNode, useRef, useState, useTransition } from "react";
+import { useFormatter, useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
+import type { BudgetLine } from "@/lib/types";
 import {
+  addBudgetLine,
   addLineViaMadame,
+  deleteBudgetLine,
   publishBudget,
   saveEnvelopeNote,
   publishEnvelopeNote,
-  saveInternalBudgetNote
+  saveInternalBudgetNote,
+  updateBudgetLine
 } from "@/app/actions/budget";
 import { Dictate } from "@/components/Dictate";
 
@@ -337,6 +341,215 @@ export function InternalNotes({ weddingId, latest }: { weddingId: string; latest
           {tc("save")}
         </button>
       </div>
+    </div>
+  );
+}
+
+/**
+ * The line-by-line, in the team's hands: press a line to rework every
+ * figure, remove it, or open a new one by hand. Clients see the same
+ * table, published lines only, untouchable.
+ */
+export function LinesTable({
+  lines,
+  weddingId,
+  isTeam,
+  nextByLine
+}: {
+  lines: BudgetLine[];
+  weddingId: string;
+  isTeam: boolean;
+  nextByLine: Record<string, string>;
+}) {
+  const t = useTranslations("budget.mgmt");
+  const tl = useTranslations("budget.lines");
+  const tc = useTranslations("common");
+  const format = useFormatter();
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [addingOpen, setAddingOpen] = useState(false);
+
+  const money = (n: number | null | undefined) =>
+    n == null ? "—" : format.number(n, { style: "currency", currency: "EUR", maximumFractionDigits: 0 });
+
+  return (
+    <div className="card">
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 14, flexWrap: "wrap", marginBottom: 14 }}>
+        <div className="eyebrow">{t("lineByLine")}</div>
+        {isTeam && (
+          <button className="addnote team-only" onClick={() => setAddingOpen((v) => !v)}>
+            {addingOpen ? tc("cancel") : tl("addLine")}
+          </button>
+        )}
+      </div>
+      {addingOpen && isTeam && (
+        <AddLineRow
+          weddingId={weddingId}
+          onDone={() => setAddingOpen(false)}
+        />
+      )}
+      <div style={{ overflowX: "auto" }}>
+        <table className="sheet-table">
+          <thead>
+            <tr>
+              <th>{t("line")}</th>
+              <th>{t("budgeted")}</th>
+              <th>{t("committed")}</th>
+              <th>{t("paidCol")}</th>
+              <th>{t("remainingCol")}</th>
+              <th>{t("nextPayment")}</th>
+              {isTeam && <th className="team-only" aria-label={tl("edit")} />}
+            </tr>
+          </thead>
+          <tbody>
+            {lines.map((line) => (
+              <React.Fragment key={line.id}>
+                <tr>
+                  <td>
+                    {line.label}
+                    {line.status === "draft" && (
+                      <span className="tag int" style={{ marginLeft: 8 }}>{tc("draft")}</span>
+                    )}
+                  </td>
+                  <td className="num">{money(line.budgeted)}</td>
+                  <td className="num">{line.committed != null ? money(line.committed) : line.committed_note ?? "—"}</td>
+                  <td className="num">{line.paid ? money(line.paid) : "—"}</td>
+                  <td className="num">
+                    {line.committed != null ? money(line.committed - line.paid) : "—"}
+                  </td>
+                  <td>{line.next_payment_label ?? nextByLine[line.id] ?? "—"}</td>
+                  {isTeam && (
+                    <td className="team-only">
+                      <button
+                        className="addnote"
+                        onClick={() => setEditingId(editingId === line.id ? null : line.id)}
+                      >
+                        {editingId === line.id ? tc("close") : tl("edit")}
+                      </button>
+                    </td>
+                  )}
+                </tr>
+                {editingId === line.id && (
+                  <tr className="team-only">
+                    <td colSpan={7} style={{ background: "var(--parchment)" }}>
+                      <LineEditor line={line} onClose={() => setEditingId(null)} />
+                    </td>
+                  </tr>
+                )}
+              </React.Fragment>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      {isTeam && (
+        <p className="team-only" style={{ fontSize: 11.5, color: "var(--ink2)", marginTop: 10 }}>{tl("hint")}</p>
+      )}
+    </div>
+  );
+}
+
+const toNum = (s: string): number | null => {
+  const digits = s.replace(/[^\d]/g, "");
+  return digits ? Number(digits) : null;
+};
+
+function LineEditor({ line, onClose }: { line: BudgetLine; onClose: () => void }) {
+  const tl = useTranslations("budget.lines");
+  const tc = useTranslations("common");
+  const [label, setLabel] = useState(line.label);
+  const [budgeted, setBudgeted] = useState(line.budgeted?.toString() ?? "");
+  const [committed, setCommitted] = useState(line.committed?.toString() ?? "");
+  const [paid, setPaid] = useState(line.paid ? String(line.paid) : "");
+  const [next, setNext] = useState(line.next_payment_label ?? "");
+  const [pending, startTransition] = useTransition();
+
+  const field = (labelKey: string, value: string, set: (v: string) => void, ph?: string) => (
+    <div className="field" style={{ minWidth: 130, flex: 1 }}>
+      <label className="eyebrow">{tl(labelKey)}</label>
+      <input value={value} onChange={(e) => set(e.target.value)} placeholder={ph} />
+    </div>
+  );
+
+  return (
+    <div style={{ padding: "12px 6px" }}>
+      <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+        <div className="field" style={{ flex: 2, minWidth: 180 }}>
+          <label className="eyebrow">{tl("label")}</label>
+          <input value={label} onChange={(e) => setLabel(e.target.value)} />
+        </div>
+        {field("budgeted", budgeted, setBudgeted, "12 000")}
+        {field("committed", committed, setCommitted, "12 500")}
+        {field("paid", paid, setPaid, "4 000")}
+        <div className="field" style={{ flex: 2, minWidth: 200 }}>
+          <label className="eyebrow">{tl("nextPayment")}</label>
+          <input value={next} onChange={(e) => setNext(e.target.value)} placeholder={tl("nextPh")} />
+        </div>
+      </div>
+      <div style={{ display: "flex", gap: 10, marginTop: 12, flexWrap: "wrap" }}>
+        <button
+          className="btn sm"
+          disabled={pending || !label.trim()}
+          onClick={() =>
+            startTransition(async () => {
+              await updateBudgetLine({
+                id: line.id,
+                label,
+                budgeted: toNum(budgeted),
+                committed: toNum(committed),
+                paid: toNum(paid) ?? 0,
+                nextPaymentLabel: next
+              });
+              onClose();
+            })
+          }
+        >
+          {pending ? "…" : tc("save")}
+        </button>
+        <button
+          className="btn ghost sm"
+          disabled={pending}
+          onClick={() =>
+            startTransition(async () => {
+              await deleteBudgetLine(line.id);
+              onClose();
+            })
+          }
+        >
+          {tl("remove")}
+        </button>
+        <button className="btn ghost sm" onClick={onClose}>{tc("cancel")}</button>
+      </div>
+    </div>
+  );
+}
+
+function AddLineRow({ weddingId, onDone }: { weddingId: string; onDone: () => void }) {
+  const tl = useTranslations("budget.lines");
+  const [label, setLabel] = useState("");
+  const [budgeted, setBudgeted] = useState("");
+  const [pending, startTransition] = useTransition();
+  return (
+    <div className="assist team-only" style={{ marginBottom: 14 }}>
+      <input value={label} onChange={(e) => setLabel(e.target.value)} placeholder={tl("labelPh")} />
+      <input
+        value={budgeted}
+        onChange={(e) => setBudgeted(e.target.value)}
+        placeholder={tl("budgetedPh")}
+        style={{ flex: "0 1 160px", minWidth: 120 }}
+      />
+      <button
+        className="btn ghost"
+        disabled={pending || !label.trim()}
+        onClick={() =>
+          startTransition(async () => {
+            await addBudgetLine(weddingId, label, toNum(budgeted));
+            setLabel("");
+            setBudgeted("");
+            onDone();
+          })
+        }
+      >
+        {pending ? "…" : tl("open")}
+      </button>
     </div>
   );
 }

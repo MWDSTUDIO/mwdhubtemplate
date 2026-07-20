@@ -160,3 +160,60 @@ export async function addLineViaMadame(weddingId: string, instruction: string) {
   revalidatePath("/budget");
   return { ok: true as const, note: parsed.client_note };
 }
+
+/**
+ * The line-by-line, held by hand: every figure of a line can be
+ * reworked in place. A touched line returns to draft — the client's
+ * sheet never moves before Estelle publishes.
+ */
+export async function updateBudgetLine(input: {
+  id: string;
+  label: string;
+  budgeted: number | null;
+  committed: number | null;
+  paid: number;
+  nextPaymentLabel: string;
+}) {
+  await teamSession();
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("budget_lines")
+    .update({
+      label: input.label.trim(),
+      budgeted: input.budgeted,
+      committed: input.committed,
+      paid: input.paid,
+      next_payment_label: input.nextPaymentLabel.trim() || null,
+      status: "draft"
+    })
+    .eq("id", input.id);
+  revalidatePath("/budget");
+  return { ok: !error };
+}
+
+export async function deleteBudgetLine(id: string) {
+  await teamSession();
+  const supabase = await createClient();
+  await supabase.from("budget_lines").delete().eq("id", id);
+  revalidatePath("/budget");
+  return { ok: true as const };
+}
+
+/** Open a line by hand — label and budget, the rest follows in time. */
+export async function addBudgetLine(weddingId: string, label: string, budgeted: number | null) {
+  await teamSession();
+  const supabase = await createClient();
+  const { count } = await supabase
+    .from("budget_lines")
+    .select("id", { count: "exact", head: true })
+    .eq("wedding_id", weddingId);
+  const { error } = await supabase.from("budget_lines").insert({
+    wedding_id: weddingId,
+    label: label.trim(),
+    budgeted,
+    status: "draft",
+    sort: (count ?? 0) + 1
+  });
+  revalidatePath("/budget");
+  return { ok: !error };
+}

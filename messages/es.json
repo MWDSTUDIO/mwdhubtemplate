@@ -281,6 +281,21 @@
       "blurb": "Sus notas, sus márgenes de negociación y su método viven aquí. El agente se nutre de ellos para responder al cliente en su nombre — sin revelarlos jamás.",
       "latest": "Última nota",
       "placeholder": "Un margen, un método, algo que callar por ahora…"
+    },
+    "lines": {
+      "edit": "Retocar",
+      "addLine": "Abrir una línea a mano",
+      "open": "Abrir",
+      "hint": "Solo el equipo — la pareja ve esta tabla en lectura, únicamente las líneas publicadas. Una línea retocada vuelve a borrador hasta que publique.",
+      "label": "Línea",
+      "budgeted": "Presupuestado",
+      "committed": "Comprometido",
+      "paid": "Pagado",
+      "nextPayment": "Próximo pago",
+      "nextPh": "8 000 € · 1 ago 2026 — o deje vacío para seguir el calendario",
+      "remove": "Retirar la línea",
+      "labelPh": "Fotografía, Diseño floral, Transporte…",
+      "budgetedPh": "Presupuestado — 12 000"
     }
   },
   "vendors": {

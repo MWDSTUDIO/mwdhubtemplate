@@ -281,6 +281,21 @@
       "blurb": "Vos notes, vos marges de négociation et votre méthode vivent ici. L'agent s'en nourrit pour répondre au client en votre nom — sans jamais les révéler.",
       "latest": "Dernière note",
       "placeholder": "Une marge, une méthode, une chose à taire…"
+    },
+    "lines": {
+      "edit": "Retravailler",
+      "addLine": "Ouvrir une ligne à la main",
+      "open": "Ouvrir",
+      "hint": "Équipe seulement — les clients voient ce tableau en lecture seule, lignes publiées uniquement. Une ligne retravaillée repasse en brouillon jusqu'à votre publication.",
+      "label": "Ligne",
+      "budgeted": "Budgété",
+      "committed": "Engagé",
+      "paid": "Payé",
+      "nextPayment": "Prochain versement",
+      "nextPh": "8 000 € · 1 août 2026 — ou laissez vide pour suivre l'échéancier",
+      "remove": "Retirer la ligne",
+      "labelPh": "Photographie, Design floral, Transports…",
+      "budgetedPh": "Budgété — 12 000"
     }
   },
   "vendors": {

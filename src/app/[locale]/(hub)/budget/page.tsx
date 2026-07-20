@@ -5,6 +5,7 @@ import type { BudgetEnvelope, BudgetLine, EnvelopeNote } from "@/lib/types";
 import {
   BudgetTabs,
   EnvelopeNoteEditor,
+  LinesTable,
   MadameBudgetAdd,
   PublishBar,
   BudgetAsk,
@@ -27,11 +28,16 @@ export default async function BudgetPage({
   if (!wedding) return null;
 
   const supabase = await createClient();
-  const [{ data: envelopes }, { data: notes }, { data: lines }, internalLatest] =
+  const [{ data: envelopes }, { data: notes }, { data: lines }, { data: payments }, internalLatest] =
     await Promise.all([
       supabase.from("budget_envelopes").select("*").eq("wedding_id", wedding.id).order("sort"),
       supabase.from("envelope_notes").select("*").eq("wedding_id", wedding.id),
       supabase.from("budget_lines").select("*").eq("wedding_id", wedding.id).order("sort"),
+      supabase
+        .from("payments")
+        .select("budget_line_id, label, amount, due_date, paid_at")
+        .eq("wedding_id", wedding.id)
+        .order("due_date", { ascending: true, nullsFirst: false }),
       session.isTeam
         ? supabase
             .from("internal_budget_notes")
@@ -44,8 +50,19 @@ export default async function BudgetPage({
     ]);
 
   const allLines = (lines ?? []) as BudgetLine[];
-  const visibleLines = allLines; // RLS already hides drafts from clients
   const draftCount = allLines.filter((l) => l.status === "draft").length;
+
+  // The next unpaid instalment of each line — drawn from the payment
+  // schedule the contracts fed, unless the line carries its own word.
+  const nextByLine: Record<string, string> = {};
+  for (const p of payments ?? []) {
+    if (!p.budget_line_id || p.paid_at || nextByLine[p.budget_line_id]) continue;
+    const when = p.due_date
+      ? format.dateTime(new Date(p.due_date), { day: "numeric", month: "short", year: "numeric" })
+      : null;
+    nextByLine[p.budget_line_id] =
+      `${format.number(p.amount, { style: "currency", currency: "EUR", maximumFractionDigits: 0 })}${when ? ` · ${when}` : ""}`;
+  }
   const noteFor = (envId: string) =>
     ((notes ?? []) as EnvelopeNote[]).find((n) => n.envelope_id === envId) ?? null;
 
@@ -133,44 +150,12 @@ export default async function BudgetPage({
           </span>
         </div>
       </div>
-      <div className="card">
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 14, flexWrap: "wrap", marginBottom: 14 }}>
-          <div className="eyebrow">{t("mgmt.lineByLine")}</div>
-        </div>
-        <div style={{ overflowX: "auto" }}>
-          <table className="sheet-table">
-            <thead>
-              <tr>
-                <th>{t("mgmt.line")}</th>
-                <th>{t("mgmt.budgeted")}</th>
-                <th>{t("mgmt.committed")}</th>
-                <th>{t("mgmt.paidCol")}</th>
-                <th>{t("mgmt.remainingCol")}</th>
-                <th>{t("mgmt.nextPayment")}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {visibleLines.map((line) => (
-                <tr key={line.id}>
-                  <td>
-                    {line.label}
-                    {line.status === "draft" && (
-                      <span className="tag int" style={{ marginLeft: 8 }}>{tc("draft")}</span>
-                    )}
-                  </td>
-                  <td className="num">{money(line.budgeted)}</td>
-                  <td className="num">{line.committed != null ? money(line.committed) : line.committed_note ?? "—"}</td>
-                  <td className="num">{line.paid ? money(line.paid) : "—"}</td>
-                  <td className="num">
-                    {line.committed != null ? money(line.committed - line.paid) : "—"}
-                  </td>
-                  <td>{line.next_payment_label ?? "—"}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
+      <LinesTable
+        lines={allLines}
+        weddingId={wedding.id}
+        isTeam={session.isTeam}
+        nextByLine={nextByLine}
+      />
 
       <div className="ia">
         <div className="eyebrow">{t("ask.title")}</div>
