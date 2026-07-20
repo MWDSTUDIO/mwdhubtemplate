@@ -19,6 +19,8 @@ export interface Wedding {
   entrance_media_url: string | null;
   entrance_plaque_url: string | null;
   budget_total: number | null;
+  budget_analysis: string | null;
+  budget_analysis_at: string | null;
   drive_folder_shared_id: string | null;
   drive_folder_internal_id: string | null;
   first_toast_at: string | null;
