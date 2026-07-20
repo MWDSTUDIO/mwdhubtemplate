@@ -75,10 +75,10 @@ export function Sidebar({ access }: { access: NavAccess }) {
     <aside className="house">
       <div className="logo">
         <Image
-          src="/brand/plaque.png"
+          src="/brand/logo-ivory.png"
           alt="Madame Wedding Design"
           width={150}
-          height={111}
+          height={112}
           style={{ height: "auto" }}
         />
         <span>{t("theInnerHouse")}</span>

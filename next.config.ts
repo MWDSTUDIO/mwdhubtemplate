@@ -4,8 +4,10 @@ import createNextIntlPlugin from "next-intl/plugin";
 const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
 
 const nextConfig: NextConfig = {
-  // Vendor documents and entrance media live in Supabase Storage.
+  // Few, light images (plaque, board covers) — served directly; the
+  // image-CDN round-trip 502s on CLI deploys and buys us nothing here.
   images: {
+    unoptimized: true,
     remotePatterns: [
       { protocol: "https", hostname: "**.supabase.co" },
       { protocol: "https", hostname: "mwdwebsitec.netlify.app" }
