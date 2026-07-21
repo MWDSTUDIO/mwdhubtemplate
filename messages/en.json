@@ -155,12 +155,12 @@
     "monthly": {
       "title": "This month at the house — {month}",
       "titleBare": "This month at the house",
-      "composeNext": "Compose next month",
+      "composeNext": "Compose the month — the note & its previews",
       "subjectsPlaceholder": "Give the subjects: tasting, proof, floral direction…",
       "letAgentWrite": "Let the agent write it",
       "keepDraft": "Keep as draft",
       "publish": "Publish to the client",
-      "hint": "You give the subjects; the agent composes the note in the house's voice. Nothing reaches the client before your word."
+      "hint": "You give the subjects; the agent composes the month's note and the previews of the three months that follow, in the house's voice. Nothing reaches the client before your word."
     },
     "attentions": {
       "title": "Your attentions",

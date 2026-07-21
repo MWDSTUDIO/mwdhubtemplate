@@ -118,3 +118,44 @@ export async function settleAttention(id: string) {
   await supabase.from("attentions").update({ status: "attended" }).eq("id", id);
   revalidatePath("/timeline");
 }
+
+/**
+ * The whole monthly card in one word: the month's note and the
+ * previews of the three months that follow — drafts until published.
+ */
+export async function saveMonthlyComposition(input: {
+  weddingId: string;
+  month: string; // yyyy-mm
+  subjects: string;
+  composed: string;
+  previews: { month: string; text: string }[];
+  publish: boolean;
+}) {
+  await teamSession();
+  const supabase = await createClient();
+  const status = input.publish ? "published" : "draft";
+  await supabase.from("monthly_notes").upsert(
+    {
+      wedding_id: input.weddingId,
+      month: `${input.month}-01`,
+      subjects_raw: input.subjects,
+      composed_text: input.composed,
+      status
+    },
+    { onConflict: "wedding_id,month" }
+  );
+  for (const p of input.previews) {
+    if (!p.month || !p.text) continue;
+    await supabase.from("monthly_notes").upsert(
+      {
+        wedding_id: input.weddingId,
+        month: `${p.month}-01`,
+        preview_text: p.text,
+        status
+      },
+      { onConflict: "wedding_id,month" }
+    );
+  }
+  revalidatePath("/timeline");
+  return { ok: true as const };
+}

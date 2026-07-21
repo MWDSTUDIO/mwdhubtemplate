@@ -155,12 +155,12 @@
     "monthly": {
       "title": "Este mes en la casa — {month}",
       "titleBare": "Este mes en la casa",
-      "composeNext": "Componer el mes próximo",
+      "composeNext": "Componer el mes — la nota y sus avances",
       "subjectsPlaceholder": "Dé los temas: degustación, prueba de imprenta, dirección floral…",
       "letAgentWrite": "Dejar que el agente lo escriba",
       "keepDraft": "Guardar como borrador",
       "publish": "Publicar al cliente",
-      "hint": "Usted da los temas; el agente compone la nota con la voz de la casa. Nada llega al cliente antes de su palabra."
+      "hint": "Usted da los temas; el agente compone la nota del mes y los avances de los tres meses siguientes, con la voz de la casa. Nada llega al cliente antes de su palabra."
     },
     "attentions": {
       "title": "Sus atenciones",

@@ -155,12 +155,12 @@
     "monthly": {
       "title": "Ce mois-ci à la maison — {month}",
       "titleBare": "Ce mois-ci à la maison",
-      "composeNext": "Composer le mois prochain",
+      "composeNext": "Composer le mois — la note & ses aperçus",
       "subjectsPlaceholder": "Donnez les sujets : dégustation, épreuve, direction florale…",
       "letAgentWrite": "Laisser l'agent l'écrire",
       "keepDraft": "Garder en brouillon",
       "publish": "Publier au client",
-      "hint": "Vous donnez les sujets ; l'agent compose la note dans la voix de la maison. Rien n'atteint le client avant votre mot."
+      "hint": "Vous donnez les sujets ; l'agent compose la note du mois et les aperçus des trois mois suivants, dans la voix de la maison. Rien n'atteint le client avant votre mot."
     },
     "attentions": {
       "title": "Vos attentions",

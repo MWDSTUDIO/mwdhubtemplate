@@ -2,8 +2,9 @@
 
 import { useState, useTransition } from "react";
 import { useFormatter, useTranslations } from "next-intl";
+import { useRouter } from "@/i18n/navigation";
 import type { MonthlyNote } from "@/lib/types";
-import { saveMonthlyNoteDraft, publishMonthlyNote } from "@/app/actions/timeline";
+import { saveMonthlyComposition } from "@/app/actions/timeline";
 import { Dictate } from "@/components/Dictate";
 
 /**
@@ -27,12 +28,14 @@ export function MonthlyNotes({
   const format = useFormatter();
   const [subjects, setSubjects] = useState("");
   const [draft, setDraft] = useState<string | null>(null);
+  const [draftPreviews, setDraftPreviews] = useState<{ month: string; text: string }[]>([]);
   const [busy, setBusy] = useState(false);
   const [pending, startTransition] = useTransition();
+  const router = useRouter();
 
+  // The card writes for the month we are living, previews follow it.
   const now = new Date();
-  const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
-  const nextKey = `${nextMonth.getFullYear()}-${String(nextMonth.getMonth() + 1).padStart(2, "0")}`;
+  const nowKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
 
   async function compose() {
     const s = subjects.trim();
@@ -42,15 +45,34 @@ export function MonthlyNotes({
       const r = await fetch("/api/agents/monthly-note", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ weddingId, subjects: s })
+        body: JSON.stringify({ weddingId, subjects: s, month: nowKey })
       });
       const d = await r.json();
-      if (d.text) setDraft(d.text);
+      if (d.text) {
+        setDraft(d.text);
+        setDraftPreviews(Array.isArray(d.previews) ? d.previews : []);
+      }
     } catch {
       setDraft(null);
     }
     setBusy(false);
   }
+
+  const keep = (publish: boolean) =>
+    startTransition(async () => {
+      await saveMonthlyComposition({
+        weddingId,
+        month: nowKey,
+        subjects,
+        composed: draft ?? "",
+        previews: draftPreviews,
+        publish
+      });
+      setDraft(null);
+      setDraftPreviews([]);
+      setSubjects("");
+      router.refresh();
+    });
 
   const monthName = (iso: string) =>
     format.dateTime(new Date(iso), { month: "long" });
@@ -106,30 +128,21 @@ export function MonthlyNotes({
               <p className="ia-quote" style={{ marginTop: 12 }} aria-live="polite">
                 &ldquo;{draft}&rdquo;
               </p>
+              {draftPreviews.length > 0 && (
+                <div className="grid3" style={{ marginTop: 12 }}>
+                  {draftPreviews.map((p) => (
+                    <div key={p.month} style={{ border: "1px solid var(--line)", padding: "12px 14px", background: "var(--parchment)" }}>
+                      <div className="eyebrow">{monthName(`${p.month}-01`)}</div>
+                      <p style={{ fontSize: 12.5, marginTop: 6, color: "var(--ink2)" }}>{p.text}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
               <div style={{ display: "flex", gap: 10, marginTop: 12, flexWrap: "wrap" }}>
-                <button
-                  className="btn ghost sm"
-                  disabled={pending}
-                  onClick={() =>
-                    startTransition(() =>
-                      saveMonthlyNoteDraft({ weddingId, month: nextKey, subjects, composed: draft })
-                    )
-                  }
-                >
+                <button className="btn ghost sm" disabled={pending} onClick={() => keep(false)}>
                   {t("keepDraft")}
                 </button>
-                <button
-                  className="btn sm"
-                  disabled={pending}
-                  onClick={() =>
-                    startTransition(async () => {
-                      await saveMonthlyNoteDraft({ weddingId, month: nextKey, subjects, composed: draft });
-                      await publishMonthlyNote(weddingId, nextKey);
-                      setDraft(null);
-                      setSubjects("");
-                    })
-                  }
-                >
+                <button className="btn sm" disabled={pending} onClick={() => keep(true)}>
                   {t("publish")}
                 </button>
               </div>

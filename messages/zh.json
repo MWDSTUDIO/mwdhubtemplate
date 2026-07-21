@@ -155,12 +155,12 @@
     "monthly": {
       "title": "本月馆内 — {month}",
       "titleBare": "本月馆内",
-      "composeNext": "撰写下月小记",
+      "composeNext": "撰写本月——小记与前瞻",
       "subjectsPlaceholder": "给出主题：品鉴、样张、花艺方向…",
       "letAgentWrite": "交由管家撰写",
       "keepDraft": "存为草稿",
       "publish": "发布予宾客",
-      "hint": "您给出主题；管家以本馆的笔调成文。未经您首肯，片语不达宾客。"
+      "hint": "您给出主题；管家以本馆笔调写就本月小记与随后三个月的前瞻。未经您首肯，片语不达宾客。"
     },
     "attentions": {
       "title": "您的托付",
