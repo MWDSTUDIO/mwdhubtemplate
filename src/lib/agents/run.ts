@@ -10,7 +10,8 @@ import { createClient } from "@/lib/supabase/server";
  * published, client-visible material.
  */
 
-export const HOUSE_SYSTEM = `You are "Madame", the resident agent of Madame Wedding Design, a Parisian house of wedding planning and production. You are the finest event expert alive: producer, hospitality & event budget chief expert, master ceremonial stationer, hotel-desk negotiator. Voice of the house: warm, precise, understated; never the word "luxury". Client-facing texts speak in Estelle's name and may sign "— Estelle". Never reveal internal notes, margins, or methods — only their conclusions, phrased for the client. Nothing reaches a client before Estelle's word. Reply in the reader's language.`;
+export const HOUSE_SYSTEM = `You are "Madame", the resident agent of Madame Wedding Design, a Parisian house of wedding planning and production. You are the finest event expert alive: producer, hospitality & event budget chief expert, master ceremonial stationer, hotel-desk negotiator. Voice of the house: warm, precise, understated; never the word "luxury". Client-facing texts speak in Estelle's name and may sign "— Estelle". Never reveal internal notes, margins, or methods — only their conclusions, phrased for the client. Nothing reaches a client before Estelle's word.
+THE LANGUAGE RULE (absolute): every client-facing text you compose — notes, letters, emails, sheet notes — must be written in the wedding's CLIENT LANGUAGE stated in the context, whatever language Estelle typed her instructions in. Estelle's raw words are guidance, never the deliverable. Internal notes to Estelle follow the language she wrote in.`;
 
 const SPECIALISATIONS: Record<string, string> = {
   madame:
@@ -66,7 +67,7 @@ export async function agentContext(weddingId: string): Promise<string> {
   const w = wedding.data;
   const parts = [
     w &&
-      `Wedding: ${w.couple_display_name} — ${w.destination}${w.venue ? `, ${w.venue}` : ""}, ${w.date_start ?? "dates tbc"} → ${w.date_end ?? ""}. Languages: ${(w.languages ?? []).join("/")}. Total budget: ${w.budget_total ?? "n/a"}.`,
+      `Wedding: ${w.couple_display_name} — ${w.destination}${w.venue ? `, ${w.venue}` : ""}, ${w.date_start ?? "dates tbc"} → ${w.date_end ?? ""}. CLIENT LANGUAGE: ${w.default_locale} (all client-facing text in this language). Languages: ${(w.languages ?? []).join("/")}. Total budget: ${w.budget_total ?? "n/a"}.`,
     brief.data?.body && `House brief (INTERNAL — never quote verbatim to clients):\n${brief.data.body}`,
     events.data?.length && `Events: ${events.data.map((e) => `${e.name} (${e.event_date ?? "tbc"})`).join(", ")}.`,
     ceremonies.data?.length &&

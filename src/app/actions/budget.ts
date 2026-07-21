@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { requireHouseSession } from "@/lib/session";
-import { notifyCouple } from "@/lib/notify";
+import { notifyCouple, sendHouseEmailToCouple } from "@/lib/notify";
 import { runAgent } from "@/lib/agents/run";
 
 async function teamSession() {
@@ -216,4 +216,140 @@ export async function addBudgetLine(weddingId: string, label: string, budgeted: 
   });
   revalidatePath("/budget");
   return { ok: !error };
+}
+
+/* ══════════ Budget v2 — payments held by hand ══════════ */
+
+export async function addPayment(input: {
+  weddingId: string;
+  budgetLineId: string | null;
+  label: string;
+  amount: number;
+  currency: string;
+  amountEur: number | null;
+  dueDate: string | null;
+  method: string;
+  payer: string;
+  refundable: boolean;
+}) {
+  await teamSession();
+  const supabase = await createClient();
+  const full: Record<string, unknown> = {
+    wedding_id: input.weddingId,
+    budget_line_id: input.budgetLineId,
+    label: input.label.trim(),
+    amount: input.amount,
+    currency: input.currency || "EUR",
+    amount_eur: input.amountEur,
+    due_date: input.dueDate,
+    method: input.method.trim() || null,
+    payer: input.payer.trim() || null,
+    refundable: input.refundable
+  };
+  let { error } = await supabase.from("payments").insert(full);
+  if (error) {
+    // Before migration 0011 the v2 columns are absent.
+    ({ error } = await supabase.from("payments").insert({
+      wedding_id: input.weddingId,
+      budget_line_id: input.budgetLineId,
+      label: input.label.trim(),
+      amount: input.amount,
+      due_date: input.dueDate
+    }));
+  }
+  revalidatePath("/budget");
+  return { ok: !error };
+}
+
+/** One press: the instalment is settled (date editable), totals follow. */
+export async function markPaymentPaid(paymentId: string, paidAt: string | null) {
+  await teamSession();
+  const supabase = await createClient();
+  const { data: payment } = await supabase
+    .from("payments")
+    .select("id, wedding_id, budget_line_id, amount, amount_eur")
+    .eq("id", paymentId)
+    .single();
+  await supabase.from("payments").update({ paid_at: paidAt }).eq("id", paymentId);
+
+  // The line's "paid" follows its settled instalments (EUR equivalent).
+  if (payment?.budget_line_id) {
+    const { data: siblings } = await supabase
+      .from("payments")
+      .select("amount, amount_eur, paid_at, currency")
+      .eq("budget_line_id", payment.budget_line_id);
+    const paid = (siblings ?? [])
+      .filter((p) => p.paid_at)
+      .reduce((s, p) => s + Number(p.amount_eur ?? (("currency" in p ? p.currency : "EUR") === "EUR" ? p.amount : 0)), 0);
+    await supabase
+      .from("budget_lines")
+      .update({ paid })
+      .eq("id", payment.budget_line_id);
+  }
+  revalidatePath("/budget");
+  return { ok: true as const };
+}
+
+export async function updatePaymentFlags(
+  paymentId: string,
+  flags: { refundable?: boolean; reveal_banking?: boolean }
+) {
+  await teamSession();
+  const supabase = await createClient();
+  const { error } = await supabase.from("payments").update(flags).eq("id", paymentId);
+  revalidatePath("/budget");
+  return { ok: !error };
+}
+
+export async function deletePayment(paymentId: string) {
+  await teamSession();
+  const supabase = await createClient();
+  await supabase.from("payments").delete().eq("id", paymentId);
+  revalidatePath("/budget");
+  return { ok: true as const };
+}
+
+/**
+ * "Notify the client" on an instalment: Madame composes the word in
+ * the client language; Estelle reads it before anything leaves.
+ */
+export async function composePaymentNotice(weddingId: string, paymentId: string) {
+  await teamSession();
+  const supabase = await createClient();
+  const { data: p } = await supabase
+    .from("payments")
+    .select("*, budget_lines(label, vendor_id)")
+    .eq("id", paymentId)
+    .single();
+  if (!p) return { ok: false as const };
+  const text = await runAgent({
+    weddingId,
+    agent: "budget",
+    maxTokens: 600,
+    prompt:
+      `Compose the short payment notice the house sends the couple ahead of an instalment — ` +
+      `the house's voice, in the wedding's CLIENT LANGUAGE, 3–4 sentences, signed "— Estelle". ` +
+      `Instalment: "${p.label}", amount ${p.amount} ${p.currency ?? "EUR"}, due ${p.due_date ?? "to be settled"}, ` +
+      `method ${p.method ?? "bank transfer"}. Mention that banking details ` +
+      `${p.reveal_banking ? "are shown in their Inner House budget page" : "will be shared separately"}. ` +
+      `Reply with the notice text alone.`
+  });
+  return { ok: true as const, notice: text.trim() };
+}
+
+/** Estelle approved: in-app notice now; email when the house's box is wired. */
+export async function sendPaymentNotice(weddingId: string, paymentId: string, notice: string) {
+  await teamSession();
+  const supabase = await createClient();
+  const { data: p } = await supabase.from("payments").select("label, amount, currency, due_date").eq("id", paymentId).single();
+  await notifyCouple(weddingId, {
+    kind: "payment_notice",
+    title: "A payment approaches",
+    body: notice.length > 140 ? `${notice.slice(0, 140)}…` : notice,
+    url: "/budget"
+  });
+  const emailed = await sendHouseEmailToCouple(weddingId, `A payment approaches — ${p?.label ?? ""}`, notice);
+  await supabase.from("payments").update({ notified_at: new Date().toISOString() }).eq("id", paymentId);
+  revalidatePath("/budget");
+  return { ok: true as const, emailed };
 }

@@ -42,3 +42,23 @@ export const DEFAULT_FORMS: { title: string; status: "awaiting" | "to_come"; due
     ]
   }
 ];
+
+/** One envelope of the scope, as the sheet edits it. */
+export interface EnvelopeDraft {
+  id?: string;
+  label: string;
+  percent: number;
+  priority: "high" | "standard";
+  locked: boolean;
+  sort: number;
+}
+
+/** The house's default envelopes, born with every wedding. */
+export const HOUSE_ENVELOPES: Omit<EnvelopeDraft, "id">[] = [
+  { label: "Venues & accommodation", percent: 28, priority: "high", locked: false, sort: 1 },
+  { label: "Catering & wines", percent: 24, priority: "high", locked: false, sort: 2 },
+  { label: "Design, floral & rentals", percent: 22, priority: "standard", locked: false, sort: 3 },
+  { label: "Music & entertainment", percent: 10, priority: "standard", locked: false, sort: 4 },
+  { label: "Image, stationery & beauty", percent: 10, priority: "standard", locked: false, sort: 5 },
+  { label: "Production & contingency", percent: 6, priority: "standard", locked: false, sort: 6 }
+];

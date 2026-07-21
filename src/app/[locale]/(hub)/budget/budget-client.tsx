@@ -452,7 +452,7 @@ const toNum = (s: string): number | null => {
   return digits ? Number(digits) : null;
 };
 
-function LineEditor({ line, onClose }: { line: BudgetLine; onClose: () => void }) {
+export function LineEditor({ line, onClose }: { line: BudgetLine; onClose: () => void }) {
   const tl = useTranslations("budget.lines");
   const tc = useTranslations("common");
   const [label, setLabel] = useState(line.label);

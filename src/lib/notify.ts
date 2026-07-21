@@ -106,3 +106,31 @@ export async function notifyCouple(weddingId: string, notice: Notice) {
     .eq("relation", "couple");
   await fanOut((data ?? []).map((m) => m.profile_id), weddingId, notice);
 }
+
+/**
+ * A letter from the house to the couple — their addresses resolved
+ * through admin. Returns whether an email truly left: false until a
+ * sending house box (Resend with the verified domain, or Gmail OAuth)
+ * is wired, in which case the in-app word still stands.
+ */
+export async function sendHouseEmailToCouple(
+  weddingId: string,
+  subject: string,
+  text: string
+): Promise<boolean> {
+  if (!process.env.RESEND_API_KEY) return false;
+  const admin = createAdminClient();
+  const { data: members } = await admin
+    .from("wedding_members")
+    .select("profile_id")
+    .eq("wedding_id", weddingId)
+    .eq("relation", "couple");
+  const emails: string[] = [];
+  for (const m of members ?? []) {
+    const { data: u } = await admin.auth.admin.getUserById(m.profile_id);
+    if (u?.user?.email) emails.push(u.user.email);
+  }
+  if (emails.length === 0) return false;
+  await sendEmail(emails, subject, text);
+  return true;
+}

@@ -162,6 +162,9 @@ export interface BudgetEnvelope {
   label: string;
   percent: number | null;
   sort: number;
+  /** Scope v2 (migration 0011). */
+  priority?: "high" | "standard";
+  locked?: boolean;
 }
 
 export interface EnvelopeNote {
@@ -184,6 +187,25 @@ export interface BudgetLine {
   next_payment_label: string | null;
   status: PublishStatus;
   sort: number;
+  /** Budget v2 (migration 0011): nested credits under a parent line. */
+  parent_line_id?: string | null;
+  line_kind?: "line" | "credit" | "included";
+}
+
+/** One line of a vendor's quote, grouped by event (migration 0011). */
+export interface BudgetLineItem {
+  id: string;
+  wedding_id: string;
+  budget_line_id: string;
+  event_label: string | null;
+  label: string;
+  qty: number | null;
+  unit_price: number | null;
+  total_ht: number | null;
+  vat_pct: number | null;
+  total_ttc: number | null;
+  notes: string | null;
+  sort: number;
 }
 
 export interface Payment {
@@ -195,6 +217,27 @@ export interface Payment {
   due_date: string | null;
   paid_at: string | null;
   reminder_sent_at: string | null;
+  /** Budget v2 (migration 0011). */
+  currency?: string;
+  amount_eur?: number | null;
+  method?: string | null;
+  payer?: string | null;
+  refundable?: boolean;
+  reveal_banking?: boolean;
+  notified_at?: string | null;
+}
+
+/** The risk buffer, as in the house's Excel (migration 0011). */
+export interface BudgetRisk {
+  id: string;
+  wedding_id: string;
+  label: string;
+  description: string | null;
+  exposure: number | null;
+  probability: number | null;
+  owner: string | null;
+  mitigation: string | null;
+  sort: number;
 }
 
 export interface Guest {

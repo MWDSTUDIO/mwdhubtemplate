@@ -1,17 +1,24 @@
 import { getTranslations, setRequestLocale, getFormatter } from "next-intl/server";
 import { requireHouseSession } from "@/lib/session";
 import { createClient } from "@/lib/supabase/server";
-import type { BudgetEnvelope, BudgetLine, EnvelopeNote } from "@/lib/types";
+import type {
+  BudgetEnvelope,
+  BudgetLine,
+  BudgetLineItem,
+  BudgetRisk,
+  EnvelopeNote,
+  Payment
+} from "@/lib/types";
 import {
   BudgetTabs,
-  EnvelopeNoteEditor,
-  LinesTable,
   MadameBudgetAdd,
   PublishBar,
   BudgetAsk,
   BudgetDocDrop,
   InternalNotes
 } from "./budget-client";
+import { ScopeStudio } from "./scope-client";
+import { MasterTable, PaymentsCalendar, RiskBuffer } from "./mgmt-client";
 
 export default async function BudgetPage({
   params
@@ -22,97 +29,96 @@ export default async function BudgetPage({
   setRequestLocale(locale);
   const session = await requireHouseSession();
   const t = await getTranslations("budget");
-  const tc = await getTranslations("common");
   const format = await getFormatter();
   const { wedding } = session;
   if (!wedding) return null;
 
   const supabase = await createClient();
-  const [{ data: envelopes }, { data: notes }, { data: lines }, { data: payments }, internalLatest] =
-    await Promise.all([
-      supabase.from("budget_envelopes").select("*").eq("wedding_id", wedding.id).order("sort"),
-      supabase.from("envelope_notes").select("*").eq("wedding_id", wedding.id),
-      supabase.from("budget_lines").select("*").eq("wedding_id", wedding.id).order("sort"),
-      supabase
-        .from("payments")
-        .select("budget_line_id, label, amount, due_date, paid_at")
-        .eq("wedding_id", wedding.id)
-        .order("due_date", { ascending: true, nullsFirst: false }),
-      session.isTeam
-        ? supabase
-            .from("internal_budget_notes")
-            .select("body")
-            .eq("wedding_id", wedding.id)
-            .order("created_at", { ascending: false })
-            .limit(1)
-            .maybeSingle()
-        : Promise.resolve({ data: null })
-    ]);
+  const [
+    { data: envelopes },
+    { data: notes },
+    { data: lines },
+    { data: payments },
+    itemsRes,
+    risksRes,
+    internalLatest
+  ] = await Promise.all([
+    supabase.from("budget_envelopes").select("*").eq("wedding_id", wedding.id).order("sort"),
+    supabase.from("envelope_notes").select("*").eq("wedding_id", wedding.id),
+    supabase.from("budget_lines").select("*").eq("wedding_id", wedding.id).order("sort"),
+    supabase
+      .from("payments")
+      .select("*")
+      .eq("wedding_id", wedding.id)
+      .order("due_date", { ascending: true, nullsFirst: false }),
+    // Absent until migration 0011 — the page stands without them.
+    supabase.from("budget_line_items").select("*").eq("wedding_id", wedding.id).order("sort"),
+    session.isTeam
+      ? supabase.from("budget_risks").select("*").eq("wedding_id", wedding.id).order("sort")
+      : Promise.resolve({ data: null, error: null }),
+    session.isTeam
+      ? supabase
+          .from("internal_budget_notes")
+          .select("body")
+          .eq("wedding_id", wedding.id)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle()
+      : Promise.resolve({ data: null })
+  ]);
 
   const allLines = (lines ?? []) as BudgetLine[];
+  const allPayments = (payments ?? []) as Payment[];
+  const items = (itemsRes.data ?? []) as BudgetLineItem[];
+  const risks = (risksRes.data ?? []) as BudgetRisk[];
+  const risksAvailable = !risksRes.error;
   const draftCount = allLines.filter((l) => l.status === "draft").length;
-
-  // The next unpaid instalment of each line — drawn from the payment
-  // schedule the contracts fed, unless the line carries its own word.
-  const nextByLine: Record<string, string> = {};
-  for (const p of payments ?? []) {
-    if (!p.budget_line_id || p.paid_at || nextByLine[p.budget_line_id]) continue;
-    const when = p.due_date
-      ? format.dateTime(new Date(p.due_date), { day: "numeric", month: "short", year: "numeric" })
-      : null;
-    nextByLine[p.budget_line_id] =
-      `${format.number(p.amount, { style: "currency", currency: "EUR", maximumFractionDigits: 0 })}${when ? ` · ${when}` : ""}`;
-  }
-  const noteFor = (envId: string) =>
-    ((notes ?? []) as EnvelopeNote[]).find((n) => n.envelope_id === envId) ?? null;
 
   const money = (n: number | null | undefined) =>
     n == null ? "—" : format.number(n, { style: "currency", currency: "EUR", maximumFractionDigits: 0 });
 
+  // Credits fold into their parent, so totals never double-count.
   const committed = allLines.reduce((s, l) => s + (l.committed ?? 0), 0);
   const paid = allLines.reduce((s, l) => s + (l.paid ?? 0), 0);
   const remaining = committed - paid;
   const total = wedding.budget_total ?? 0;
 
+  const committedByEnvelope: Record<string, number> = {};
+  for (const l of allLines) {
+    if (l.envelope_id) {
+      committedByEnvelope[l.envelope_id] = (committedByEnvelope[l.envelope_id] ?? 0) + (l.committed ?? 0);
+    }
+  }
+
+  const nextByLine: Record<string, string> = {};
+  for (const p of allPayments) {
+    if (!p.budget_line_id || p.paid_at || nextByLine[p.budget_line_id]) continue;
+    const when = p.due_date
+      ? format.dateTime(new Date(p.due_date), { day: "numeric", month: "short", year: "numeric" })
+      : null;
+    const cur = p.currency && p.currency !== "EUR" ? p.currency : "EUR";
+    nextByLine[p.budget_line_id] =
+      `${format.number(p.amount, { style: "currency", currency: cur, maximumFractionDigits: 0 })}${when ? ` · ${when}` : ""}`;
+  }
+
+  const lineLabels: Record<string, string> = Object.fromEntries(allLines.map((l) => [l.id, l.label]));
+
   const scopePanel = (
     <>
-      <div className="card">
+      <div className="card" style={{ background: "var(--parchment)", border: "1px solid var(--line)" }}>
         <div className="eyebrow">{t("scope.title")}</div>
-        <p style={{ margin: "10px 0 20px", fontSize: 13.5, color: "var(--ink2)" }}>
+        <p style={{ margin: "10px 0 0", fontSize: 13.5, color: "var(--ink2)" }}>
           {t("scope.blurb", { destination: wedding.destination })}
         </p>
-        {(envelopes as BudgetEnvelope[] | null)?.map((env) => {
-          const note = noteFor(env.id);
-          const showNote = note && (note.status === "published" || session.isTeam);
-          return (
-            <div key={env.id}>
-              <div className="env" style={showNote ? { borderBottom: "none" } : undefined}>
-                <span>
-                  {env.label}
-                  {session.isTeam && (
-                    <EnvelopeNoteEditor
-                      envelopeId={env.id}
-                      weddingId={wedding.id}
-                      envelopeLabel={env.label}
-                      existing={note?.body ?? null}
-                      status={note?.status ?? null}
-                    />
-                  )}
-                </span>
-                {env.percent != null && <span className="serif num">{env.percent} %</span>}
-              </div>
-              {showNote && (
-                <div className="envnote">
-                  &ldquo;{note.body}&rdquo; — Estelle
-                  {note.status === "draft" && (
-                    <span className="tag int" style={{ marginLeft: 8 }}>{tc("draft")}</span>
-                  )}
-                </div>
-              )}
-            </div>
-          );
-        })}
       </div>
+      <ScopeStudio
+        weddingId={wedding.id}
+        total={total}
+        envelopes={(envelopes ?? []) as BudgetEnvelope[]}
+        committedByEnvelope={committedByEnvelope}
+        notes={(notes ?? []) as EnvelopeNote[]}
+        isTeam={session.isTeam}
+      />
       {session.isTeam && <MadameBudgetAdd weddingId={wedding.id} />}
     </>
   );
@@ -136,9 +142,9 @@ export default async function BudgetPage({
         <div className="card" style={{ marginBottom: 0 }}>
           <div className="eyebrow">{t("mgmt.paid")}</div>
           <div className="serif num" style={{ fontSize: 30 }}>{money(paid)}</div>
-          {total > 0 && (
+          {committed > 0 && (
             <span style={{ fontSize: 12, color: "var(--ink2)" }}>
-              {t("mgmt.ofBudget", { pct: Math.round((paid / total) * 100) })}
+              {t("mgmt.ofBudget", { pct: Math.round((paid / committed) * 100) })}
             </span>
           )}
         </div>
@@ -150,11 +156,21 @@ export default async function BudgetPage({
           </span>
         </div>
       </div>
-      <LinesTable
+
+      <MasterTable
         lines={allLines}
+        items={items}
         weddingId={wedding.id}
         isTeam={session.isTeam}
         nextByLine={nextByLine}
+      />
+
+      <PaymentsCalendar
+        payments={allPayments}
+        lineLabels={lineLabels}
+        weddingId={wedding.id}
+        lines={allLines}
+        isTeam={session.isTeam}
       />
 
       <div className="ia">
@@ -176,6 +192,10 @@ export default async function BudgetPage({
         <p style={{ marginTop: 8, fontSize: 13.5 }}>{t("docs.blurb")}</p>
         <BudgetDocDrop weddingId={wedding.id} />
       </div>
+
+      {session.isTeam && (
+        <RiskBuffer weddingId={wedding.id} risks={risks} available={risksAvailable} />
+      )}
 
       {session.isTeam && (
         <InternalNotes weddingId={wedding.id} latest={internalLatest.data?.body ?? null} />

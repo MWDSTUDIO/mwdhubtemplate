@@ -63,6 +63,30 @@ export function BoardSheet({
   const [backdrop, setBackdrop] = useState(data.backdropUrl);
   const [busySlot, setBusySlot] = useState<number | null>(null);
   const [composeOpen, setComposeOpen] = useState(false);
+  const stageRef = useRef<HTMLDivElement>(null);
+  const [fsHint, setFsHint] = useState(false);
+
+  // Full screen for presentations — the sheet alone, edge to edge.
+  function enterFullscreen() {
+    const el = stageRef.current;
+    if (!el?.requestFullscreen) return;
+    void el
+      .requestFullscreen()
+      .then(() => setFsHint(true))
+      .catch(() => {});
+  }
+  useEffect(() => {
+    if (!fsHint) return;
+    const timer = setTimeout(() => setFsHint(false), 5000);
+    const onChange = () => {
+      if (!document.fullscreenElement) setFsHint(false);
+    };
+    document.addEventListener("fullscreenchange", onChange);
+    return () => {
+      clearTimeout(timer);
+      document.removeEventListener("fullscreenchange", onChange);
+    };
+  }, [fsHint]);
   const [, startTransition] = useTransition();
 
   const eyebrowRef = useRef<HTMLDivElement>(null);
@@ -165,7 +189,12 @@ export function BoardSheet({
   );
 
   return (
-    <div className="bsheet-stage">
+    <div className="bsheet-stage" ref={stageRef}>
+      {fsHint && (
+        <div className="fs-hint" role="status">
+          {t("fullscreenHint")}
+        </div>
+      )}
       {isTeam && (
         <div className="bsheet-bar team-only" style={{ alignItems: "center" }}>
           {status && !target.sub && <StatusControl boardId={target.boardId} status={status} />}
@@ -185,6 +214,9 @@ export function BoardSheet({
           <button className="btn ghost sm" onClick={() => setComposeOpen((v) => !v)}>
             {t("letMadame")}
           </button>
+          <button className="btn ghost sm" onClick={enterFullscreen}>
+            {t("fullscreen")}
+          </button>
           <a className="btn sm" href={pdfHref}>
             {t("savePdf")}
           </a>
@@ -192,6 +224,9 @@ export function BoardSheet({
       )}
       {!isTeam && (
         <div className="bsheet-bar">
+          <button className="btn ghost sm" onClick={enterFullscreen}>
+            {t("fullscreen")}
+          </button>
           <a className="btn ghost sm" href={pdfHref}>
             {t("savePdf")}
           </a>

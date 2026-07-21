@@ -54,7 +54,10 @@ export async function POST(request: Request) {
         `"vendor_name": string|null, "vendor_category": string|null (Floral, Catering, Image…), ` +
         `"label": string (short display label), ` +
         `"total_amount": number|null, "currency": string|null, ` +
-        `"schedule": [{"label": string, "amount": number, "due_date": "yyyy-mm-dd"|null}], ` +
+        `"schedule": [{"label": string, "amount": number, "due_date": "yyyy-mm-dd"|null, "refundable": boolean (deposits/cautions marked refundable)}], ` +
+        `"items": [{"event": string|null (the wedding moment this line belongs to, e.g. "Rehearsal dinner — April 30"), ` +
+        `"label": string, "qty": number|null, "unit_price": number|null, "total_ht": number|null, "vat_pct": number|null, "total_ttc": number|null}] ` +
+        `(EVERY line of the quote, grouped by event — a florist or caterer quote may hold dozens; keep them all), ` +
         `"terms": string|null (one line), ` +
         `"summary": string (2–3 sentences to Estelle, in the house's voice, describing what you read and what you have prepared as drafts)}`
     });
@@ -147,16 +150,62 @@ export async function POST(request: Request) {
         lineId = newLine?.id ?? null;
       }
 
+      // The quote's own lines, grouped by event — they power the unfold
+      // and the client sheet, and the subtotal rolls up on its own.
+      if (lineId && Array.isArray(parsed.items) && parsed.items.length) {
+        const rows = parsed.items.map(
+          (
+            it: { event?: string; label?: string; qty?: number; unit_price?: number; total_ht?: number; vat_pct?: number; total_ttc?: number },
+            i: number
+          ) => ({
+            wedding_id: weddingId,
+            budget_line_id: lineId,
+            event_label: it.event ?? null,
+            label: it.label ?? "—",
+            qty: it.qty ?? null,
+            unit_price: it.unit_price ?? null,
+            total_ht: it.total_ht ?? null,
+            vat_pct: it.vat_pct ?? null,
+            total_ttc: it.total_ttc ?? null,
+            sort: i + 1
+          })
+        );
+        // Replace this document's previous reading rather than stacking.
+        await supabase.from("budget_line_items").delete().eq("budget_line_id", lineId);
+        const { error: itemsErr } = await supabase.from("budget_line_items").insert(rows);
+        // Before migration 0011 the table is absent — the line stands alone.
+        if (!itemsErr) {
+          const rollup = rows.reduce(
+            (s: number, r: { total_ttc: number | null; total_ht: number | null }) =>
+              s + Number(r.total_ttc ?? r.total_ht ?? 0),
+            0
+          );
+          if (rollup > 0) {
+            await supabase
+              .from("budget_lines")
+              .update({ committed: Math.round(rollup), committed_note: null, status: "draft" })
+              .eq("id", lineId);
+          }
+        }
+      }
+
       // A contract or invoice feeds the payment schedule — as data the
       // team reviews, never straight to the client.
       for (const instalment of parsed.schedule ?? []) {
-        await supabase.from("payments").insert({
+        const base = {
           wedding_id: weddingId,
           budget_line_id: lineId,
           label: `${parsed.label ?? file.name} — ${instalment.label}`,
           amount: instalment.amount,
           due_date: instalment.due_date
+        };
+        const { error: payErr } = await supabase.from("payments").insert({
+          ...base,
+          currency: parsed.currency ?? "EUR",
+          amount_eur: (parsed.currency ?? "EUR") === "EUR" ? instalment.amount : null,
+          refundable: Boolean(instalment.refundable)
         });
+        if (payErr) await supabase.from("payments").insert(base);
       }
     } else {
       const { error: docErr } = await supabase.from("documents").insert({
