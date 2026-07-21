@@ -472,7 +472,9 @@
       "dropTitle": "Confiar un documento a Madame",
       "autoDetect": "Dejar que Madame reconozca al proveedor",
       "choose": "Elegir un archivo",
-      "failed": "El documento no ha podido leerse en este momento."
+      "failed": "El documento no ha podido leerse en este momento.",
+      "removeDoc": "Retirar este documento",
+      "removeConfirm": "¿Retirar «{label}»? Sus pagos y cifras del presupuesto permanecen hasta que los retire donde viven."
     },
     "outreach": {
       "title": "Plantillas de correo por categoría",
@@ -746,6 +748,14 @@
       "addInstalment": "Añadir un vencimiento",
       "save": "Guardar en la cámara",
       "cancel": "Cancelar"
+    },
+    "register": {
+      "title": "El registro — una boda puede salir de él",
+      "blurb": "Solo la mano de Estelle, tras este código. Escriba el nombre de la pareja completo: nada aquí ocurre por accidente. Toda huella de la boda le sigue; las cuentas se retiran desde Accès.",
+      "typePlaceholder": "Escriba «{name}» para confirmar",
+      "typeHint": "El nombre de la pareja debe escribirse exactamente",
+      "remove": "Retirar esta boda",
+      "failed": "El nombre no coincide — nada fue retirado."
     }
   },
   "access": {

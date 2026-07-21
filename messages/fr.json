@@ -472,7 +472,9 @@
       "dropTitle": "Confier un document à Madame",
       "autoDetect": "Laisser Madame reconnaître le prestataire",
       "choose": "Choisir un fichier",
-      "failed": "Le document n'a pas pu être lu pour l'instant."
+      "failed": "Le document n'a pas pu être lu pour l'instant.",
+      "removeDoc": "Retirer ce document",
+      "removeConfirm": "Retirer « {label} » ? Ses versements et chiffres du budget demeurent jusqu'à ce que vous les retiriez là où ils vivent."
     },
     "outreach": {
       "title": "Modèles d'emails par catégorie",
@@ -746,6 +748,14 @@
       "addInstalment": "Ajouter une échéance",
       "save": "Garder au coffre",
       "cancel": "Annuler"
+    },
+    "register": {
+      "title": "Le registre — un mariage peut en sortir",
+      "blurb": "La main d'Estelle seule, derrière ce code. Tapez le nom du couple en entier : rien ici n'arrive par accident. Toute trace du mariage suit ; les comptes se retirent depuis Accès.",
+      "typePlaceholder": "Tapez « {name} » pour confirmer",
+      "typeHint": "Le nom du couple doit être tapé exactement",
+      "remove": "Retirer ce mariage",
+      "failed": "Le nom ne correspond pas — rien n'a été retiré."
     }
   },
   "access": {

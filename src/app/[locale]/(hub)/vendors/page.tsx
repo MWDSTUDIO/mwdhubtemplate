@@ -2,7 +2,7 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { requireHouseSession } from "@/lib/session";
 import { createClient } from "@/lib/supabase/server";
 import type { Vendor, VendorDocument } from "@/lib/types";
-import { AddVendor, OutreachComposer, StageSelect, VendorDocDrop } from "./vendors-client";
+import { AddVendor, DocChip, OutreachComposer, StageSelect, VendorDocDrop } from "./vendors-client";
 
 export default async function VendorsPage({
   params
@@ -63,11 +63,20 @@ export default async function VendorsPage({
                     {docsFor(vendor.id).length === 0 ? (
                       <span style={{ fontSize: 12, color: "var(--ink2)" }}>—</span>
                     ) : (
-                      docsFor(vendor.id).map((doc) => (
-                        <span key={doc.id} className="doc">
-                          {t(`docTypes.${doc.type}`)} <em>{doc.label}</em>
-                        </span>
-                      ))
+                      docsFor(vendor.id).map((doc) =>
+                        session.isTeam ? (
+                          <DocChip
+                            key={doc.id}
+                            docId={doc.id}
+                            typeLabel={t(`docTypes.${doc.type}`)}
+                            label={doc.label}
+                          />
+                        ) : (
+                          <span key={doc.id} className="doc">
+                            {t(`docTypes.${doc.type}`)} <em>{doc.label}</em>
+                          </span>
+                        )
+                      )
                     )}
                   </td>
                   {session.isTeam && (

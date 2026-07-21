@@ -177,3 +177,26 @@ export async function saveVendorClientNote(input: {
   revalidatePath("/budget");
   return { ok: !error, needsMigration: Boolean(error) };
 }
+
+/**
+ * A document entered twice can leave: the record goes, the filed
+ * original goes with it. The budget lines and instalments it fed are
+ * removed by hand where they live — nothing vanishes silently.
+ */
+export async function deleteVendorDocument(docId: string) {
+  await teamSession();
+  const supabase = await createClient();
+  const { data: doc } = await supabase
+    .from("vendor_documents")
+    .select("storage_path")
+    .eq("id", docId)
+    .maybeSingle();
+  if (doc?.storage_path) {
+    const [bucket, ...rest] = doc.storage_path.split("/");
+    await supabase.storage.from(bucket).remove([rest.join("/")]).catch(() => undefined);
+  }
+  await supabase.from("vendor_documents").delete().eq("id", docId);
+  revalidatePath("/vendors");
+  revalidatePath("/budget");
+  return { ok: true as const };
+}

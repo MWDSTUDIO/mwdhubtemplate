@@ -1,8 +1,10 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { cookies } from "next/headers";
 import bcrypt from "bcryptjs";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { createClient } from "@/lib/supabase/server";
 import { requireHouseSession } from "@/lib/session";
 
 /**
@@ -140,5 +142,34 @@ export async function setRoomCode(scope: "teamwork" | "vault", code: string) {
       .from("access_codes")
       .upsert({ scope: "vault", profile_id: session.userId, code_hash }, { onConflict: "scope,profile_id" });
   }
+  return { ok: true as const };
+}
+
+/**
+ * A wedding leaves the register — Estelle alone, behind the Vault's
+ * code: the principal's hand, never an inadvertent one. Every trace
+ * follows (boards, budget, guests, messages…) by the base's own
+ * cascade; client accounts remain and can be removed from Accès.
+ */
+export async function deleteWedding(weddingId: string, typedName: string) {
+  const session = await requireHouseSession();
+  if (!session.isPrincipal) throw new Error("principal only");
+  const supabase = await createClient();
+  const { data: wedding } = await supabase
+    .from("weddings")
+    .select("couple_display_name")
+    .eq("id", weddingId)
+    .single();
+  if (!wedding) return { ok: false as const };
+  if (typedName.trim().toLowerCase() !== wedding.couple_display_name.trim().toLowerCase()) {
+    return { ok: false as const, reason: "name" as const };
+  }
+  const { error } = await supabase.from("weddings").delete().eq("id", weddingId);
+  if (error) return { ok: false as const };
+  const cookieStore = await cookies();
+  if (cookieStore.get("mwd_wedding")?.value === weddingId) {
+    cookieStore.delete("mwd_wedding");
+  }
+  revalidatePath("/", "layout");
   return { ok: true as const };
 }

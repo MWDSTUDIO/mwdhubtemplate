@@ -102,6 +102,14 @@ export async function POST(request: Request) {
       if (parsed.doc_type === "contract") {
         await supabase.from("vendors").update({ stage: "contracted" }).eq("id", matchedVendor);
       }
+      // The same paper dropped again replaces its previous reading —
+      // never a duplicate stacking silently into the budget.
+      await supabase
+        .from("vendor_documents")
+        .delete()
+        .eq("vendor_id", matchedVendor)
+        .eq("type", parsed.doc_type)
+        .eq("label", parsed.label ?? file.name);
       await supabase.from("vendor_documents").insert({
         vendor_id: matchedVendor,
         wedding_id: weddingId,
@@ -190,7 +198,16 @@ export async function POST(request: Request) {
       }
 
       // A contract or invoice feeds the payment schedule — as data the
-      // team reviews, never straight to the client.
+      // team reviews, never straight to the client. A re-read replaces
+      // its own unpaid instalments instead of stacking them.
+      if (lineId && (parsed.schedule ?? []).length) {
+        await supabase
+          .from("payments")
+          .delete()
+          .eq("budget_line_id", lineId)
+          .is("paid_at", null)
+          .like("label", `${parsed.label ?? file.name} — %`);
+      }
       for (const instalment of parsed.schedule ?? []) {
         const base = {
           wedding_id: weddingId,

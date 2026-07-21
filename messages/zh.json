@@ -472,7 +472,9 @@
       "dropTitle": "将文件交与 Madame",
       "autoDetect": "由 Madame 辨认合作方",
       "choose": "选择文件",
-      "failed": "文件此刻未能读取。"
+      "failed": "文件此刻未能读取。",
+      "removeDoc": "撤下此文件",
+      "removeConfirm": "撤下「{label}」？其付款与预算数字仍在原处，须您亲手移除。"
     },
     "outreach": {
       "title": "分类邮件底稿",
@@ -746,6 +748,14 @@
       "addInstalment": "添一期",
       "save": "存入保险室",
       "cancel": "取消"
+    },
+    "register": {
+      "title": "名册——婚礼可从中移出",
+      "blurb": "唯有 Estelle 之手，且在此码之后。请完整输入新人姓名：此处无事出于意外。婚礼的一切痕迹随之而去；账户则从 Accès 移除。",
+      "typePlaceholder": "输入「{name}」以确认",
+      "typeHint": "须完全一致地输入新人姓名",
+      "remove": "移除这场婚礼",
+      "failed": "姓名不符——未作任何移除。"
     }
   },
   "access": {

@@ -4,6 +4,8 @@ import { useState, useTransition } from "react";
 import { useFormatter, useTranslations } from "next-intl";
 import type { VaultContract } from "@/lib/types";
 import { addVaultContract, draftReminder, toggleInstalmentPaid } from "@/app/actions/vault";
+import { deleteWedding } from "@/app/actions/access";
+import { useRouter } from "@/i18n/navigation";
 
 export function VaultContracts({
   contracts,
@@ -186,6 +188,77 @@ function AddContract({ weddingId }: { weddingId: string | null }) {
           {t("cancel")}
         </button>
       </div>
+    </div>
+  );
+}
+
+/**
+ * The register — a wedding may leave it, by Estelle's hand alone,
+ * behind the Vault's code. The couple's name must be typed in full:
+ * nothing here happens by accident.
+ */
+export function WeddingRegister({
+  weddings
+}: {
+  weddings: { id: string; couple_display_name: string }[];
+}) {
+  const t = useTranslations("vault.register");
+  const [selected, setSelected] = useState(weddings[0]?.id ?? "");
+  const [typed, setTyped] = useState("");
+  const [failed, setFailed] = useState(false);
+  const [pending, startTransition] = useTransition();
+  const router = useRouter();
+
+  const chosen = weddings.find((w) => w.id === selected);
+  const match =
+    chosen && typed.trim().toLowerCase() === chosen.couple_display_name.trim().toLowerCase();
+
+  if (weddings.length === 0) return null;
+  return (
+    <div className="card" style={{ borderColor: "var(--champagne)", marginTop: 18 }}>
+      <div className="eyebrow" style={{ marginBottom: 8 }}>{t("title")}</div>
+      <p style={{ fontSize: 13, color: "var(--ink2)", marginBottom: 12 }}>{t("blurb")}</p>
+      <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
+        <select
+          value={selected}
+          onChange={(e) => { setSelected(e.target.value); setTyped(""); setFailed(false); }}
+          style={{ padding: "10px 12px", border: "1px solid var(--line)", background: "#fff", minWidth: 220 }}
+          aria-label={t("title")}
+        >
+          {weddings.map((w) => (
+            <option key={w.id} value={w.id}>{w.couple_display_name}</option>
+          ))}
+        </select>
+        <input
+          value={typed}
+          onChange={(e) => { setTyped(e.target.value); setFailed(false); }}
+          placeholder={t("typePlaceholder", { name: chosen?.couple_display_name ?? "" })}
+          style={{ flex: "1 1 260px" }}
+          aria-label={t("typePlaceholder", { name: chosen?.couple_display_name ?? "" })}
+        />
+        <button
+          className="btn ghost"
+          disabled={pending || !match}
+          title={!match ? t("typeHint") : undefined}
+          onClick={() =>
+            startTransition(async () => {
+              const r = await deleteWedding(selected, typed);
+              if (r.ok) {
+                setTyped("");
+                router.push("/");
+                router.refresh();
+              } else {
+                setFailed(true);
+              }
+            })
+          }
+        >
+          {pending ? "…" : t("remove")}
+        </button>
+      </div>
+      {failed && (
+        <p role="alert" style={{ fontSize: 12.5, color: "var(--bronze)", marginTop: 8 }}>{t("failed")}</p>
+      )}
     </div>
   );
 }

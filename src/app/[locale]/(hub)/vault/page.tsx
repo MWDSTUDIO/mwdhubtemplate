@@ -4,7 +4,7 @@ import { requireHouseSession } from "@/lib/session";
 import { hasRoom } from "@/lib/rooms";
 import { createClient } from "@/lib/supabase/server";
 import { CodeGate } from "@/components/CodeGate";
-import { VaultContracts } from "./vault-client";
+import { VaultContracts, WeddingRegister } from "./vault-client";
 import type { VaultContract } from "@/lib/types";
 
 /**
@@ -52,6 +52,7 @@ export default async function VaultPage({
         contracts={(contracts ?? []) as VaultContract[]}
         weddingId={session.wedding?.id ?? null}
       />
+      <WeddingRegister weddings={session.weddings} />
       <p style={{ fontSize: 12.5, color: "var(--ink2)", marginTop: 12 }}>{t("agentNote")}</p>
     </section>
   );

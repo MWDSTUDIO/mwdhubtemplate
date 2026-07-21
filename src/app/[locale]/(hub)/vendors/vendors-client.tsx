@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import type { Vendor } from "@/lib/types";
-import { addVendor, draftOutreach, sendOutreach, setVendorStage } from "@/app/actions/vendors";
+import { addVendor, deleteVendorDocument, draftOutreach, sendOutreach, setVendorStage } from "@/app/actions/vendors";
 import { Dictate } from "@/components/Dictate";
 
 const STAGES = ["scouted", "contacted", "proposal", "contracted"] as const;
@@ -236,5 +236,34 @@ export function OutreachComposer({ weddingId, vendors }: { weddingId: string; ve
         </div>
       )}
     </div>
+  );
+}
+
+/** A document chip the house can withdraw — duplicates leave politely. */
+export function DocChip({ docId, typeLabel, label }: { docId: string; typeLabel: string; label: string }) {
+  const t = useTranslations("vendors.docs");
+  const [pending, startTransition] = useTransition();
+  const router = useRouter();
+  return (
+    <span className="doc" style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+      {typeLabel} <em>{label}</em>
+      <button
+        type="button"
+        className="team-only"
+        title={t("removeDoc")}
+        aria-label={t("removeDoc")}
+        disabled={pending}
+        style={{ border: "none", background: "none", cursor: "pointer", color: "var(--bronze)", fontSize: 13, lineHeight: 1, padding: "0 2px" }}
+        onClick={() => {
+          if (!confirm(t("removeConfirm", { label }))) return;
+          startTransition(async () => {
+            await deleteVendorDocument(docId);
+            router.refresh();
+          });
+        }}
+      >
+        ×
+      </button>
+    </span>
   );
 }

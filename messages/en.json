@@ -472,7 +472,9 @@
       "dropTitle": "Hand a document to Madame",
       "autoDetect": "Let Madame match the vendor",
       "choose": "Choose a file",
-      "failed": "The document could not be read just now."
+      "failed": "The document could not be read just now.",
+      "removeDoc": "Withdraw this document",
+      "removeConfirm": "Withdraw “{label}”? Its instalments and budget figures stay until you remove them where they live."
     },
     "outreach": {
       "title": "Email templates by category",
@@ -746,6 +748,14 @@
       "addInstalment": "Add an instalment",
       "save": "Keep in the vault",
       "cancel": "Cancel"
+    },
+    "register": {
+      "title": "The register — a wedding may leave it",
+      "blurb": "Estelle's hand alone, behind this code. Type the couple's name in full: nothing here happens by accident. Every trace of the wedding follows; accounts are removed from Accès.",
+      "typePlaceholder": "Type “{name}” to confirm",
+      "typeHint": "The couple's name must be typed exactly",
+      "remove": "Remove this wedding",
+      "failed": "The name does not match — nothing was removed."
     }
   },
   "access": {
