@@ -17,7 +17,7 @@ import {
   BudgetDocDrop,
   InternalNotes
 } from "./budget-client";
-import { ScopeStudio } from "./scope-client";
+import { ScopeStudio, ScopeAnalysisDrop } from "./scope-client";
 import { MasterTable, PaymentsCalendar, RiskBuffer } from "./mgmt-client";
 
 export default async function BudgetPage({
@@ -119,6 +119,7 @@ export default async function BudgetPage({
         notes={(notes ?? []) as EnvelopeNote[]}
         isTeam={session.isTeam}
       />
+      {session.isTeam && <ScopeAnalysisDrop weddingId={wedding.id} />}
       {session.isTeam && <MadameBudgetAdd weddingId={wedding.id} />}
     </>
   );

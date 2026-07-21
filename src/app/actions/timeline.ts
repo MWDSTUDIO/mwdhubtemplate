@@ -159,3 +159,48 @@ export async function saveMonthlyComposition(input: {
   revalidatePath("/timeline");
   return { ok: true as const };
 }
+
+/**
+ * One preview, held by hand: Estelle rewrites it, keeps it as draft,
+ * publishes it, or withdraws it — month by month, never all at once.
+ */
+export async function savePreview(input: {
+  weddingId: string;
+  month: string; // yyyy-mm
+  text: string;
+  publish: boolean;
+}) {
+  await teamSession();
+  const supabase = await createClient();
+  await supabase.from("monthly_notes").upsert(
+    {
+      wedding_id: input.weddingId,
+      month: `${input.month}-01`,
+      preview_text: input.text.trim(),
+      status: input.publish ? "published" : "draft"
+    },
+    { onConflict: "wedding_id,month" }
+  );
+  revalidatePath("/timeline");
+  return { ok: true as const };
+}
+
+export async function removePreview(weddingId: string, month: string) {
+  await teamSession();
+  const supabase = await createClient();
+  const { data: row } = await supabase
+    .from("monthly_notes")
+    .select("id, composed_text")
+    .eq("wedding_id", weddingId)
+    .eq("month", `${month}-01`)
+    .maybeSingle();
+  if (!row) return { ok: true as const };
+  if (row.composed_text) {
+    // The month keeps its note; only the preview withdraws.
+    await supabase.from("monthly_notes").update({ preview_text: null }).eq("id", row.id);
+  } else {
+    await supabase.from("monthly_notes").delete().eq("id", row.id);
+  }
+  revalidatePath("/timeline");
+  return { ok: true as const };
+}

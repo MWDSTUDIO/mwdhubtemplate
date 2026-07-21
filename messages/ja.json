@@ -160,7 +160,10 @@
       "letAgentWrite": "エージェントに綴らせる",
       "keepDraft": "下書きのまま",
       "publish": "お客様へ公開",
-      "hint": "題材はあなたから。エージェントが今月の便りと、続く三月の見通しを当館の声で仕立てます。あなたのお言葉なくして、お客様には届きません。"
+      "hint": "題材はあなたから。エージェントが今月の便りと、続く三月の見通しを当館の声で仕立てます。あなたのお言葉なくして、お客様には届きません。",
+      "dropPreview": "{month} の見通しを外す",
+      "unpublish": "下書きへ戻す",
+      "withdraw": "取り下げる"
     },
     "attentions": {
       "title": "お預けした事柄",
@@ -335,6 +338,27 @@
         "refinedLabel": "当館の声——お客さまの言語",
         "saveDraft": "下書きで保存",
         "publish": "公開する"
+      },
+      "analysis": {
+        "title": "資料をスコープに照らす",
+        "internalTag": "内部",
+        "blurb": "予算分析・契約書・お見積りをスコープにお預けください。Madameが数字と言葉の両面で封筒と照らし合わせます——お二人へのメモはあなた様のお言葉を待ち、注意点と当家の工夫はあなた様おひとりのものです。",
+        "choose": "資料を読み込む",
+        "failed": "ただいま資料をお読みできませんでした。",
+        "colEnvelope": "封筒",
+        "colAllocated": "配分",
+        "colDocument": "資料の額",
+        "colVariance": "差異",
+        "flagOver": "超過",
+        "flagTight": "余裕薄",
+        "flagEven": "釣り合い",
+        "flagUnder": "余裕あり",
+        "clientNoteTitle": "お二人へのメモ——お言葉を待って",
+        "publishNote": "当家の分析として公開する",
+        "publishedTag": "公開済み",
+        "internalTitle": "注意点と当家の工夫",
+        "neverVisible": "お客様には表示されません",
+        "filedNote": "内部の予算メモに収めました。"
       }
     },
     "master": {

@@ -160,7 +160,10 @@
       "letAgentWrite": "Laisser l'agent l'écrire",
       "keepDraft": "Garder en brouillon",
       "publish": "Publier au client",
-      "hint": "Vous donnez les sujets ; l'agent compose la note du mois et les aperçus des trois mois suivants, dans la voix de la maison. Rien n'atteint le client avant votre mot."
+      "hint": "Vous donnez les sujets ; l'agent compose la note du mois et les aperçus des trois mois suivants, dans la voix de la maison. Rien n'atteint le client avant votre mot.",
+      "dropPreview": "Écarter l'aperçu de {month}",
+      "unpublish": "Repasser en brouillon",
+      "withdraw": "Retirer"
     },
     "attentions": {
       "title": "Vos attentions",
@@ -335,6 +338,27 @@
         "refinedLabel": "La voix de la maison — langue du client",
         "saveDraft": "Garder en brouillon",
         "publish": "Publier"
+      },
+      "analysis": {
+        "title": "Confronter une étude au scope",
+        "internalTag": "Interne",
+        "blurb": "Confiez au scope une analyse budgétaire, un contrat ou un devis — Madame la confronte à vos enveloppes, en chiffres et en mots : une note pour le couple qui attend votre mot, et les avertissements et astuces de la maison gardés pour vous seule.",
+        "choose": "Lire un document",
+        "failed": "Le document n'a pu être lu à l'instant.",
+        "colEnvelope": "Enveloppe",
+        "colAllocated": "Alloué",
+        "colDocument": "Dans le document",
+        "colVariance": "Écart",
+        "flagOver": "Dépassé",
+        "flagTight": "Juste",
+        "flagEven": "Au pas",
+        "flagUnder": "Qui respire",
+        "clientNoteTitle": "La note pour le couple — à votre mot",
+        "publishNote": "Publier comme analyse de la maison",
+        "publishedTag": "Publiée",
+        "internalTitle": "Avertissements & astuces de la maison",
+        "neverVisible": "Jamais visible des clients",
+        "filedNote": "Classée avec vos notes budgétaires internes."
       }
     },
     "master": {

@@ -160,7 +160,10 @@
       "letAgentWrite": "交由管家撰写",
       "keepDraft": "存为草稿",
       "publish": "发布予宾客",
-      "hint": "您给出主题；管家以本馆笔调写就本月小记与随后三个月的前瞻。未经您首肯，片语不达宾客。"
+      "hint": "您给出主题；管家以本馆笔调写就本月小记与随后三个月的前瞻。未经您首肯，片语不达宾客。",
+      "dropPreview": "舍弃{month}的前瞻",
+      "unpublish": "退回草稿",
+      "withdraw": "撤下"
     },
     "attentions": {
       "title": "您的托付",
@@ -335,6 +338,27 @@
         "refinedLabel": "本馆笔调——宾客语言",
         "saveDraft": "存为草稿",
         "publish": "发布"
+      },
+      "analysis": {
+        "title": "以文件对照预算框架",
+        "internalTag": "内部",
+        "blurb": "将一份预算分析、合同或报价交给预算框架——Madame 会以数字与文字将其与您的信封逐一对照:一段等待您首肯的致新人短笺,以及只留给您的提醒与本家心得。",
+        "choose": "读取文件",
+        "failed": "此文件暂时未能读取。",
+        "colEnvelope": "信封",
+        "colAllocated": "已分配",
+        "colDocument": "文件所载",
+        "colVariance": "差额",
+        "flagOver": "超出",
+        "flagTight": "偏紧",
+        "flagEven": "相称",
+        "flagUnder": "留有余地",
+        "clientNoteTitle": "致新人的短笺——待您首肯",
+        "publishNote": "作为本家分析发布",
+        "publishedTag": "已发布",
+        "internalTitle": "提醒与本家心得",
+        "neverVisible": "客户永不可见",
+        "filedNote": "已归入您的内部预算备注。"
       }
     },
     "master": {

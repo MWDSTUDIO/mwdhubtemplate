@@ -160,7 +160,10 @@
       "letAgentWrite": "Dejar que el agente lo escriba",
       "keepDraft": "Guardar como borrador",
       "publish": "Publicar al cliente",
-      "hint": "Usted da los temas; el agente compone la nota del mes y los avances de los tres meses siguientes, con la voz de la casa. Nada llega al cliente antes de su palabra."
+      "hint": "Usted da los temas; el agente compone la nota del mes y los avances de los tres meses siguientes, con la voz de la casa. Nada llega al cliente antes de su palabra.",
+      "dropPreview": "Descartar el avance de {month}",
+      "unpublish": "Volver a borrador",
+      "withdraw": "Retirar"
     },
     "attentions": {
       "title": "Sus atenciones",
@@ -335,6 +338,27 @@
         "refinedLabel": "La voz de la casa — idioma del cliente",
         "saveDraft": "Guardar como borrador",
         "publish": "Publicar"
+      },
+      "analysis": {
+        "title": "Contrastar un estudio con el scope",
+        "internalTag": "Interno",
+        "blurb": "Confíe al scope un análisis presupuestario, un contrato o un presupuesto — Madame lo contrasta con sus sobres, en cifras y en palabras: una nota para la pareja que aguarda su palabra, y las advertencias y astucias de la casa reservadas solo para usted.",
+        "choose": "Leer un documento",
+        "failed": "El documento no pudo leerse en este momento.",
+        "colEnvelope": "Sobre",
+        "colAllocated": "Asignado",
+        "colDocument": "En el documento",
+        "colVariance": "Diferencia",
+        "flagOver": "Excedido",
+        "flagTight": "Justo",
+        "flagEven": "Al paso",
+        "flagUnder": "Con aire",
+        "clientNoteTitle": "La nota para la pareja — a su palabra",
+        "publishNote": "Publicar como análisis de la casa",
+        "publishedTag": "Publicada",
+        "internalTitle": "Advertencias y astucias de la casa",
+        "neverVisible": "Nunca visible para los clientes",
+        "filedNote": "Guardada con sus notas presupuestarias internas."
       }
     },
     "master": {

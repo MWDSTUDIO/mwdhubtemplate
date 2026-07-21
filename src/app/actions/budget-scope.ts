@@ -205,3 +205,18 @@ export async function deleteRisk(id: string) {
   revalidatePath("/budget");
   return { ok: true as const };
 }
+
+/**
+ * Estelle publishes the comparative note: it becomes the house's
+ * analysis the couple reads on their budget page.
+ */
+export async function publishScopeAnalysis(weddingId: string, text: string) {
+  await teamSession();
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("weddings")
+    .update({ budget_analysis: text.trim() })
+    .eq("id", weddingId);
+  revalidatePath("/budget");
+  return { ok: !error };
+}

@@ -7,6 +7,7 @@ import type { BudgetEnvelope, EnvelopeNote } from "@/lib/types";
 import type { EnvelopeDraft } from "@/lib/templates";
 import {
   adoptHouseEnvelopes,
+  publishScopeAnalysis,
   refineEnvelopeNote,
   saveEnvelopeNoteV2,
   saveScope,
@@ -465,6 +466,161 @@ function ScopeNote({
         </button>
         <button className="btn ghost sm" onClick={() => setOpen(false)}>{tc("cancel")}</button>
       </div>
+    </div>
+  );
+}
+
+interface AnalysisRow {
+  envelope: string;
+  allocated: number | null;
+  in_document: number | null;
+  variance: number | null;
+  flag: "over" | "tight" | "even" | "under" | null;
+}
+
+/**
+ * The scope reads a study: a budget analysis, a contract, a proposal —
+ * Madame sets it against the envelopes, in figures and in words.
+ * The client note publishes at Estelle's word; warnings and the
+ * house's tricks stay hers, filed with her internal notes.
+ */
+export function ScopeAnalysisDrop({ weddingId }: { weddingId: string }) {
+  const t = useTranslations("budget.scopeStudio.analysis");
+  const format = useFormatter();
+  const router = useRouter();
+  const [busy, setBusy] = useState(false);
+  const [rows, setRows] = useState<AnalysisRow[]>([]);
+  const [clientNote, setClientNote] = useState("");
+  const [warnings, setWarnings] = useState<string[]>([]);
+  const [tips, setTips] = useState<string[]>([]);
+  const [published, setPublished] = useState(false);
+  const [pending, startTransition] = useTransition();
+
+  const money = (n: number | null | undefined) =>
+    n == null ? "—" : format.number(n, { style: "currency", currency: "EUR", maximumFractionDigits: 0 });
+
+  async function handle(file: File) {
+    if (busy) return;
+    setBusy(true);
+    setRows([]);
+    setClientNote("");
+    setWarnings([]);
+    setTips([]);
+    setPublished(false);
+    try {
+      const form = new FormData();
+      form.append("weddingId", weddingId);
+      form.append("file", file);
+      const r = await fetch("/api/agents/scope-analysis", { method: "POST", body: form });
+      const d = await r.json();
+      setRows(Array.isArray(d.rows) ? d.rows : []);
+      setClientNote(d.clientNote ?? "");
+      setWarnings(Array.isArray(d.warnings) ? d.warnings : []);
+      setTips(Array.isArray(d.tips) ? d.tips : []);
+    } catch {
+      setClientNote("");
+      setWarnings([t("failed")]);
+    }
+    setBusy(false);
+  }
+
+  const flagTag = (f: AnalysisRow["flag"]) =>
+    f === "over" ? (
+      <span className="tag alert" style={{ borderColor: "var(--bronze)", color: "var(--bronze)" }}>{t("flagOver")}</span>
+    ) : f === "tight" ? (
+      <span className="tag wait">{t("flagTight")}</span>
+    ) : f === "under" ? (
+      <span className="tag">{t("flagUnder")}</span>
+    ) : f === "even" ? (
+      <span className="tag ok">{t("flagEven")}</span>
+    ) : null;
+
+  return (
+    <div className="ia team-only" style={{ marginTop: 14 }}>
+      <div className="eyebrow">
+        {t("title")} <span className="tag int">{t("internalTag")}</span>
+      </div>
+      <p style={{ marginTop: 8, fontSize: 13.5 }}>{t("blurb")}</p>
+      <label className="btn ghost" style={{ cursor: "pointer", marginTop: 10, display: "inline-block" }}>
+        {busy ? "…" : t("choose")}
+        <input
+          type="file"
+          hidden
+          accept=".pdf,.png,.jpg,.jpeg"
+          onChange={(e) => {
+            const f = e.target.files?.[0];
+            if (f) void handle(f);
+            e.target.value = "";
+          }}
+        />
+      </label>
+
+      {rows.length > 0 && (
+        <div style={{ overflowX: "auto", marginTop: 14 }}>
+          <table className="sheet-table" style={{ background: "#fff", fontSize: 13 }}>
+            <thead>
+              <tr>
+                <th>{t("colEnvelope")}</th>
+                <th className="num">{t("colAllocated")}</th>
+                <th className="num">{t("colDocument")}</th>
+                <th className="num">{t("colVariance")}</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((r, i) => (
+                <tr key={i}>
+                  <td>{r.envelope}</td>
+                  <td className="num">{money(r.allocated)}</td>
+                  <td className="num">{money(r.in_document)}</td>
+                  <td className="num" style={{ color: (r.variance ?? 0) > 0 ? "var(--bronze)" : undefined }}>
+                    {r.variance != null ? `${r.variance > 0 ? "+" : ""}${money(r.variance)}` : "—"}
+                  </td>
+                  <td>{flagTag(r.flag)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {clientNote && (
+        <div style={{ marginTop: 14, background: "#fff", border: "1px solid var(--line)", padding: "14px 16px" }}>
+          <div className="eyebrow" style={{ marginBottom: 6 }}>{t("clientNoteTitle")}</div>
+          <p className="serif" style={{ fontStyle: "italic", fontSize: 16, lineHeight: 1.6 }}>
+            &ldquo;{clientNote}&rdquo; — Estelle
+          </p>
+          <button
+            className="btn sm"
+            style={{ marginTop: 10 }}
+            disabled={pending || published}
+            onClick={() =>
+              startTransition(async () => {
+                await publishScopeAnalysis(weddingId, clientNote);
+                setPublished(true);
+                router.refresh();
+              })
+            }
+          >
+            {published ? t("publishedTag") : t("publishNote")}
+          </button>
+        </div>
+      )}
+
+      {(warnings.length > 0 || tips.length > 0) && (
+        <div style={{ marginTop: 14 }}>
+          <div className="eyebrow" style={{ marginBottom: 6 }}>
+            {t("internalTitle")} <span className="tag int">{t("neverVisible")}</span>
+          </div>
+          {warnings.map((w, i) => (
+            <p key={`w${i}`} style={{ fontSize: 13, color: "var(--bronze)", marginTop: 4 }}>⚠ {w}</p>
+          ))}
+          {tips.map((x, i) => (
+            <p key={`t${i}`} style={{ fontSize: 13, color: "var(--ink2)", marginTop: 4 }}>— {x}</p>
+          ))}
+          <p style={{ fontSize: 11.5, color: "var(--ink2)", marginTop: 8 }}>{t("filedNote")}</p>
+        </div>
+      )}
     </div>
   );
 }

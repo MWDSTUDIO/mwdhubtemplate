@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { gate, agentError } from "../_shared";
-import { runAgent } from "@/lib/agents/run";
+import { runAgentFull } from "@/lib/agents/run";
 
 const READABLE = new Set([
   "application/pdf",
@@ -38,46 +38,104 @@ export async function POST(request: Request) {
       .select("id, name, category")
       .eq("wedding_id", weddingId);
 
-    const raw = await runAgent({
-      weddingId,
-      agent: "budget",
-      maxTokens: 1200,
-      documents: mediaType ? [{ mediaType, base64: buffer.toString("base64") }] : undefined,
-      prompt:
-        `${mediaType ? "Read the attached document." : `A file named "${file.name}" was dropped (its format cannot be read inline).`}\n` +
-        `Known vendors: ${JSON.stringify(vendors)}.\n` +
-        `Estelle handed this document to the house's budget herself: if it is a vendor proposal, contract or invoice — ` +
-        `even a sample drawn from another wedding — classify it as such and extract its vendor, amounts and schedule, ` +
-        `so the drafts await her word. Only classify as "other" what is genuinely not vendor paper.\n` +
-        `Reply with STRICT JSON only: {"doc_type": "proposal"|"contract"|"invoice"|"guest_list"|"other", ` +
-        `"vendor_id": string|null (an existing vendor id if the document belongs to one), ` +
-        `"vendor_name": string|null, "vendor_category": string|null (Floral, Catering, Image…), ` +
-        `"label": string (short display label), ` +
-        `"total_amount": number|null, "currency": string|null, ` +
-        `"schedule": [{"label": string, "amount": number, "due_date": "yyyy-mm-dd"|null, "refundable": boolean (deposits/cautions marked refundable)}], ` +
-        `"items": [{"event": string|null (the wedding moment this line belongs to, e.g. "Rehearsal dinner — April 30"), ` +
-        `"label": string, "qty": number|null, "unit_price": number|null, "total_ht": number|null, "vat_pct": number|null, "total_ttc": number|null}] ` +
-        `(EVERY line of the quote, grouped by event — a florist or caterer quote may hold dozens; keep them all), ` +
-        `"terms": string|null (one line), ` +
-        `"summary": string (2–3 sentences to Estelle, in the house's voice, describing what you read and what you have prepared as drafts)}`
-    });
-
-    const parsed = JSON.parse(raw.replace(/^```(?:json)?\s*|\s*```$/g, ""));
-
-    // Store the original in the internal bucket.
+    // Store the original in the internal bucket first — whatever the
+    // reading yields, the paper itself is never lost.
     const path = `${weddingId}/${Date.now()}-${file.name}`;
     await supabase.storage.from("internal").upload(path, buffer, {
       contentType: file.type || "application/octet-stream"
     });
 
+    const intro = mediaType
+      ? "Read the attached document."
+      : `A file named "${file.name}" was dropped (its format cannot be read inline).`;
+    const baseFields =
+      `Reply with STRICT JSON only — no prose before or after: {"doc_type": "proposal"|"contract"|"invoice"|"guest_list"|"other", ` +
+      `"vendor_id": string|null (an existing vendor id if the document belongs to one), ` +
+      `"vendor_name": string|null, "vendor_category": string|null (Floral, Catering, Image…), ` +
+      `"label": string (short display label), ` +
+      `"total_amount": number|null, "currency": string|null, ` +
+      `"schedule": [{"label": string, "amount": number, "due_date": "yyyy-mm-dd"|null, "refundable": boolean (deposits/cautions marked refundable)}], `;
+    const preamble =
+      `${intro}\n` +
+      `Known vendors: ${JSON.stringify(vendors)}.\n` +
+      `Estelle handed this document to the house's budget herself: if it is a vendor proposal, contract or invoice — ` +
+      `even a sample drawn from another wedding — classify it as such and extract its vendor, amounts and schedule, ` +
+      `so the drafts await her word. Only classify as "other" what is genuinely not vendor paper.\n`;
+    const fullPrompt =
+      preamble +
+      baseFields +
+      `"items": [{"event": string|null (the wedding moment this line belongs to, e.g. "Rehearsal dinner — April 30"), ` +
+      `"label": string, "qty": number|null, "unit_price": number|null, "total_ht": number|null, "vat_pct": number|null, "total_ttc": number|null}] ` +
+      `(EVERY priced line of the quote, grouped by event — a florist or caterer quote may hold dozens; keep them all, ` +
+      `with labels kept short; legal boilerplate is not a line; past 40 lines, fold the smallest into grouped lines so the set stays under 40), ` +
+      `"terms": string|null (one line), ` +
+      `"summary": string (2–3 sentences to Estelle, in the house's voice, describing what you read and what you have prepared as drafts)}`;
+    // A long contract read in one breath needs room — a truncated JSON
+    // is exactly the "could not be read" failure this replaces.
+    const slimPrompt =
+      preamble +
+      baseFields +
+      `"items": [] (leave empty this time), ` +
+      `"terms": string|null (one line), ` +
+      `"summary": string (2–3 sentences to Estelle, in the house's voice)}`;
+
+    const documents = mediaType ? [{ mediaType, base64: buffer.toString("base64") }] : undefined;
+    let parsed: Record<string, unknown> & {
+      doc_type?: string; vendor_id?: string | null; vendor_name?: string | null;
+      vendor_category?: string | null; label?: string; total_amount?: number | null;
+      currency?: string | null; terms?: string | null; summary?: string;
+      schedule?: { label: string; amount: number; due_date: string | null; refundable?: boolean }[];
+      items?: { event?: string; label?: string; qty?: number; unit_price?: number; total_ht?: number; vat_pct?: number; total_ttc?: number }[];
+    } | null = null;
+    try {
+      const first = await runAgentFull({
+        weddingId, agent: "budget", maxTokens: 4000, documents, prompt: fullPrompt
+      });
+      if (first.stopReason === "max_tokens") throw new Error("truncated");
+      parsed = JSON.parse(first.text.replace(/^```(?:json)?\s*|\s*```$/g, ""));
+    } catch (err) {
+      console.error("document read, full pass:", err);
+      // The full reading resisted (truncation or malformed JSON): read
+      // once more without the line detail, so the vendor, the amount and
+      // the schedule still land. Estelle can re-drop for the sub-lines.
+      try {
+        const second = await runAgentFull({
+          weddingId, agent: "budget", maxTokens: 1500, documents, prompt: slimPrompt
+        });
+        parsed = JSON.parse(second.text.replace(/^```(?:json)?\s*|\s*```$/g, ""));
+      } catch (err2) {
+        console.error("document read, slim pass:", err2);
+        parsed = null;
+      }
+    }
+
+    if (!parsed) {
+      // Even unread, the paper is filed where the team can find it.
+      const { error: docErr } = await supabase.from("documents").insert({
+        wedding_id: weddingId,
+        label: file.name,
+        internal: true,
+        storage_path: `internal/${path}`
+      });
+      if (docErr) {
+        await supabase.from("documents").insert({ wedding_id: weddingId, label: file.name, internal: true });
+      }
+      return NextResponse.json({
+        text:
+          "The document is filed in the register, but its reading resisted just now — " +
+          "it may be long or densely set. Drop it once more, or tell Madame what it holds and she will enter it by hand."
+      });
+    }
+
     // Resolve the vendor — by explicit choice, by the agent's match,
     // by name, or by creating it on the spot: a dropped contract must
     // land in the budget even for a wedding whose file is brand new.
+    const docType = parsed.doc_type ?? "other";
     let matchedVendor: string | null = vendorId ?? parsed.vendor_id ?? null;
     if (
       !matchedVendor &&
       parsed.vendor_name &&
-      ["proposal", "contract", "invoice"].includes(parsed.doc_type)
+      ["proposal", "contract", "invoice"].includes(docType)
     ) {
       const wanted = String(parsed.vendor_name).trim().toLowerCase();
       const found = (vendors ?? []).find((v) => v.name.trim().toLowerCase() === wanted);
@@ -90,7 +148,7 @@ export async function POST(request: Request) {
             wedding_id: weddingId,
             name: String(parsed.vendor_name).trim(),
             category: parsed.vendor_category ?? "—",
-            stage: parsed.doc_type === "proposal" ? "proposal" : "contracted"
+            stage: docType === "proposal" ? "proposal" : "contracted"
           })
           .select("id")
           .single();
@@ -98,8 +156,8 @@ export async function POST(request: Request) {
       }
     }
 
-    if (["proposal", "contract", "invoice"].includes(parsed.doc_type) && matchedVendor) {
-      if (parsed.doc_type === "contract") {
+    if (["proposal", "contract", "invoice"].includes(docType) && matchedVendor) {
+      if (docType === "contract") {
         await supabase.from("vendors").update({ stage: "contracted" }).eq("id", matchedVendor);
       }
       // The same paper dropped again replaces its previous reading —
@@ -108,12 +166,12 @@ export async function POST(request: Request) {
         .from("vendor_documents")
         .delete()
         .eq("vendor_id", matchedVendor)
-        .eq("type", parsed.doc_type)
+        .eq("type", docType)
         .eq("label", parsed.label ?? file.name);
       await supabase.from("vendor_documents").insert({
         vendor_id: matchedVendor,
         wedding_id: weddingId,
-        type: parsed.doc_type,
+        type: docType,
         label: parsed.label ?? file.name,
         storage_path: `internal/${path}`,
         extraction: parsed,
@@ -243,7 +301,7 @@ export async function POST(request: Request) {
 
     // State plainly what was implanted — the narration must match the act.
     let text = parsed.summary ?? "Read and filed.";
-    if (["proposal", "contract", "invoice"].includes(parsed.doc_type) && matchedVendor) {
+    if (["proposal", "contract", "invoice"].includes(docType) && matchedVendor) {
       text += parsed.total_amount
         ? ` — The vendor and a draft budget line of ${parsed.total_amount} are in place below; publish when you are ready.`
         : ` — The vendor record is in place.`;

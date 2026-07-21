@@ -97,6 +97,14 @@ export async function agentContext(weddingId: string): Promise<string> {
 }
 
 export async function runAgent(input: AgentInput): Promise<string> {
+  const { text } = await runAgentFull(input);
+  return text;
+}
+
+/** Same run, with the stop reason — callers parsing JSON need to know a truncation from a bad answer. */
+export async function runAgentFull(
+  input: AgentInput
+): Promise<{ text: string; stopReason: string | null }> {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) throw new Error("ANTHROPIC_API_KEY is not configured");
   const anthropic = new Anthropic({ apiKey });
@@ -138,9 +146,10 @@ export async function runAgent(input: AgentInput): Promise<string> {
     messages: [{ role: "user", content }]
   });
 
-  return response.content
+  const text = response.content
     .filter((b): b is Anthropic.TextBlock => b.type === "text")
     .map((b) => b.text)
     .join("")
     .trim();
+  return { text, stopReason: response.stop_reason ?? null };
 }

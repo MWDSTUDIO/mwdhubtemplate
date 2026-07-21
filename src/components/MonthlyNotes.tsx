@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import { useFormatter, useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import type { MonthlyNote } from "@/lib/types";
-import { saveMonthlyComposition } from "@/app/actions/timeline";
+import { removePreview, saveMonthlyComposition, savePreview } from "@/app/actions/timeline";
 import { Dictate } from "@/components/Dictate";
 
 /**
@@ -97,12 +97,16 @@ export function MonthlyNotes({
       )}
       {previews.length > 0 && (
         <div className="grid3" style={{ marginTop: 16 }}>
-          {previews.map((p) => (
-            <div key={p.id} style={{ border: "1px solid var(--line)", padding: "14px 16px" }}>
-              <div className="eyebrow">{monthName(p.month)}</div>
-              <p style={{ fontSize: 12.5, marginTop: 6, color: "var(--ink2)" }}>{p.preview_text}</p>
-            </div>
-          ))}
+          {previews.map((p) =>
+            isTeam ? (
+              <PreviewCard key={p.id} weddingId={weddingId} note={p} monthLabel={monthName(p.month)} />
+            ) : (
+              <div key={p.id} style={{ border: "1px solid var(--line)", padding: "14px 16px" }}>
+                <div className="eyebrow">{monthName(p.month)}</div>
+                <p style={{ fontSize: 12.5, marginTop: 6, color: "var(--ink2)" }}>{p.preview_text}</p>
+              </div>
+            )
+          )}
         </div>
       )}
 
@@ -130,10 +134,29 @@ export function MonthlyNotes({
               </p>
               {draftPreviews.length > 0 && (
                 <div className="grid3" style={{ marginTop: 12 }}>
-                  {draftPreviews.map((p) => (
+                  {draftPreviews.map((p, i) => (
                     <div key={p.month} style={{ border: "1px solid var(--line)", padding: "12px 14px", background: "var(--parchment)" }}>
-                      <div className="eyebrow">{monthName(`${p.month}-01`)}</div>
-                      <p style={{ fontSize: 12.5, marginTop: 6, color: "var(--ink2)" }}>{p.text}</p>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+                        <div className="eyebrow">{monthName(`${p.month}-01`)}</div>
+                        <button
+                          className="addnote"
+                          aria-label={t("dropPreview", { month: monthName(`${p.month}-01`) })}
+                          onClick={() => setDraftPreviews((list) => list.filter((_, j) => j !== i))}
+                        >
+                          ×
+                        </button>
+                      </div>
+                      <textarea
+                        rows={2}
+                        value={p.text}
+                        aria-label={monthName(`${p.month}-01`)}
+                        onChange={(e) =>
+                          setDraftPreviews((list) =>
+                            list.map((x, j) => (j === i ? { ...x, text: e.target.value } : x))
+                          )
+                        }
+                        style={{ width: "100%", marginTop: 6, fontSize: 12.5, padding: "6px 8px", border: "1px solid var(--line)", background: "#fff" }}
+                      />
                     </div>
                   ))}
                 </div>
@@ -151,6 +174,104 @@ export function MonthlyNotes({
           <p style={{ fontSize: 12, color: "var(--ink2)", marginTop: 8 }}>{t("hint")}</p>
         </div>
       )}
+    </div>
+  );
+}
+
+/**
+ * One preview, in the team's hand after the fact: rewrite it, keep it
+ * as draft, publish it alone, or withdraw it — month by month.
+ */
+function PreviewCard({
+  weddingId,
+  note,
+  monthLabel
+}: {
+  weddingId: string;
+  note: MonthlyNote;
+  monthLabel: string;
+}) {
+  const t = useTranslations("timeline.monthly");
+  const tc = useTranslations("common");
+  const [editing, setEditing] = useState(false);
+  const [text, setText] = useState(note.preview_text ?? "");
+  const [pending, startTransition] = useTransition();
+  const router = useRouter();
+  const monthKey = note.month.slice(0, 7);
+
+  const act = (fn: () => Promise<unknown>) =>
+    startTransition(async () => {
+      await fn();
+      setEditing(false);
+      router.refresh();
+    });
+
+  return (
+    <div style={{ border: "1px solid var(--line)", padding: "14px 16px" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8 }}>
+        <div className="eyebrow">{monthLabel}</div>
+        {note.status === "draft" && <span className="tag int">{tc("draft")}</span>}
+      </div>
+      {editing ? (
+        <textarea
+          rows={2}
+          value={text}
+          aria-label={monthLabel}
+          onChange={(e) => setText(e.target.value)}
+          style={{ width: "100%", marginTop: 6, fontSize: 12.5, padding: "6px 8px", border: "1px solid var(--champagne)" }}
+        />
+      ) : (
+        <p style={{ fontSize: 12.5, marginTop: 6, color: "var(--ink2)" }}>{note.preview_text}</p>
+      )}
+      <div className="team-only" style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 8 }}>
+        {editing ? (
+          <>
+            <button
+              className="addnote"
+              disabled={pending || !text.trim()}
+              onClick={() => act(() => savePreview({ weddingId, month: monthKey, text, publish: false }))}
+            >
+              {t("keepDraft")}
+            </button>
+            <button
+              className="addnote"
+              disabled={pending || !text.trim()}
+              onClick={() => act(() => savePreview({ weddingId, month: monthKey, text, publish: true }))}
+            >
+              {t("publish")}
+            </button>
+            <button className="addnote" onClick={() => setEditing(false)}>{tc("cancel")}</button>
+          </>
+        ) : (
+          <>
+            <button className="addnote" onClick={() => setEditing(true)}>{tc("edit")}</button>
+            {note.status === "draft" ? (
+              <button
+                className="addnote"
+                disabled={pending}
+                onClick={() => act(() => savePreview({ weddingId, month: monthKey, text: note.preview_text ?? "", publish: true }))}
+              >
+                {t("publish")}
+              </button>
+            ) : (
+              <button
+                className="addnote"
+                disabled={pending}
+                onClick={() => act(() => savePreview({ weddingId, month: monthKey, text: note.preview_text ?? "", publish: false }))}
+              >
+                {t("unpublish")}
+              </button>
+            )}
+            <button
+              className="addnote"
+              disabled={pending}
+              onClick={() => act(() => removePreview(weddingId, monthKey))}
+            >
+              {t("withdraw")}
+            </button>
+          </>
+        )}
+      </div>
     </div>
   );
 }

@@ -160,7 +160,10 @@
       "letAgentWrite": "Let the agent write it",
       "keepDraft": "Keep as draft",
       "publish": "Publish to the client",
-      "hint": "You give the subjects; the agent composes the month's note and the previews of the three months that follow, in the house's voice. Nothing reaches the client before your word."
+      "hint": "You give the subjects; the agent composes the month's note and the previews of the three months that follow, in the house's voice. Nothing reaches the client before your word.",
+      "dropPreview": "Drop the {month} preview",
+      "unpublish": "Back to draft",
+      "withdraw": "Withdraw"
     },
     "attentions": {
       "title": "Your attentions",
@@ -335,6 +338,27 @@
         "refinedLabel": "The house's voice — client language",
         "saveDraft": "Save as draft",
         "publish": "Publish"
+      },
+      "analysis": {
+        "title": "Set a study against the scope",
+        "internalTag": "Internal",
+        "blurb": "Hand the scope a budget analysis, a contract or a proposal — Madame sets it against your envelopes, in figures and in words: a note for the couple awaiting your word, and the house's warnings and tricks kept for you alone.",
+        "choose": "Read a document",
+        "failed": "The document could not be read just now.",
+        "colEnvelope": "Envelope",
+        "colAllocated": "Allocated",
+        "colDocument": "In the document",
+        "colVariance": "Variance",
+        "flagOver": "Over",
+        "flagTight": "Tight",
+        "flagEven": "In step",
+        "flagUnder": "Breathing",
+        "clientNoteTitle": "The note for the couple — at your word",
+        "publishNote": "Publish as the house's analysis",
+        "publishedTag": "Published",
+        "internalTitle": "Warnings & the house's tricks",
+        "neverVisible": "Never visible to clients",
+        "filedNote": "Filed with your internal budget notes."
       }
     },
     "master": {
