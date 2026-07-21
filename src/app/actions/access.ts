@@ -130,7 +130,9 @@ export async function setRoomCode(scope: "teamwork" | "vault", code: string) {
   if (!session.isPrincipal) throw new Error("Estelle only");
   if (!/^\d{4,8}$/.test(code)) return { ok: false as const };
   const admin = createAdminClient();
-  const code_hash = bcrypt.hashSync(code, 10);
+  // pgcrypto's crypt() only recognises the $2a$ bcrypt prefix — the
+  // algorithm is identical, so normalise what bcryptjs produces.
+  const code_hash = bcrypt.hashSync(code, 10).replace(/^\$2[bxy]\$/, "$2a$");
   if (scope === "teamwork") {
     await admin.from("access_codes").update({ code_hash }).eq("scope", "teamwork").is("profile_id", null);
   } else {
