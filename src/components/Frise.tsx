@@ -49,7 +49,8 @@ export function Frise({
       const d = await r.json();
       setAgentNote(d.text ?? t("agentFailed"));
       setInstruct("");
-      startTransition(() => {});
+      // The corrections just landed — the frise must show them at once.
+      router.refresh();
     } catch {
       setAgentNote(t("agentFailed"));
     }
