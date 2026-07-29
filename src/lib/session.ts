@@ -25,53 +25,47 @@ const WEDDING_COOKIE = "mwd_wedding";
  */
 export const getHouseSession = cache(async (): Promise<HouseSession | null> => {
   const supabase = await createClient();
-  const {
-    data: { user }
-  } = await supabase.auth.getUser();
-  if (!user) return null;
+  // The token is verified locally (ES256 against the cached signing
+  // keys) — no auth round-trip on every page. Forgery has nowhere to
+  // go anyway: the same token is what RLS judges at the database.
+  const { data: claimsData } = await supabase.auth.getClaims();
+  const userId = claimsData?.claims.sub;
+  if (!userId) return null;
 
-  // One parallel burst instead of a chain of round-trips: profile,
-  // memberships and the wedding list travel together (RLS trims the
-  // list to what the caller may see).
+  // One parallel burst, one round-trip total: profile, memberships and
+  // the full wedding rows travel together (RLS trims the list to what
+  // the caller may see — a couple only ever receives their own).
   const cookieStore = await cookies();
   const wanted = cookieStore.get(WEDDING_COOKIE)?.value;
 
   const [{ data: profile }, { data: memberships }, { data: allWeddings }] =
     await Promise.all([
-      supabase.from("profiles").select("*").eq("id", user.id).single<Profile>(),
-      supabase.from("wedding_members").select("wedding_id").eq("profile_id", user.id),
+      supabase.from("profiles").select("*").eq("id", userId).single<Profile>(),
+      supabase.from("wedding_members").select("wedding_id").eq("profile_id", userId),
       // Newest first: without a stored choice, the team lands on the
       // wedding most recently set in motion, not the oldest file.
       supabase
         .from("weddings")
-        .select("id, slug, couple_display_name")
+        .select("*")
         .order("created_at", { ascending: false })
+        .returns<Wedding[]>()
     ]);
   if (!profile) return null;
 
   const isTeam = profile.role === "team";
-
-  let weddings: Pick<Wedding, "id" | "slug" | "couple_display_name">[] = allWeddings ?? [];
-  let wedding: Wedding | null = null;
+  const rows = allWeddings ?? [];
 
   const chosenId = isTeam
-    ? (weddings.find((w) => w.id === wanted) ?? weddings[0])?.id
-    : memberships?.[0]?.wedding_id;
+    ? (rows.find((w) => w.id === wanted) ?? rows[0])?.id
+    : (memberships?.[0]?.wedding_id ?? rows[0]?.id);
 
-  if (chosenId) {
-    const { data: full } = await supabase
-      .from("weddings")
-      .select("*")
-      .eq("id", chosenId)
-      .single<Wedding>();
-    wedding = full;
-    if (!isTeam && full) {
-      weddings = [{ id: full.id, slug: full.slug, couple_display_name: full.couple_display_name }];
-    }
-  }
+  const wedding: Wedding | null = rows.find((w) => w.id === chosenId) ?? null;
+  const weddings: Pick<Wedding, "id" | "slug" | "couple_display_name">[] = (
+    isTeam ? rows : rows.filter((w) => w.id === chosenId)
+  ).map((w) => ({ id: w.id, slug: w.slug, couple_display_name: w.couple_display_name }));
 
   return {
-    userId: user.id,
+    userId,
     profile,
     wedding,
     isTeam,

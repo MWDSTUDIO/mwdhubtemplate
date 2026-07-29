@@ -39,8 +39,11 @@ export async function middleware(request: NextRequest) {
     .getAll()
     .some((c) => c.name.startsWith("sb-") && c.name.includes("-auth-token"));
 
+  // Local ES256 verification against the cached signing keys — the
+  // gate answers without a network round-trip. RLS re-judges the same
+  // token at the database, so nothing rests on this check alone.
   const user = hasAuthCookie
-    ? (await supabase.auth.getUser()).data.user
+    ? ((await supabase.auth.getClaims()).data?.claims ?? null)
     : null;
 
   const path = request.nextUrl.pathname;

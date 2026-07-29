@@ -879,3 +879,25 @@ ul.steps { list-style: none; }
   .bsheet .r2 .tile:nth-child(2) { margin-top: 0; }
   .bsheet .mats { padding-left: 0; }
 }
+
+/* ── the room's silhouette while it loads ───────────────────────────── */
+.page-loading { padding: 8px 0 40px; }
+.ske {
+  background: var(--parchment);
+  border: 1px solid var(--line-soft);
+  animation: ske-breathe 1.6s ease-out infinite alternate;
+}
+.ske-eyebrow { width: 120px; height: 12px; margin-bottom: 14px; }
+.ske-title { width: min(360px, 60%); height: 30px; margin-bottom: 26px; }
+.ske-row { display: flex; gap: 14px; margin-bottom: 26px; }
+.ske-card { flex: 1; height: 92px; }
+.ske-block { height: 200px; margin-bottom: 14px; }
+.ske-block.short { height: 120px; }
+@keyframes ske-breathe { from { opacity: 1; } to { opacity: 0.55; } }
+@media (prefers-reduced-motion: reduce) {
+  .ske { animation: none; }
+}
+@media (max-width: 820px) {
+  .ske-row { flex-direction: column; }
+  .ske-card { height: 64px; }
+}

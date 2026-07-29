@@ -7,8 +7,10 @@ import type { BudgetLine, BudgetLineItem, BudgetRisk, Payment } from "@/lib/type
 import {
   addPayment,
   composePaymentNotice,
+  deleteLineItem,
   deletePayment,
   markPaymentPaid,
+  saveLineItem,
   sendPaymentNotice,
   updatePaymentFlags
 } from "@/app/actions/budget";
@@ -66,14 +68,18 @@ export function MasterTable({
             {line.status === "draft" && (
               <span className="tag int" style={{ marginLeft: 8 }}>{tc("draft")}</span>
             )}
-            {own.length > 0 && (
+            {(own.length > 0 || isTeam) && (
               <button
-                className="addnote"
+                className={own.length > 0 ? "addnote" : "addnote team-only"}
                 style={{ marginLeft: 10 }}
                 aria-expanded={unfoldedId === line.id}
                 onClick={() => setUnfoldedId(unfoldedId === line.id ? null : line.id)}
               >
-                {unfoldedId === line.id ? tm("fold") : tm("unfold", { count: own.length })}
+                {unfoldedId === line.id
+                  ? tm("fold")
+                  : own.length > 0
+                    ? tm("unfold", { count: own.length })
+                    : tm("itemsBtn")}
               </button>
             )}
           </td>
@@ -112,10 +118,10 @@ export function MasterTable({
             </td>
           </tr>
         )}
-        {unfoldedId === line.id && own.length > 0 && (
+        {unfoldedId === line.id && (own.length > 0 || isTeam) && (
           <tr>
             <td colSpan={8} style={{ padding: 0 }}>
-              <SubLines items={own} />
+              <SubLines items={own} weddingId={weddingId} budgetLineId={line.id} isTeam={isTeam} />
             </td>
           </tr>
         )}
@@ -171,10 +177,35 @@ export function MasterTable({
   );
 }
 
-/** A quote's own lines, grouped by event — subtotals roll up alone. */
-function SubLines({ items }: { items: BudgetLineItem[] }) {
+/** "1 234,56" the way a hand types it → a number, or null. */
+const num = (v: string): number | null => {
+  const n = Number(v.replace(/\s/g, "").replace(",", "."));
+  return v.trim() === "" || Number.isNaN(n) ? null : n;
+};
+
+/**
+ * A quote's own lines, grouped by event — subtotals roll up alone.
+ * The team corrects any row by hand, sheet-style: no need to pass
+ * through the document again. Clients read, never touch.
+ */
+function SubLines({
+  items,
+  weddingId,
+  budgetLineId,
+  isTeam
+}: {
+  items: BudgetLineItem[];
+  weddingId: string;
+  budgetLineId: string;
+  isTeam: boolean;
+}) {
   const tm = useTranslations("budget.master");
+  const tc = useTranslations("common");
   const format = useFormatter();
+  const router = useRouter();
+  const [editing, setEditing] = useState<string | null>(null);
+  const [adding, setAdding] = useState(false);
+  const [pending, startTransition] = useTransition();
   const groups = useMemo(() => {
     const map = new Map<string, BudgetLineItem[]>();
     for (const it of items) {
@@ -184,6 +215,14 @@ function SubLines({ items }: { items: BudgetLineItem[] }) {
     return [...map.entries()];
   }, [items, tm]);
 
+  const remove = (it: BudgetLineItem) => {
+    if (!window.confirm(tm("removeItemConfirm"))) return;
+    startTransition(async () => {
+      await deleteLineItem(it.id, budgetLineId);
+      router.refresh();
+    });
+  };
+
   return (
     <div style={{ background: "var(--parchment)", padding: "14px 18px" }}>
       {groups.map(([event, rows]) => (
@@ -191,26 +230,147 @@ function SubLines({ items }: { items: BudgetLineItem[] }) {
           <div className="eyebrow" style={{ color: "var(--bronze)", margin: "4px 0 6px" }}>{event}</div>
           <table className="sheet-table" style={{ background: "#fff", fontSize: 12.8 }}>
             <tbody>
-              {rows.map((it) => (
-                <tr key={it.id}>
-                  <td>{it.label}</td>
-                  <td className="num">{it.qty != null ? `${it.qty} × ${money(format, it.unit_price)}` : ""}</td>
-                  <td className="num">{it.total_ht != null ? `HT ${money(format, it.total_ht)}` : ""}</td>
-                  <td className="num">{it.vat_pct != null ? `${tm("vat")} ${it.vat_pct} %` : ""}</td>
-                  <td className="num">{money(format, it.total_ttc ?? it.total_ht)}</td>
-                </tr>
-              ))}
+              {rows.map((it) =>
+                editing === it.id ? (
+                  <tr key={it.id} className="team-only">
+                    <td colSpan={isTeam ? 6 : 5} style={{ background: "var(--parchment)" }}>
+                      <ItemEditor
+                        item={it}
+                        weddingId={weddingId}
+                        budgetLineId={budgetLineId}
+                        onClose={() => setEditing(null)}
+                      />
+                    </td>
+                  </tr>
+                ) : (
+                  <tr key={it.id}>
+                    <td>{it.label}</td>
+                    <td className="num">{it.qty != null ? `${it.qty} × ${money(format, it.unit_price)}` : ""}</td>
+                    <td className="num">{it.total_ht != null ? `HT ${money(format, it.total_ht)}` : ""}</td>
+                    <td className="num">{it.vat_pct != null ? `${tm("vat")} ${it.vat_pct} %` : ""}</td>
+                    <td className="num">{money(format, it.total_ttc ?? it.total_ht)}</td>
+                    {isTeam && (
+                      <td className="team-only" style={{ whiteSpace: "nowrap", textAlign: "right" }}>
+                        <button className="addnote" onClick={() => setEditing(it.id)}>{tc("edit")}</button>
+                        <button
+                          className="addnote"
+                          style={{ marginLeft: 8, color: "var(--bronze)" }}
+                          disabled={pending}
+                          onClick={() => remove(it)}
+                        >
+                          {tm("removeItem")}
+                        </button>
+                      </td>
+                    )}
+                  </tr>
+                )
+              )}
               <tr style={{ background: "var(--parchment)" }}>
                 <td>{tm("subtotal")}</td>
                 <td></td>
                 <td className="num">{money(format, rows.reduce((s, r) => s + Number(r.total_ht ?? 0), 0))}</td>
                 <td></td>
                 <td className="num"><b>{money(format, rows.reduce((s, r) => s + Number(r.total_ttc ?? r.total_ht ?? 0), 0))}</b></td>
+                {isTeam && <td className="team-only"></td>}
               </tr>
             </tbody>
           </table>
         </div>
       ))}
+      {isTeam && (
+        <div className="team-only" style={{ marginTop: 4 }}>
+          {adding ? (
+            <ItemEditor
+              item={null}
+              weddingId={weddingId}
+              budgetLineId={budgetLineId}
+              onClose={() => setAdding(false)}
+            />
+          ) : (
+            <button className="addnote" onClick={() => setAdding(true)}>+ {tm("addItem")}</button>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** One sub-line under the hand — the sheet's own arithmetic fills the gaps. */
+function ItemEditor({
+  item,
+  weddingId,
+  budgetLineId,
+  onClose
+}: {
+  item: BudgetLineItem | null;
+  weddingId: string;
+  budgetLineId: string;
+  onClose: () => void;
+}) {
+  const tm = useTranslations("budget.master");
+  const tc = useTranslations("common");
+  const router = useRouter();
+  const [event, setEvent] = useState(item?.event_label ?? "");
+  const [label, setLabel] = useState(item?.label ?? "");
+  const [qty, setQty] = useState(item?.qty?.toString() ?? "");
+  const [unit, setUnit] = useState(item?.unit_price?.toString() ?? "");
+  const [vat, setVat] = useState(item?.vat_pct?.toString() ?? "");
+  const [ttc, setTtc] = useState(item?.total_ttc?.toString() ?? "");
+  const [pending, startTransition] = useTransition();
+
+  const field = (labelKey: string, value: string, set: (v: string) => void, width = 90, ph?: string) => (
+    <div className="field" style={{ width, flex: "0 1 auto" }}>
+      <label className="eyebrow">{tm(labelKey)}</label>
+      <input value={value} onChange={(e) => set(e.target.value)} placeholder={ph} inputMode="decimal" />
+    </div>
+  );
+
+  return (
+    <div style={{ padding: "10px 4px" }}>
+      <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "flex-end" }}>
+        <div className="field" style={{ flex: "1 1 150px" }}>
+          <label className="eyebrow">{tm("itemEvent")}</label>
+          <input value={event} onChange={(e) => setEvent(e.target.value)} placeholder={tm("noEvent")} />
+        </div>
+        <div className="field" style={{ flex: "2 1 200px" }}>
+          <label className="eyebrow">{tm("itemLabel")}</label>
+          <input value={label} onChange={(e) => setLabel(e.target.value)} />
+        </div>
+        {field("itemQty", qty, setQty, 70, "160")}
+        {field("itemUnit", unit, setUnit, 90, "20")}
+        {field("itemVat", vat, setVat, 70, "20")}
+        {field("itemTtc", ttc, setTtc, 110)}
+      </div>
+      <div style={{ display: "flex", gap: 10, marginTop: 10, alignItems: "center", flexWrap: "wrap" }}>
+        <button
+          className="btn sm"
+          disabled={pending || !label.trim()}
+          onClick={() =>
+            startTransition(async () => {
+              await saveLineItem({
+                id: item?.id,
+                weddingId,
+                budgetLineId,
+                eventLabel: event,
+                label,
+                qty: num(qty),
+                unitPrice: num(unit),
+                vatPct: num(vat),
+                // Qty × unit price recomputes HT; without them, the
+                // document's own HT figure is left standing.
+                totalHt: num(qty) != null && num(unit) != null ? null : (item?.total_ht ?? null),
+                totalTtc: num(ttc)
+              });
+              onClose();
+              router.refresh();
+            })
+          }
+        >
+          {tc("save")}
+        </button>
+        <button className="btn ghost sm" onClick={onClose}>{tc("cancel")}</button>
+        <span style={{ fontSize: 11.5, color: "var(--ink2)" }}>{tm("autoHint")}</span>
+      </div>
     </div>
   );
 }

@@ -370,7 +370,18 @@
       "net": "Saldo neto — {label}",
       "paidPct": "% pagado",
       "sheet": "Ficha del cliente",
-      "hint": "Solo el equipo — la pareja ve esta tabla en lectura, únicamente líneas publicadas. Un proveedor se convierte en línea al pasar a Booked; su presupuesto llena las sublíneas."
+      "hint": "Solo el equipo — la pareja ve esta tabla en lectura, únicamente líneas publicadas. Un proveedor se convierte en línea al pasar a Booked; su presupuesto llena las sublíneas.",
+      "itemsBtn": "Sublíneas",
+      "addItem": "Añadir una sublínea",
+      "itemEvent": "Momento",
+      "itemLabel": "Concepto",
+      "itemQty": "Cant.",
+      "itemUnit": "Precio unitario",
+      "itemVat": "IVA %",
+      "itemTtc": "Total con IVA",
+      "removeItem": "Retirar",
+      "removeItemConfirm": "¿Retirar esta sublínea? El total de la línea se recompone.",
+      "autoHint": "Si se dejan vacíos, los totales se calculan solos — la base desde cant. × precio unitario, el total con IVA desde la base y el IVA."
     },
     "cal": {
       "title": "Calendario de pagos",

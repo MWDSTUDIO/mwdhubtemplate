@@ -7,6 +7,10 @@
 [[plugins]]
   package = "@netlify/plugin-nextjs"
 
+# House functions (the heartbeat) live beside the Next runtime's own.
+[functions]
+  directory = "netlify/functions"
+
 # Vendor outreach leaves from Estelle's inbox through Netlify Forms.
 # The static form definition lives in public/netlify-forms.html so the
 # build bot registers it; submissions post to /vendor-outreach.

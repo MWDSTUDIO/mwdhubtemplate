@@ -20,6 +20,7 @@
         "npm:@types/react-dom@19",
         "npm:@types/react@19",
         "npm:@types/web-push@^3.6.4",
+        "npm:bcryptjs@^3.0.3",
         "npm:next-intl@4",
         "npm:next@^15.3.0",
         "npm:react-dom@^19.1.0",

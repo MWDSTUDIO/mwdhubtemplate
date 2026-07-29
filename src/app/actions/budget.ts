@@ -218,6 +218,90 @@ export async function addBudgetLine(weddingId: string, label: string, budgeted: 
   return { ok: !error };
 }
 
+/* ══════════ Budget v2 — the quote's own lines, held by hand ══════════ */
+
+/** After any touch, the sub-lines' sum rolls up into the line itself. */
+async function rollupLine(lineId: string) {
+  const supabase = await createClient();
+  const { data: rows } = await supabase
+    .from("budget_line_items")
+    .select("total_ht, total_ttc")
+    .eq("budget_line_id", lineId);
+  if (!rows?.length) return;
+  const sum = rows.reduce((s, r) => s + Number(r.total_ttc ?? r.total_ht ?? 0), 0);
+  if (sum > 0) {
+    await supabase
+      .from("budget_lines")
+      .update({ committed: Math.round(sum), committed_note: null, status: "draft" })
+      .eq("id", lineId);
+  }
+}
+
+/**
+ * A sub-line corrected by hand — no need to pass through the document
+ * again. Missing totals compute themselves the way a sheet would:
+ * HT from qty × unit price, TTC from HT and the VAT rate.
+ */
+export async function saveLineItem(input: {
+  id?: string;
+  weddingId: string;
+  budgetLineId: string;
+  eventLabel: string;
+  label: string;
+  qty: number | null;
+  unitPrice: number | null;
+  vatPct: number | null;
+  totalHt: number | null;
+  totalTtc: number | null;
+}) {
+  await teamSession();
+  const supabase = await createClient();
+  let ht = input.totalHt;
+  if (ht == null && input.qty != null && input.unitPrice != null) {
+    ht = Math.round(input.qty * input.unitPrice * 100) / 100;
+  }
+  let ttc = input.totalTtc;
+  if (ttc == null && ht != null) {
+    ttc = Math.round(ht * (1 + (input.vatPct ?? 0) / 100) * 100) / 100;
+  }
+  const row = {
+    event_label: input.eventLabel.trim() || null,
+    label: input.label.trim() || "—",
+    qty: input.qty,
+    unit_price: input.unitPrice,
+    vat_pct: input.vatPct,
+    total_ht: ht,
+    total_ttc: ttc
+  };
+  let error;
+  if (input.id) {
+    ({ error } = await supabase.from("budget_line_items").update(row).eq("id", input.id));
+  } else {
+    const { count } = await supabase
+      .from("budget_line_items")
+      .select("id", { count: "exact", head: true })
+      .eq("budget_line_id", input.budgetLineId);
+    ({ error } = await supabase.from("budget_line_items").insert({
+      wedding_id: input.weddingId,
+      budget_line_id: input.budgetLineId,
+      sort: (count ?? 0) + 1,
+      ...row
+    }));
+  }
+  if (!error) await rollupLine(input.budgetLineId);
+  revalidatePath("/budget");
+  return { ok: !error };
+}
+
+export async function deleteLineItem(id: string, budgetLineId: string) {
+  await teamSession();
+  const supabase = await createClient();
+  await supabase.from("budget_line_items").delete().eq("id", id);
+  await rollupLine(budgetLineId);
+  revalidatePath("/budget");
+  return { ok: true as const };
+}
+
 /* ══════════ Budget v2 — payments held by hand ══════════ */
 
 export async function addPayment(input: {

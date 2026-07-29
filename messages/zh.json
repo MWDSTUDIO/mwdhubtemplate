@@ -370,7 +370,18 @@
       "net": "净额 — {label}",
       "paidPct": "已付 %",
       "sheet": "宾客账单",
-      "hint": "仅限团队——宾客只见只读表格，且仅限已发布条目。供应商一经 Booked 即成一行；其报价单填入子行。"
+      "hint": "仅限团队——宾客只见只读表格，且仅限已发布条目。供应商一经 Booked 即成一行；其报价单填入子行。",
+      "itemsBtn": "子项",
+      "addItem": "添加子项",
+      "itemEvent": "时刻",
+      "itemLabel": "名目",
+      "itemQty": "数量",
+      "itemUnit": "单价",
+      "itemVat": "增值税 %",
+      "itemTtc": "含税总额",
+      "removeItem": "移除",
+      "removeItemConfirm": "移除此子项?该行总额将自动重新计算。",
+      "autoHint": "留空时金额自动计算——不含税额由数量 × 单价得出,含税总额由不含税额与税率得出。"
     },
     "cal": {
       "title": "付款日历",

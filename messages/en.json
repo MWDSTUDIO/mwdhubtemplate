@@ -370,7 +370,18 @@
       "net": "Net balance — {label}",
       "paidPct": "% paid",
       "sheet": "Client sheet",
-      "hint": "Team only — clients see this table read-only, published lines alone. A vendor becomes a line the moment it is Booked; its quote fills the sub-lines."
+      "hint": "Team only — clients see this table read-only, published lines alone. A vendor becomes a line the moment it is Booked; its quote fills the sub-lines.",
+      "itemsBtn": "Sub-lines",
+      "addItem": "Add a sub-line",
+      "itemEvent": "Moment",
+      "itemLabel": "Designation",
+      "itemQty": "Qty",
+      "itemUnit": "Unit price",
+      "itemVat": "VAT %",
+      "itemTtc": "Total incl. VAT",
+      "removeItem": "Remove",
+      "removeItemConfirm": "Remove this sub-line? The line's total recomposes itself.",
+      "autoHint": "Left empty, the totals compute themselves — HT from qty × unit price, TTC from HT and VAT."
     },
     "cal": {
       "title": "Payment calendar",

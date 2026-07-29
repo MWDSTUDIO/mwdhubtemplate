@@ -370,7 +370,18 @@
       "net": "Solde net — {label}",
       "paidPct": "% payé",
       "sheet": "Fiche client",
-      "hint": "Équipe seulement — les clients voient ce tableau en lecture, lignes publiées uniquement. Un prestataire devient une ligne dès qu'il est Booked ; son devis remplit les sous-lignes."
+      "hint": "Équipe seulement — les clients voient ce tableau en lecture, lignes publiées uniquement. Un prestataire devient une ligne dès qu'il est Booked ; son devis remplit les sous-lignes.",
+      "itemsBtn": "Sous-lignes",
+      "addItem": "Ajouter une sous-ligne",
+      "itemEvent": "Moment",
+      "itemLabel": "Désignation",
+      "itemQty": "Qté",
+      "itemUnit": "Prix unitaire",
+      "itemVat": "TVA %",
+      "itemTtc": "Total TTC",
+      "removeItem": "Retirer",
+      "removeItemConfirm": "Retirer cette sous-ligne ? Le total de la ligne se recompose.",
+      "autoHint": "Laissés vides, les totaux se calculent seuls — HT depuis qté × prix unitaire, TTC depuis HT et TVA."
     },
     "cal": {
       "title": "Calendrier des paiements",
