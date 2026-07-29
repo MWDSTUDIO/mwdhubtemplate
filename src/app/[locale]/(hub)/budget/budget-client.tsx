@@ -216,7 +216,7 @@ export function BudgetAsk({ weddingId }: { weddingId: string }) {
   }
 
   return (
-    <>
+    <div className="team-only">
       {answer && (
         <p className="ia-quote" style={{ marginTop: 14 }} aria-live="polite">
           &ldquo;{answer}&rdquo;
@@ -229,7 +229,7 @@ export function BudgetAsk({ weddingId }: { weddingId: string }) {
           {busy ? "…" : t("ask")}
         </button>
       </div>
-    </>
+    </div>
   );
 }
 

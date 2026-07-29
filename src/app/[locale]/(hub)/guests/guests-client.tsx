@@ -503,7 +503,7 @@ export function StationerReview({ weddingId, latestFlag }: { weddingId: string; 
   const [pending, startTransition] = useTransition();
 
   return (
-    <div className="ia">
+    <div className="ia team-only">
       <div className="eyebrow">{t("title")}</div>
       <p style={{ marginTop: 8, fontSize: 13.5 }}>{t("blurb")}</p>
       {(latestFlag || note) && (

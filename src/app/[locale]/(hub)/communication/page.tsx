@@ -144,10 +144,12 @@ export default async function CommunicationPage({
 
       {session.isTeam && <HotelDesk weddingId={wedding.id} sample={t("hotelDesk.sample")} />}
 
-      <div className="ia">
-        <div className="eyebrow">{t("desk.title")}</div>
-        <p style={{ marginTop: 8, fontSize: 13.5 }}>{t("desk.blurb")}</p>
-      </div>
+      {session.isTeam && (
+        <div className="ia team-only">
+          <div className="eyebrow">{t("desk.title")}</div>
+          <p style={{ marginTop: 8, fontSize: 13.5 }}>{t("desk.blurb")}</p>
+        </div>
+      )}
     </section>
   );
 }

@@ -93,10 +93,12 @@ export default async function VendorsPage({
         {session.isTeam && <AddVendor weddingId={wedding.id} />}
       </div>
 
-      <div className="ia">
-        <div className="eyebrow">{t("reading.title")}</div>
-        <p style={{ marginTop: 8, fontSize: 13.5 }}>{t("reading.blurb")}</p>
-      </div>
+      {session.isTeam && (
+        <div className="ia team-only">
+          <div className="eyebrow">{t("reading.title")}</div>
+          <p style={{ marginTop: 8, fontSize: 13.5 }}>{t("reading.blurb")}</p>
+        </div>
+      )}
 
       {session.isTeam && (
         <>

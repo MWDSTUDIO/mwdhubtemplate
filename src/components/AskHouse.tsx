@@ -35,7 +35,9 @@ export function AskHouse({ weddingId }: { weddingId: string }) {
   }
 
   return (
-    <div className="ia">
+    // Team only, and marked so: the couple's experience never includes
+    // an agent, and Client view must preview exactly what they see.
+    <div className="ia team-only">
       <div className="eyebrow">{t("title")}</div>
       <p style={{ marginTop: 8, fontSize: 13.5 }}>{t("blurb")}</p>
       <div className="assist">
