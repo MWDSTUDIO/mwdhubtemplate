@@ -75,7 +75,8 @@
     "you": "あなた",
     "go": "実行",
     "unreachable": "ただいまMadameと連絡が取れません — サーバー側の ANTHROPIC_API_KEY をご確認ください。",
-    "dictate": "音声で入力"
+    "dictate": "音声で入力",
+    "sees": "ただいま {room} のページを拝見しております"
   },
   "home": {
     "welcome": "ようこそ",
@@ -1091,5 +1092,53 @@
     },
     "fullscreen": "全画面",
     "fullscreenHint": "Esc キーで全画面を終了できます"
+  },
+  "publishDesk": {
+    "title": "公開",
+    "tagline": "お言葉を待つすべてを、ひとつの所作で公開いたします。",
+    "open": "公開",
+    "loading": "お言葉を待つものを確かめております…",
+    "nothing": "お言葉を待つものはございません — お二人には、お見せになりたいものがすべて届いております。",
+    "done": "公開いたしました。お二人へは、そっとお知らせしております。",
+    "budgetRow": "ご予算 — {lines, plural, =0 {下書きの行はございません} other {下書きの行 # 件}}{notes, plural, =0 {} other {、封筒の覚書 # 件}}",
+    "timelineRow": "タイムライン — {n, plural, other {下書きの節目 # 件}}",
+    "monthRow": "月々のお便り — {month}",
+    "docsTitle": "内部の書類",
+    "docsHint": "一枚ずつお選びいただくのみ — お印のないまま、内部のものが館を出ることはございません。",
+    "review": "公開される内容を確かめる",
+    "confirmTitle": "お二人にご覧いただけるようになるもの",
+    "confirm": "{n, plural, other {# 件を公開する}}",
+    "keepDraft": "下書きのままにする",
+    "recapLines": "{n, plural, other {ご予算の行 # 件}}",
+    "recapNotes": "{n, plural, other {封筒の覚書 # 件}}",
+    "recapMilestones": "{n, plural, other {節目 # 件}}",
+    "recapMonths": "{n, plural, other {月々のお便り # 通}}",
+    "recapDocs": "{n, plural, other {書類 # 点}}",
+    "journalTitle": "館の日誌",
+    "journalEmpty": "まだ公開の記録はございません。",
+    "journalSoon": "日誌はマイグレーション 0015 をお待ちしております。",
+    "journalSweep": "まとめて公開いたしました",
+    "journalUnpublish": "公開を取り下げました",
+    "journalBudget": "ご予算を公開いたしました",
+    "journalTimeline": "タイムラインを公開いたしました",
+    "journalMonthly": "月々のお便りを公開いたしました",
+    "journalEnvelope": "封筒の覚書を公開いたしました",
+    "journalDocument": "書類をお二人のお手元へお届けいたしました",
+    "journalWithdraw": "書類を取り下げました",
+    "journalBoard": "ボードを進めました",
+    "unpublish": "取り下げる",
+    "reverted": "取り下げ済み"
+  },
+  "help": {
+    "title": "キーのご案内",
+    "tagline": "チームビューのどのページでも、同じキーでございます。",
+    "keyHelp": "このご案内を開く",
+    "keyMadame": "Madame をお呼びする",
+    "keyPublish": "公開の卓を開く",
+    "keyEsc": "パネルや窓を閉じる",
+    "keyTab": "フォームの中を順にめぐる",
+    "keyEnter": "お書きのものを保存する",
+    "keyUndo": "台帳での取り消し",
+    "note": "台帳では：セルをクリックしてご記入、矢印キーで移動、表計算からそのまま貼り付けいただけます。"
   }
 }

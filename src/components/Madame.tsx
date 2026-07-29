@@ -1,7 +1,8 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
+import { usePathname } from "@/i18n/navigation";
 import { Dictate } from "@/components/Dictate";
 
 interface Exchange {
@@ -17,6 +18,7 @@ interface Exchange {
  */
 export function Madame({ weddingId }: { weddingId: string }) {
   const t = useTranslations("madame");
+  const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [log, setLog] = useState<Exchange[]>([]);
@@ -24,6 +26,34 @@ export function Madame({ weddingId }: { weddingId: string }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const outRef = useRef<HTMLDivElement>(null);
+
+  // The room she is standing in — injected into her conversation so
+  // "add this here" needs no preamble (brief §2.4).
+  const room = pathname.split("/").filter(Boolean)[0] ?? "home";
+
+  // m opens her from any page; Escape closes; the pen lands ready.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const el = e.target as HTMLElement;
+      const typing =
+        el.tagName === "INPUT" || el.tagName === "TEXTAREA" || el.tagName === "SELECT" || el.isContentEditable;
+      if (e.key === "Escape" && open) {
+        setOpen(false);
+        return;
+      }
+      if (typing || e.metaKey || e.ctrlKey || e.altKey) return;
+      if (e.key === "m") {
+        e.preventDefault();
+        setOpen((v) => !v);
+      }
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [open]);
+
+  useEffect(() => {
+    if (open) requestAnimationFrame(() => inputRef.current?.focus());
+  }, [open]);
 
   const scroll = () =>
     requestAnimationFrame(() => {
@@ -41,7 +71,7 @@ export function Madame({ weddingId }: { weddingId: string }) {
       const r = await fetch("/api/agents/madame", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ weddingId, prompt: q })
+        body: JSON.stringify({ weddingId, prompt: q, room })
       });
       const d = await r.json();
       setLog((l) => [...l, { who: "madame", text: d.text ?? t("unreachable") }]);
@@ -85,7 +115,10 @@ export function Madame({ weddingId }: { weddingId: string }) {
         <div className="maPanel team-only" role="dialog" aria-label="Madame">
           <div className="hd">
             <div className="eyebrow">Madame</div>
-            <div style={{ fontSize: 12.5, marginTop: 3 }}>{t("tagline")}</div>
+            <div style={{ fontSize: 13, marginTop: 3 }}>{t("tagline")}</div>
+            <div style={{ fontSize: 12, marginTop: 5, color: "var(--champagne)" }}>
+              {t("sees", { room })}
+            </div>
           </div>
           <button
             type="button"

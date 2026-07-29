@@ -75,7 +75,8 @@
     "you": "Vous",
     "go": "Aller",
     "unreachable": "Madame est injoignable — vérifiez la clé ANTHROPIC_API_KEY côté serveur.",
-    "dictate": "Dicter"
+    "dictate": "Dicter",
+    "sees": "Elle voit la page {room}"
   },
   "home": {
     "welcome": "Bienvenue",
@@ -1091,5 +1092,53 @@
     },
     "fullscreen": "Plein écran",
     "fullscreenHint": "Appuyez sur Échap pour quitter le plein écran"
+  },
+  "publishDesk": {
+    "title": "Publication",
+    "tagline": "Tout ce qui attend votre mot, publié d'un seul geste.",
+    "open": "Publication",
+    "loading": "La maison compte ce qui attend votre mot…",
+    "nothing": "Rien n'attend votre mot — le couple voit tout ce que vous vouliez montrer.",
+    "done": "Publié. Le couple a été prévenu, discrètement.",
+    "budgetRow": "Budget — {lines, plural, =0 {aucune ligne en brouillon} one {# ligne en brouillon} other {# lignes en brouillon}}{notes, plural, =0 {} one {, # note d'enveloppe} other {, # notes d'enveloppe}}",
+    "timelineRow": "Timeline — {n, plural, one {# jalon en brouillon} other {# jalons en brouillon}}",
+    "monthRow": "Note mensuelle — {month}",
+    "docsTitle": "Documents internes",
+    "docsHint": "À la pièce, jamais en bloc — rien d'interne ne sort de la maison sans être coché.",
+    "review": "Relire ce qui deviendra visible",
+    "confirmTitle": "Ceci deviendra visible pour le couple",
+    "confirm": "{n, plural, one {Rendre # élément visible au couple} other {Rendre # éléments visibles au couple}}",
+    "keepDraft": "Garder en brouillon",
+    "recapLines": "{n, plural, one {# ligne de budget} other {# lignes de budget}}",
+    "recapNotes": "{n, plural, one {# note d'enveloppe} other {# notes d'enveloppe}}",
+    "recapMilestones": "{n, plural, one {# jalon} other {# jalons}}",
+    "recapMonths": "{n, plural, one {# note mensuelle} other {# notes mensuelles}}",
+    "recapDocs": "{n, plural, one {# document} other {# documents}}",
+    "journalTitle": "Le journal de la maison",
+    "journalEmpty": "Aucune publication consignée pour l'instant.",
+    "journalSoon": "Le journal attend la migration 0015.",
+    "journalSweep": "a publié une sélection groupée",
+    "journalUnpublish": "a repris une publication",
+    "journalBudget": "a publié le budget",
+    "journalTimeline": "a publié la timeline",
+    "journalMonthly": "a publié une note mensuelle",
+    "journalEnvelope": "a publié une note d'enveloppe",
+    "journalDocument": "a remis un document au couple",
+    "journalWithdraw": "a retiré un document",
+    "journalBoard": "a fait avancer une planche",
+    "unpublish": "Reprendre",
+    "reverted": "reprise"
+  },
+  "help": {
+    "title": "Les touches",
+    "tagline": "Les mêmes touches sur chaque page de la vue équipe.",
+    "keyHelp": "Ouvrir cette fiche",
+    "keyMadame": "Appeler Madame",
+    "keyPublish": "Ouvrir la publication",
+    "keyEsc": "Fermer panneaux et fenêtres",
+    "keyTab": "Circuler dans un formulaire, dans l'ordre",
+    "keyEnter": "Valider ce que vous écrivez",
+    "keyUndo": "Annuler dans le grand livre du budget",
+    "note": "Dans le grand livre : cliquez une cellule pour écrire, flèches pour circuler, collez directement depuis un tableur."
   }
 }

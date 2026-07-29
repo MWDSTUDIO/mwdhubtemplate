@@ -75,7 +75,8 @@
     "you": "您",
     "go": "去",
     "unreachable": "Madame 暂时无法联络 — 请核查服务器端的 ANTHROPIC_API_KEY。",
-    "dictate": "语音输入"
+    "dictate": "语音输入",
+    "sees": "她正看着 {room} 页面"
   },
   "home": {
     "welcome": "欢迎",
@@ -1091,5 +1092,53 @@
     },
     "fullscreen": "全屏",
     "fullscreenHint": "按 Esc 键退出全屏"
+  },
+  "publishDesk": {
+    "title": "发布",
+    "tagline": "所有等待您示下的内容，一次发布。",
+    "open": "发布",
+    "loading": "正在清点等待您示下的内容…",
+    "nothing": "没有内容等待您示下 — 新人所见，即您所愿。",
+    "done": "已发布。已悄然告知新人。",
+    "budgetRow": "预算 — {lines, plural, =0 {没有草稿行} other {# 条草稿行}}{notes, plural, =0 {} other {，# 条预算袋注记}}",
+    "timelineRow": "时间线 — {n, plural, other {# 个草稿节点}}",
+    "monthRow": "月度短笺 — {month}",
+    "docsTitle": "内部文件",
+    "docsHint": "逐件勾选，绝不整批 — 未经勾选，内部材料不出府门。",
+    "review": "复核将展示的内容",
+    "confirmTitle": "以下内容将对新人可见",
+    "confirm": "{n, plural, other {使 # 项对新人可见}}",
+    "keepDraft": "保留为草稿",
+    "recapLines": "{n, plural, other {# 条预算行}}",
+    "recapNotes": "{n, plural, other {# 条预算袋注记}}",
+    "recapMilestones": "{n, plural, other {# 个节点}}",
+    "recapMonths": "{n, plural, other {# 篇月度短笺}}",
+    "recapDocs": "{n, plural, other {# 份文件}}",
+    "journalTitle": "府邸日志",
+    "journalEmpty": "尚无发布记录。",
+    "journalSoon": "日志有待迁移 0015。",
+    "journalSweep": "发布了一组内容",
+    "journalUnpublish": "撤回了一次发布",
+    "journalBudget": "发布了预算",
+    "journalTimeline": "发布了时间线",
+    "journalMonthly": "发布了月度短笺",
+    "journalEnvelope": "发布了预算袋注记",
+    "journalDocument": "将文件交至新人手中",
+    "journalWithdraw": "撤回了文件",
+    "journalBoard": "推进了一块画板",
+    "unpublish": "撤回",
+    "reverted": "已撤回"
+  },
+  "help": {
+    "title": "快捷键",
+    "tagline": "团队视图的每一页，快捷键都相同。",
+    "keyHelp": "打开本页",
+    "keyMadame": "呼唤 Madame",
+    "keyPublish": "打开发布台",
+    "keyEsc": "关闭面板与对话框",
+    "keyTab": "按顺序在表单中移动",
+    "keyEnter": "保存正在书写的内容",
+    "keyUndo": "在预算总账中撤销",
+    "note": "在总账中：点击单元格即可书写，方向键移动，可直接从表格粘贴。"
   }
 }

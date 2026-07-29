@@ -75,7 +75,8 @@
     "you": "Usted",
     "go": "Ir",
     "unreachable": "Madame no responde — verifique la clave ANTHROPIC_API_KEY en el servidor.",
-    "dictate": "Dictar"
+    "dictate": "Dictar",
+    "sees": "Ella ve la página {room}"
   },
   "home": {
     "welcome": "Bienvenidos",
@@ -1091,5 +1092,53 @@
     },
     "fullscreen": "Pantalla completa",
     "fullscreenHint": "Pulse Esc para salir de la pantalla completa"
+  },
+  "publishDesk": {
+    "title": "Publicación",
+    "tagline": "Todo lo que espera su palabra, publicado en un solo gesto.",
+    "open": "Publicación",
+    "loading": "La casa cuenta lo que espera su palabra…",
+    "nothing": "Nada espera su palabra — la pareja ve todo lo que usted quería mostrar.",
+    "done": "Publicado. La pareja ha sido avisada, con discreción.",
+    "budgetRow": "Presupuesto — {lines, plural, =0 {ninguna línea en borrador} one {# línea en borrador} other {# líneas en borrador}}{notes, plural, =0 {} one {, # nota de partida} other {, # notas de partida}}",
+    "timelineRow": "Cronología — {n, plural, one {# hito en borrador} other {# hitos en borrador}}",
+    "monthRow": "Nota mensual — {month}",
+    "docsTitle": "Documentos internos",
+    "docsHint": "Pieza a pieza, nunca en bloque — nada interno sale de la casa sin marcarse.",
+    "review": "Revisar lo que será visible",
+    "confirmTitle": "Esto será visible para la pareja",
+    "confirm": "{n, plural, one {Hacer visible # elemento para la pareja} other {Hacer visibles # elementos para la pareja}}",
+    "keepDraft": "Guardar como borradores",
+    "recapLines": "{n, plural, one {# línea de presupuesto} other {# líneas de presupuesto}}",
+    "recapNotes": "{n, plural, one {# nota de partida} other {# notas de partida}}",
+    "recapMilestones": "{n, plural, one {# hito} other {# hitos}}",
+    "recapMonths": "{n, plural, one {# nota mensual} other {# notas mensuales}}",
+    "recapDocs": "{n, plural, one {# documento} other {# documentos}}",
+    "journalTitle": "El diario de la casa",
+    "journalEmpty": "Ninguna publicación registrada todavía.",
+    "journalSoon": "El diario espera la migración 0015.",
+    "journalSweep": "publicó una selección agrupada",
+    "journalUnpublish": "retiró una publicación",
+    "journalBudget": "publicó el presupuesto",
+    "journalTimeline": "publicó la cronología",
+    "journalMonthly": "publicó una nota mensual",
+    "journalEnvelope": "publicó una nota de partida",
+    "journalDocument": "entregó un documento a la pareja",
+    "journalWithdraw": "retiró un documento",
+    "journalBoard": "hizo avanzar una lámina",
+    "unpublish": "Retomar",
+    "reverted": "retomada"
+  },
+  "help": {
+    "title": "Las teclas",
+    "tagline": "Las mismas teclas en cada página de la vista del equipo.",
+    "keyHelp": "Abrir esta ficha",
+    "keyMadame": "Llamar a Madame",
+    "keyPublish": "Abrir la publicación",
+    "keyEsc": "Cerrar paneles y ventanas",
+    "keyTab": "Recorrer un formulario, en orden",
+    "keyEnter": "Guardar lo que escribe",
+    "keyUndo": "Deshacer en el libro mayor",
+    "note": "En el libro mayor: haga clic en una celda para escribir, flechas para moverse, pegue directamente desde una hoja de cálculo."
   }
 }

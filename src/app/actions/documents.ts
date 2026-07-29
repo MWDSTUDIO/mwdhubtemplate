@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireHouseSession } from "@/lib/session";
 import { notifyCouple } from "@/lib/notify";
+import { logActivity } from "@/lib/activity";
 import { storageKeyFor } from "@/lib/docfiles";
 
 async function teamSession() {
@@ -25,7 +26,7 @@ const TYPE_CATEGORY: Record<string, string> = {
  * never automatic (brief B7).
  */
 export async function publishVendorDocToCouple(vendorDocId: string, notify: boolean) {
-  await teamSession();
+  const session = await teamSession();
   const admin = createAdminClient();
   const { data: doc } = await admin
     .from("vendor_documents")
@@ -64,6 +65,9 @@ export async function publishVendorDocToCouple(vendorDocId: string, notify: bool
   if (error) return { ok: false as const };
 
   await admin.from("vendor_documents").update({ client_visible: true }).eq("id", vendorDocId);
+  await logActivity(admin, doc.wedding_id, session.profile.full_name, "publish_document", {
+    label
+  });
   if (notify) {
     await notifyCouple(doc.wedding_id, {
       kind: "document_published",
@@ -79,7 +83,7 @@ export async function publishVendorDocToCouple(vendorDocId: string, notify: bool
 
 /** An internal register paper published to the couple, same gesture. */
 export async function publishDocumentToCouple(documentId: string, notify: boolean) {
-  await teamSession();
+  const session = await teamSession();
   const admin = createAdminClient();
   const { data: doc } = await admin.from("documents").select("*").eq("id", documentId).maybeSingle();
   if (!doc?.storage_path || !doc.internal) return { ok: false as const };
@@ -101,6 +105,9 @@ export async function publishDocumentToCouple(documentId: string, notify: boolea
     .update({ internal: false, storage_path: path })
     .eq("id", documentId);
   if (error) return { ok: false as const };
+  await logActivity(admin, doc.wedding_id, session.profile.full_name, "publish_document", {
+    label: doc.label
+  });
   if (notify) {
     await notifyCouple(doc.wedding_id, {
       kind: "document_published",
@@ -115,11 +122,14 @@ export async function publishDocumentToCouple(documentId: string, notify: boolea
 
 /** A shared paper withdrawn from the couple's page — mistakes can leave. */
 export async function withdrawDocument(documentId: string) {
-  await teamSession();
+  const session = await teamSession();
   const admin = createAdminClient();
   const { data: doc } = await admin.from("documents").select("*").eq("id", documentId).maybeSingle();
   if (!doc) return { ok: false as const };
   await admin.from("documents").update({ internal: true }).eq("id", documentId);
+  await logActivity(admin, doc.wedding_id, session.profile.full_name, "withdraw_document", {
+    label: doc.label
+  });
   revalidatePath("/documents");
   return { ok: true as const };
 }

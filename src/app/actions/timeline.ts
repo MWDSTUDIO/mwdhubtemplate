@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { requireHouseSession } from "@/lib/session";
+import { logActivity } from "@/lib/activity";
 
 /** Team guard for all timeline mutations — RLS enforces it again below. */
 async function teamSession() {
@@ -46,9 +47,12 @@ export async function deleteMilestone(id: string) {
 }
 
 export async function publishTimeline(weddingId: string) {
-  await teamSession();
+  const session = await teamSession();
   const supabase = await createClient();
-  await supabase.rpc("publish_timeline", { p_wedding: weddingId });
+  const { data: published } = await supabase.rpc("publish_timeline", { p_wedding: weddingId });
+  await logActivity(supabase, weddingId, session.profile.full_name, "publish_timeline", {
+    counts: { milestones: published ?? 0 }
+  });
   revalidatePath("/", "layout");
 }
 
@@ -74,13 +78,16 @@ export async function saveMonthlyNoteDraft(input: {
 }
 
 export async function publishMonthlyNote(weddingId: string, month: string) {
-  await teamSession();
+  const session = await teamSession();
   const supabase = await createClient();
   await supabase
     .from("monthly_notes")
     .update({ status: "published" })
     .eq("wedding_id", weddingId)
     .eq("month", `${month}-01`);
+  await logActivity(supabase, weddingId, session.profile.full_name, "publish_monthly_note", {
+    month
+  });
   revalidatePath("/timeline");
 }
 

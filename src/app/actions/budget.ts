@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { requireHouseSession } from "@/lib/session";
 import { notifyCouple, sendHouseEmailToCouple } from "@/lib/notify";
+import { logActivity } from "@/lib/activity";
 import { runAgent } from "@/lib/agents/run";
 
 async function teamSession() {
@@ -25,12 +26,19 @@ export async function saveEnvelopeNote(envelopeId: string, weddingId: string, bo
 }
 
 export async function publishEnvelopeNote(envelopeId: string) {
-  await teamSession();
+  const session = await teamSession();
   const supabase = await createClient();
-  await supabase
+  const { data: note } = await supabase
     .from("envelope_notes")
     .update({ status: "published" })
-    .eq("envelope_id", envelopeId);
+    .eq("envelope_id", envelopeId)
+    .select("wedding_id")
+    .maybeSingle();
+  if (note) {
+    await logActivity(supabase, note.wedding_id, session.profile.full_name, "publish_envelope_note", {
+      envelopeId
+    });
+  }
   revalidatePath("/budget");
 }
 
@@ -47,9 +55,12 @@ export async function saveInternalBudgetNote(weddingId: string, body: string) {
  * couple is notified. The client never sees work in progress.
  */
 export async function publishBudget(weddingId: string) {
-  await teamSession();
+  const session = await teamSession();
   const supabase = await createClient();
-  await supabase.rpc("publish_budget", { p_wedding: weddingId });
+  const { data: published } = await supabase.rpc("publish_budget", { p_wedding: weddingId });
+  await logActivity(supabase, weddingId, session.profile.full_name, "publish_budget", {
+    counts: { lines: published ?? 0 }
+  });
 
   // Recompose the house's analysis over the now-published numbers.
   try {

@@ -75,7 +75,8 @@
     "you": "You",
     "go": "Go",
     "unreachable": "Madame could not be reached — verify the ANTHROPIC_API_KEY on the server.",
-    "dictate": "Dictate"
+    "dictate": "Dictate",
+    "sees": "She sees the {room} page"
   },
   "home": {
     "welcome": "Welcome",
@@ -1091,5 +1092,53 @@
     },
     "fullscreen": "Full screen",
     "fullscreenHint": "Press Esc to leave full screen"
+  },
+  "publishDesk": {
+    "title": "Publication",
+    "tagline": "Everything awaiting your word, published in one gesture.",
+    "open": "Publication",
+    "loading": "Counting what awaits your word…",
+    "nothing": "Nothing awaits your word — the couple sees everything you intended.",
+    "done": "Published. The couple has been quietly told.",
+    "budgetRow": "Budget — {lines, plural, =0 {no draft line} one {# draft line} other {# draft lines}}{notes, plural, =0 {} one {, # envelope note} other {, # envelope notes}}",
+    "timelineRow": "Timeline — {n, plural, one {# draft milestone} other {# draft milestones}}",
+    "monthRow": "Monthly note — {month}",
+    "docsTitle": "Internal documents",
+    "docsHint": "Hand-picked only — nothing internal leaves the house unchecked.",
+    "review": "Review what will become visible",
+    "confirmTitle": "This will become visible to the couple",
+    "confirm": "{n, plural, one {Make # update visible to the couple} other {Make # updates visible to the couple}}",
+    "keepDraft": "Keep as drafts",
+    "recapLines": "{n, plural, one {# budget line} other {# budget lines}}",
+    "recapNotes": "{n, plural, one {# envelope note} other {# envelope notes}}",
+    "recapMilestones": "{n, plural, one {# milestone} other {# milestones}}",
+    "recapMonths": "{n, plural, one {# monthly note} other {# monthly notes}}",
+    "recapDocs": "{n, plural, one {# document} other {# documents}}",
+    "journalTitle": "The house's journal",
+    "journalEmpty": "No publication recorded yet.",
+    "journalSoon": "The journal awaits migration 0015.",
+    "journalSweep": "published a grouped selection",
+    "journalUnpublish": "took a publication back",
+    "journalBudget": "published the budget",
+    "journalTimeline": "published the timeline",
+    "journalMonthly": "published a monthly note",
+    "journalEnvelope": "published an envelope note",
+    "journalDocument": "placed a document in the couple's hands",
+    "journalWithdraw": "withdrew a document",
+    "journalBoard": "moved a board forward",
+    "unpublish": "Take back",
+    "reverted": "taken back"
+  },
+  "help": {
+    "title": "The keys",
+    "tagline": "The same keys on every page of the Team view.",
+    "keyHelp": "Open this sheet",
+    "keyMadame": "Call Madame",
+    "keyPublish": "Open the publication desk",
+    "keyEsc": "Close panels and dialogs",
+    "keyTab": "Move through a form in order",
+    "keyEnter": "Save what you are writing",
+    "keyUndo": "Undo in the budget ledger",
+    "note": "In the ledger: click a cell to write, arrows to move, paste straight from a spreadsheet."
   }
 }

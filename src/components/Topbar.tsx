@@ -5,6 +5,8 @@ import { useLocale, useTranslations } from "next-intl";
 import { usePathname, useRouter } from "@/i18n/navigation";
 import { locales, localeNames, type Locale } from "@/i18n/routing";
 import { setActiveWedding, signOut } from "@/app/actions/auth";
+import { PublishDesk } from "@/components/PublishDesk";
+import { HelpSheet } from "@/components/HelpSheet";
 
 interface WeddingOption {
   id: string;
@@ -36,8 +38,10 @@ export function Topbar({
         {isTeam && weddings.length > 1 && (
           <WeddingSwitcher weddings={weddings} activeWeddingId={activeWeddingId} />
         )}
+        {isTeam && activeWeddingId && <PublishDesk weddingId={activeWeddingId} />}
         <LangSwitcher />
         {isTeam && <ViewToggle labels={{ team: t("teamView"), client: t("clientView") }} />}
+        {isTeam && <HelpSheet />}
         <SignOutButton label={t("signOut")} />
       </div>
     </div>

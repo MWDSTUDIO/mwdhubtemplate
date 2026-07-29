@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { requireHouseSession } from "@/lib/session";
 import { notifyCouple, notifyTeam } from "@/lib/notify";
+import { logActivity } from "@/lib/activity";
 
 /** Team moves a board through the workflow; "to_review" notifies the client. */
 export async function setBoardStatus(
@@ -25,6 +26,12 @@ export async function setBoardStatus(
       title: "A board awaits your word",
       body: board.title,
       url: `/design/${boardId}`
+    });
+  }
+  if (board) {
+    await logActivity(supabase, board.wedding_id, session.profile.full_name, "board_status", {
+      title: board.title,
+      status
     });
   }
   revalidatePath("/design");

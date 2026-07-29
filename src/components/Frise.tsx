@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { useFormatter, useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import type { Milestone } from "@/lib/types";
@@ -188,6 +188,18 @@ function MilestoneDialog({
   const [month, setMonth] = useState(milestone?.month?.slice(0, 7) ?? "");
   const [done, setDone] = useState(milestone?.done ?? false);
   const [pending, startTransition] = useTransition();
+  const labelRef = useRef<HTMLInputElement>(null);
+
+  // The keys behave as everywhere in Team view: the pen lands ready,
+  // Enter saves, Escape leaves without a trace (brief §2.8).
+  useEffect(() => {
+    labelRef.current?.focus();
+  }, []);
+  const save = () =>
+    startTransition(async () => {
+      await saveMilestone({ id: milestone?.id, weddingId, month, label, done });
+      onClose();
+    });
 
   return (
     <div
@@ -203,6 +215,13 @@ function MilestoneDialog({
         zIndex: "var(--z-gate)"
       }}
       onClick={onClose}
+      onKeyDown={(e) => {
+        if (e.key === "Escape") onClose();
+        if (e.key === "Enter" && !pending && label && month && (e.target as HTMLElement).tagName === "INPUT") {
+          e.preventDefault();
+          save();
+        }
+      }}
     >
       <div
         className="card"
@@ -214,7 +233,7 @@ function MilestoneDialog({
         </div>
         <div className="field" style={{ marginBottom: 12 }}>
           <label className="eyebrow">{t("labelField")}</label>
-          <input value={label} onChange={(e) => setLabel(e.target.value)} />
+          <input ref={labelRef} value={label} onChange={(e) => setLabel(e.target.value)} />
         </div>
         <div className="field" style={{ marginBottom: 12 }}>
           <label className="eyebrow">{t("monthField")}</label>
@@ -230,16 +249,7 @@ function MilestoneDialog({
           {t("doneField")}
         </label>
         <div style={{ display: "flex", gap: 10, marginTop: 18, flexWrap: "wrap" }}>
-          <button
-            className="btn"
-            disabled={pending || !label || !month}
-            onClick={() =>
-              startTransition(async () => {
-                await saveMilestone({ id: milestone?.id, weddingId, month, label, done });
-                onClose();
-              })
-            }
-          >
+          <button className="btn" disabled={pending || !label || !month} onClick={save}>
             {t("saveDraft")}
           </button>
           {milestone && (
