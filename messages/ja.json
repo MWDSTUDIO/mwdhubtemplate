@@ -586,7 +586,8 @@
         "awaiting": "見積待ち",
         "paid": "精算済み",
         "open": "未定",
-        "draft": "下書き"
+        "draft": "下書き",
+        "draftAria": "お二人にはまだ公開されていません"
       },
       "colLine": "項目",
       "colCurrency": "通貨",
@@ -606,7 +607,8 @@
       "paidShort": "精算済 {amount}",
       "remainingShort": "残り {amount}",
       "scheduleTitle": "支払期",
-      "settled": "精算済み"
+      "settled": "精算済み",
+      "draftLegend": "お二人にはまだ公開されていません"
     }
   },
   "vendors": {

@@ -586,7 +586,8 @@
         "awaiting": "Awaiting quote",
         "paid": "Settled",
         "open": "Open",
-        "draft": "Draft"
+        "draft": "Draft",
+        "draftAria": "Not yet published to the couple"
       },
       "colLine": "Line",
       "colCurrency": "Cur.",
@@ -606,7 +607,8 @@
       "paidShort": "Settled {amount}",
       "remainingShort": "{amount} remains",
       "scheduleTitle": "The instalments",
-      "settled": "Settled"
+      "settled": "Settled",
+      "draftLegend": "not yet published to the couple"
     }
   },
   "vendors": {

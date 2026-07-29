@@ -994,7 +994,62 @@ ul.steps { list-style: none; }
 }
 .ledger thead th:nth-child(2) { z-index: 4; }
 .ledger-group td { background: var(--parchment) !important; font-size: 13px; }
-.ledger .cell-focus { box-shadow: inset 0 0 0 2px var(--champagne); }
+/* ── the active cell, three unmistakable states (ledger brief §1) ──
+   The row is always marked so the eye follows horizontally; the
+   selected cell (arrow navigation) sits on parchment behind a 1px
+   hunter inset flush with the table's rules; the editing cell turns
+   plain white — the passage says, without words, that typing now
+   writes. Hover stays lighter than any of them. */
+.ledger tr.row-active > td { background: oklch(0.7749 0.0521 76.74 / 0.07); }
+.ledger tr.row-active > td:nth-child(2) {
+  /* the sticky name cell needs an opaque coat, and carries the row's flag */
+  background: oklch(0.9679 0.0114 79.6);
+  font-weight: 500;
+  color: var(--hunter);
+}
+.ledger td.cell-focus {
+  background: var(--parchment);
+  box-shadow: inset 0 0 0 1px var(--hunter);
+  font-weight: 500;
+  color: var(--hunter);
+}
+.ledger td.cell-editing {
+  background: var(--surface);
+  box-shadow: inset 0 0 0 1.5px var(--hunter);
+}
+.ledger tbody tr:hover > td { background: oklch(0.7749 0.0521 76.74 / 0.04); }
+.ledger tbody tr:hover > td:nth-child(2) { background: oklch(0.9816 0.0065 79.6); }
+.ledger tbody tr.ledger-group:hover > td { background: var(--parchment); }
+/* Hovering the active row never softens its mark. */
+.ledger tbody tr.row-active:hover > td { background: oklch(0.7749 0.0521 76.74 / 0.07); }
+.ledger tbody tr.row-active:hover > td:nth-child(2) { background: oklch(0.9679 0.0114 79.6); }
+/* The cell states outrank the row wash and the hover, whatever the column. */
+.ledger tbody tr > td.cell-focus,
+.ledger tbody tr.row-active > td.cell-focus,
+.ledger tbody tr:hover > td.cell-focus { background: var(--parchment); }
+.ledger tbody tr > td.cell-editing,
+.ledger tbody tr.row-active > td.cell-editing,
+.ledger tbody tr:hover > td.cell-editing { background: var(--surface); }
+/* ── the draft marker: a bare dot, never a boxed character (§2) ── */
+.draft-dot {
+  display: inline-block;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--bronze);
+  vertical-align: middle;
+}
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
 .ledger.dense td, .ledger.dense th { padding-top: 4px; padding-bottom: 4px; font-size: 13px; }
 .housebook { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 14px; }
 .hb-card { margin: 0; }

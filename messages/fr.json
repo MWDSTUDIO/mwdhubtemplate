@@ -586,7 +586,8 @@
         "awaiting": "En attente de devis",
         "paid": "Réglé",
         "open": "Ouvert",
-        "draft": "Brouillon"
+        "draft": "Brouillon",
+        "draftAria": "Pas encore publié au couple"
       },
       "colLine": "Poste",
       "colCurrency": "Dev.",
@@ -606,7 +607,8 @@
       "paidShort": "Réglé {amount}",
       "remainingShort": "Reste {amount}",
       "scheduleTitle": "Les échéances",
-      "settled": "Réglé"
+      "settled": "Réglé",
+      "draftLegend": "pas encore publié au couple"
     }
   },
   "vendors": {

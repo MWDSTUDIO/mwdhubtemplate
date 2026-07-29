@@ -586,7 +586,8 @@
         "awaiting": "A la espera de presupuesto",
         "paid": "Saldado",
         "open": "Abierto",
-        "draft": "Borrador"
+        "draft": "Borrador",
+        "draftAria": "Aún no publicado a la pareja"
       },
       "colLine": "Partida",
       "colCurrency": "Div.",
@@ -606,7 +607,8 @@
       "paidShort": "Saldado {amount}",
       "remainingShort": "Resta {amount}",
       "scheduleTitle": "Los vencimientos",
-      "settled": "Saldado"
+      "settled": "Saldado",
+      "draftLegend": "aún no publicado a la pareja"
     }
   },
   "vendors": {

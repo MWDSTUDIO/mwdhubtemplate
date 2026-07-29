@@ -586,7 +586,8 @@
         "awaiting": "待报价",
         "paid": "已结清",
         "open": "未定",
-        "draft": "草稿"
+        "draft": "草稿",
+        "draftAria": "尚未向新人发布"
       },
       "colLine": "项目",
       "colCurrency": "币种",
@@ -606,7 +607,8 @@
       "paidShort": "已结 {amount}",
       "remainingShort": "余 {amount}",
       "scheduleTitle": "付款期",
-      "settled": "已结清"
+      "settled": "已结清",
+      "draftLegend": "尚未向新人发布"
     }
   },
   "vendors": {

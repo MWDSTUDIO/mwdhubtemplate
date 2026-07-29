@@ -398,12 +398,14 @@ function Ledger({
   );
 
   const cell = (row: Row, ri: number, col: number, content: React.ReactNode, num = false) => {
-    const isFocus = focus.r === ri && focus.c === col;
     const isEditing = editing && editing.id === row.id && editing.col === String(col);
+    // Selected and editing are two different promises to the keyboard:
+    // one says the arrows move, the other says the keys write (§1).
+    const isFocus = !isEditing && focus.r === ri && focus.c === col;
     const editable = isTeam && EDITABLE[String(col)];
     return (
       <td
-        className={`${num ? "num " : ""}${isFocus ? "cell-focus" : ""}`}
+        className={`${num ? "num " : ""}${isFocus ? "cell-focus" : ""}${isEditing ? "cell-editing" : ""}`}
         style={editable ? { cursor: "text" } : undefined}
         onClick={() => { setFocus({ r: ri, c: col }); if (editable) beginEdit(ri, col); }}
       >
@@ -451,7 +453,7 @@ function Ledger({
         <table className={`sheet-table ledger${dense ? " dense" : ""}`} ref={gridRef}>
           <thead>
             <tr>
-              <th aria-label={t("colStatus")} style={{ width: 24 }}></th>
+              <th aria-label={t("colStatus")} style={{ width: 20 }}></th>
               {th(t("colLine"), "label")}
               {th(t("colCurrency"), null)}
               {th("HT", null, true)}
@@ -496,10 +498,19 @@ function Ledger({
                   {!isCollapsed &&
                     groupRows.map((r) => {
                       const ri = flat.findIndex((f) => f.id === r.id);
+                      const isActiveRow = flat[focus.r]?.id === r.id;
                       return (
-                        <tr key={r.id} style={r.parentId ? { color: "var(--ink2)", fontSize: "0.94em" } : undefined}>
-                          <td>
-                            {r.draft && <span className="tag int" title={t("status.draft")}>·</span>}
+                        <tr
+                          key={r.id}
+                          className={isActiveRow ? "row-active" : undefined}
+                          style={r.parentId ? { color: "var(--ink2)", fontSize: "0.94em" } : undefined}
+                        >
+                          <td style={{ textAlign: "center", paddingRight: 4 }}>
+                            {r.draft && (
+                              <span className="draft-dot" role="img" aria-label={t("status.draftAria")} title={t("status.draft")}>
+                                <span className="sr-only">{t("status.draftAria")}</span>
+                              </span>
+                            )}
                           </td>
                           {cell(
                             r, ri, 1,
@@ -529,7 +540,12 @@ function Ledger({
           </tbody>
         </table>
       </div>
-      {isTeam && <p className="team-only" style={{ fontSize: 12.5, color: "var(--ink2)", marginTop: 10 }}>{t("ledgerHint")}</p>}
+      {isTeam && (
+        <p className="team-only" style={{ fontSize: 12.5, color: "var(--ink2)", marginTop: 10 }}>
+          <span className="draft-dot" aria-hidden="true" style={{ marginRight: 6 }} />
+          {t("draftLegend")} — {t("ledgerHint")}
+        </p>
+      )}
     </div>
   );
 }
