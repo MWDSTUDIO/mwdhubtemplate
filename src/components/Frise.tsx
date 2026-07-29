@@ -101,6 +101,7 @@ export function Frise({
     <div className="card" style={{ padding: "10px 28px" }}>
       <div className="frise">
         <div className="frise-line" />
+        <div className="frise-scrollhint" aria-hidden="true" />
         <div className="frise-in">
           {milestones.map((m) => (
             <div key={m.id} className={`mo${m.done ? " done" : ""}`}>

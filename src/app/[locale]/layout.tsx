@@ -39,7 +39,10 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   themeColor: "#22382B",
   width: "device-width",
-  initialScale: 1
+  initialScale: 1,
+  // Without cover, iOS never feeds the env(safe-area-inset-*) values
+  // the shell relies on — the prerequisite to every safe-area rule (I3).
+  viewportFit: "cover"
 };
 
 export function generateStaticParams() {

@@ -1002,3 +1002,102 @@ ul.steps { list-style: none; }
 @media (max-width: 480px) {
   .housebook { grid-template-columns: 1fr; }
 }
+
+/* ═══════════════════════════════════════════════════════════════════
+   Mobile — the house judged on a telephone (brief block I).
+   Safe areas live on the shell, not on each component: env() reads 0
+   everywhere but under iOS notches and home bars, where it matters.
+   ═══════════════════════════════════════════════════════════════════ */
+
+.topbar {
+  padding-top: calc(22px + env(safe-area-inset-top, 0px));
+  padding-left: calc(44px + env(safe-area-inset-left, 0px));
+  padding-right: calc(44px + env(safe-area-inset-right, 0px));
+}
+section.sheet {
+  padding-left: calc(48px + env(safe-area-inset-left, 0px));
+  padding-right: calc(48px + env(safe-area-inset-right, 0px));
+}
+main.hub { padding-bottom: calc(90px + env(safe-area-inset-bottom, 0px)); }
+.maBtn {
+  right: calc(26px + env(safe-area-inset-right, 0px));
+  bottom: calc(26px + env(safe-area-inset-bottom, 0px));
+}
+.maPanel {
+  right: calc(26px + env(safe-area-inset-right, 0px));
+  bottom: calc(92px + env(safe-area-inset-bottom, 0px));
+}
+.gate-c {
+  padding: calc(30px + env(safe-area-inset-top, 0px)) calc(30px + env(safe-area-inset-right, 0px))
+    calc(30px + env(safe-area-inset-bottom, 0px)) calc(30px + env(safe-area-inset-left, 0px));
+}
+.fs-hint { top: calc(28px + env(safe-area-inset-top, 0px)); }
+
+@media (max-width: 900px) {
+  .topbar {
+    padding-top: calc(16px + env(safe-area-inset-top, 0px));
+    padding-left: calc(22px + env(safe-area-inset-left, 0px));
+    padding-right: calc(22px + env(safe-area-inset-right, 0px));
+  }
+  section.sheet {
+    padding-left: calc(22px + env(safe-area-inset-left, 0px));
+    padding-right: calc(22px + env(safe-area-inset-right, 0px));
+  }
+}
+
+/* ── the true telephone breakpoint (I4) ─────────────────────────── */
+@media (max-width: 480px) {
+  /* The nav leaves the stacked-tab pile for a quiet bar at the thumb. */
+  aside.house {
+    position: fixed;
+    top: auto;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: auto;
+    padding: 0;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    z-index: var(--z-sticky);
+    box-shadow: 0 -10px 30px oklch(0.3178 0.0365 157.6 / 0.25);
+  }
+  .house .logo, .house .aside-foot, .house nav .grp { display: none; }
+  .house nav {
+    display: flex;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .house nav::-webkit-scrollbar { display: none; }
+  /* The sidebar groups its links in wrappers; here they must dissolve
+     so every destination sits on the same scrollable row. */
+  .house nav > div { display: contents; }
+  .house nav a {
+    padding: 14px 16px;
+    white-space: nowrap;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    border-left: none;
+    border-top: 2px solid transparent;
+  }
+  .house nav a.active { border-left: none; border-top-color: var(--champagne); }
+  main.hub { padding-bottom: calc(140px + env(safe-area-inset-bottom, 0px)); }
+  section.sheet { padding-top: 26px; }
+  h1.title { font-size: 26px; }
+  .hero-count .serif { font-size: 46px; }
+  /* Fingers, not cursors: primary targets reach 44px. */
+  .btn, .viewpick { min-height: 44px; }
+  .topbar { position: static; }
+  /* The frise scrolls by design — say so with a fading edge. */
+  .frise { position: relative; }
+  .frise-scrollhint {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 42px;
+    pointer-events: none;
+    background: linear-gradient(90deg, transparent, var(--surface, #fdfcf7));
+  }
+}
