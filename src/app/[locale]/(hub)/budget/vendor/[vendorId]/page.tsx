@@ -31,12 +31,33 @@ export default async function VendorSheetPage({
   if (!wedding) return null;
 
   const supabase = await createClient();
-  const [{ data: vendor }, { data: lines }, itemsRes, noteRes] = await Promise.all([
-    supabase.from("vendors").select("*").eq("id", vendorId).eq("wedding_id", wedding.id).maybeSingle(),
-    supabase.from("budget_lines").select("*").eq("vendor_id", vendorId).order("sort"),
-    supabase.from("budget_line_items").select("*").eq("wedding_id", wedding.id).order("sort"),
-    supabase.from("vendor_client_notes").select("*").eq("vendor_id", vendorId).maybeSingle()
-  ]);
+  // Everything independent leaves in one burst (vitesse brief §8);
+  // only the banking decrypt, which depends on the reveal flags,
+  // waits behind it.
+  const [{ data: vendor }, { data: lines }, itemsRes, noteRes, paymentsRes, readingsRes, metaRes] =
+    await Promise.all([
+      supabase.from("vendors").select("*").eq("id", vendorId).eq("wedding_id", wedding.id).maybeSingle(),
+      supabase.from("budget_lines").select("*").eq("vendor_id", vendorId).order("sort"),
+      supabase.from("budget_line_items").select("*").eq("wedding_id", wedding.id).order("sort"),
+      supabase.from("vendor_client_notes").select("*").eq("vendor_id", vendorId).maybeSingle(),
+      supabase
+        .from("payments")
+        .select("*")
+        .eq("wedding_id", wedding.id)
+        .order("due_date", { ascending: true, nullsFirst: false }),
+      session.isTeam
+        ? supabase
+            .from("document_readings")
+            .select("id, label, payload, created_at")
+            .eq("wedding_id", wedding.id)
+            .eq("vendor_id", vendorId)
+            .eq("status", "proposed")
+            .order("created_at", { ascending: false })
+        : Promise.resolve({ data: null }),
+      session.isTeam
+        ? supabase.from("vendor_banking").select("*").eq("vendor_id", vendorId).maybeSingle<Record<string, unknown>>()
+        : Promise.resolve({ data: null })
+    ]);
   if (!vendor) notFound();
 
   const vendorLines = (lines ?? []) as BudgetLine[];
@@ -44,12 +65,7 @@ export default async function VendorSheetPage({
   const items = ((itemsRes.data ?? []) as BudgetLineItem[]).filter((it) => lineIds.has(it.budget_line_id));
   const note = noteRes.data as { body_raw: string | null; body: string | null; status: string } | null;
 
-  const { data: payments } = await supabase
-    .from("payments")
-    .select("*")
-    .eq("wedding_id", wedding.id)
-    .order("due_date", { ascending: true, nullsFirst: false });
-  const vendorPayments = ((payments ?? []) as Payment[]).filter(
+  const vendorPayments = ((paymentsRes.data ?? []) as Payment[]).filter(
     (p) => p.budget_line_id && lineIds.has(p.budget_line_id)
   );
 
@@ -80,16 +96,7 @@ export default async function VendorSheetPage({
   }
 
   // The banking readings awaiting Estelle's eye — this vendor's only.
-  const bankingReadingsRes = session.isTeam
-    ? await supabase
-        .from("document_readings")
-        .select("id, label, payload, created_at")
-        .eq("wedding_id", wedding.id)
-        .eq("vendor_id", vendorId)
-        .eq("status", "proposed")
-        .order("created_at", { ascending: false })
-    : { data: null };
-  const bankingReadings = (bankingReadingsRes.data ?? []).filter(
+  const bankingReadings = (readingsRes.data ?? []).filter(
     (r) => (r.payload as { kind?: string } | null)?.kind === "banking"
   );
 
@@ -103,11 +110,7 @@ export default async function VendorSheetPage({
     pending_read_at: string | null;
   } | null = null;
   if (session.isTeam) {
-    const { data: metaRow } = await supabase
-      .from("vendor_banking")
-      .select("*")
-      .eq("vendor_id", vendorId)
-      .maybeSingle<Record<string, unknown>>();
+    const metaRow = metaRes.data;
     if (metaRow) {
       bankingMeta = {
         exists: true,

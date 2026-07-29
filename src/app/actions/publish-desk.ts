@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { requireHouseSession } from "@/lib/session";
 import { notifyCouple } from "@/lib/notify";
 import { logActivity } from "@/lib/activity";
+import { revalidateRooms } from "@/lib/revalidate";
 import { publishDocumentToCouple } from "@/app/actions/documents";
 import { runAgent } from "@/lib/agents/run";
 
@@ -239,7 +240,7 @@ export async function publishSweep(weddingId: string, input: SweepInput) {
     }
   }
 
-  revalidatePath("/", "layout");
+  revalidateRooms("", "timeline", "budget", "documents", "design");
   return { ok: true as const, counts, logId };
 }
 
@@ -293,6 +294,6 @@ export async function unpublishSweep(logId: string) {
     of: logId
   });
 
-  revalidatePath("/", "layout");
+  revalidateRooms("", "timeline", "budget", "documents", "design");
   return { ok: true as const };
 }

@@ -60,22 +60,24 @@ export default async function BoardPage({
     ? ((subRow?.content ?? {}) as Record<string, unknown>)
     : (board as unknown as Record<string, unknown>);
 
-  // Signed URLs for the collage + backdrop (RLS-checked by Storage).
+  // Signed URLs for the collage + backdrop (RLS-checked by Storage) —
+  // the backdrop signs in the same burst as the tiles (vitesse §8).
   const photoPaths = ((source.photos as Record<string, string>) ?? {});
   const photoUrls: Record<string, string> = {};
-  await Promise.all(
-    Object.entries(photoPaths).map(async ([slot, path]) => {
+  let backdropUrl: string | null = null;
+  await Promise.all([
+    ...Object.entries(photoPaths).map(async ([slot, path]) => {
       const { data } = await supabase.storage.from("shared").createSignedUrl(path, 3600);
       if (data?.signedUrl) photoUrls[slot] = data.signedUrl;
-    })
-  );
-  let backdropUrl: string | null = null;
-  if (source.backdrop_path) {
-    const { data } = await supabase.storage
-      .from("shared")
-      .createSignedUrl(source.backdrop_path as string, 3600);
-    backdropUrl = data?.signedUrl ?? null;
-  }
+    }),
+    (async () => {
+      if (!source.backdrop_path) return;
+      const { data } = await supabase.storage
+        .from("shared")
+        .createSignedUrl(source.backdrop_path as string, 3600);
+      backdropUrl = data?.signedUrl ?? null;
+    })()
+  ]);
 
   const weddingDate = wedding.date_start
     ? format.dateTime(new Date(wedding.date_start), { month: "long", year: "numeric" })

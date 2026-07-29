@@ -30,52 +30,60 @@ export default async function HomePage({
   }
 
   const supabase = await createClient();
-  const [{ data: attentions }, { data: internalTasks }, { count: boardsMoving }, { count: docsShared }] =
-    await Promise.all([
-      supabase
-        .from("attentions")
-        .select("*")
-        .eq("wedding_id", wedding.id)
-        .neq("status", "attended")
-        .order("due_date", { ascending: true, nullsFirst: false })
-        .limit(4),
-      session.isTeam
-        ? supabase
-            .from("internal_tasks")
-            .select("*")
-            .eq("wedding_id", wedding.id)
-            .eq("done", false)
-            .order("due_date", { ascending: true, nullsFirst: false })
-            .limit(3)
-        : Promise.resolve({ data: [] as InternalTask[] }),
-      supabase
-        .from("boards")
-        .select("id", { count: "exact", head: true })
-        .eq("wedding_id", wedding.id)
-        .neq("status", "in_creation"),
-      supabase
-        .from("documents")
-        .select("id", { count: "exact", head: true })
-        .eq("wedding_id", wedding.id)
-        .eq("internal", false)
-    ]);
-
-  // The moments the couple proposed — for the house to confirm.
-  let proposals: AvailabilityProposal[] = [];
-  let proposerNames: Record<string, string> = {};
-  if (session.isTeam) {
-    const { data } = await supabase
-      .from("availability_proposals")
+  // One burst, one wait (vitesse brief §8) — the proposals ride along
+  // instead of queueing behind the first four.
+  const [
+    { data: attentions },
+    { data: internalTasks },
+    { count: boardsMoving },
+    { count: docsShared },
+    proposalsRes
+  ] = await Promise.all([
+    supabase
+      .from("attentions")
       .select("*")
       .eq("wedding_id", wedding.id)
-      .order("created_at", { ascending: false })
-      .limit(5);
-    proposals = (data ?? []) as AvailabilityProposal[];
-    const ids = [...new Set(proposals.map((p) => p.proposed_by).filter(Boolean))] as string[];
-    if (ids.length) {
-      const { data: profs } = await supabase.from("profiles").select("id, full_name").in("id", ids);
-      proposerNames = Object.fromEntries((profs ?? []).map((p) => [p.id, p.full_name]));
-    }
+      .neq("status", "attended")
+      .order("due_date", { ascending: true, nullsFirst: false })
+      .limit(4),
+    session.isTeam
+      ? supabase
+          .from("internal_tasks")
+          .select("*")
+          .eq("wedding_id", wedding.id)
+          .eq("done", false)
+          .order("due_date", { ascending: true, nullsFirst: false })
+          .limit(3)
+      : Promise.resolve({ data: [] as InternalTask[] }),
+    supabase
+      .from("boards")
+      .select("id", { count: "exact", head: true })
+      .eq("wedding_id", wedding.id)
+      .neq("status", "in_creation"),
+    supabase
+      .from("documents")
+      .select("id", { count: "exact", head: true })
+      .eq("wedding_id", wedding.id)
+      .eq("internal", false),
+    session.isTeam
+      ? supabase
+          .from("availability_proposals")
+          .select("*")
+          .eq("wedding_id", wedding.id)
+          .order("created_at", { ascending: false })
+          .limit(5)
+      : Promise.resolve({ data: null })
+  ]);
+
+  // The moments the couple proposed — for the house to confirm. The
+  // proposer names genuinely depend on the proposals, so they alone
+  // wait a second round-trip.
+  const proposals = (proposalsRes.data ?? []) as AvailabilityProposal[];
+  let proposerNames: Record<string, string> = {};
+  const proposerIds = [...new Set(proposals.map((p) => p.proposed_by).filter(Boolean))] as string[];
+  if (proposerIds.length) {
+    const { data: profs } = await supabase.from("profiles").select("id, full_name").in("id", proposerIds);
+    proposerNames = Object.fromEntries((profs ?? []).map((p) => [p.id, p.full_name]));
   }
 
   const days = wedding.first_toast_at

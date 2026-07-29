@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { requireHouseSession } from "@/lib/session";
 import { logActivity } from "@/lib/activity";
+import { revalidateRooms } from "@/lib/revalidate";
 
 /** Team guard for all timeline mutations — RLS enforces it again below. */
 async function teamSession() {
@@ -36,14 +37,14 @@ export async function saveMilestone(input: {
       status: "draft"
     });
   }
-  revalidatePath("/", "layout");
+  revalidateRooms("", "timeline");
 }
 
 export async function deleteMilestone(id: string) {
   await teamSession();
   const supabase = await createClient();
   await supabase.from("timeline_milestones").delete().eq("id", id);
-  revalidatePath("/", "layout");
+  revalidateRooms("", "timeline");
 }
 
 export async function publishTimeline(weddingId: string) {
@@ -53,7 +54,7 @@ export async function publishTimeline(weddingId: string) {
   await logActivity(supabase, weddingId, session.profile.full_name, "publish_timeline", {
     counts: { milestones: published ?? 0 }
   });
-  revalidatePath("/", "layout");
+  revalidateRooms("", "timeline");
 }
 
 export async function saveMonthlyNoteDraft(input: {
