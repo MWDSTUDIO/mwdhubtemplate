@@ -433,6 +433,11 @@ export async function updatePaymentFlags(
   const supabase = await createClient();
   const { error } = await supabase.from("payments").update(flags).eq("id", paymentId);
   revalidatePath("/budget");
+  // The Postgres lock (migration 0016): nothing reveals unverified
+  // coordinates to the couple — surface it as a sentence, not a crash.
+  if (error && `${error.message}`.includes("banking_not_verified")) {
+    return { ok: false, reason: "banking_not_verified" as const };
+  }
   return { ok: !error };
 }
 

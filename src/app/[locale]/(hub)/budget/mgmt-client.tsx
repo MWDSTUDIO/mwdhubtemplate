@@ -403,6 +403,7 @@ export function PaymentsCalendar({
   const [editingId, setEditingId] = useState<string | null>(null);
   const [notice, setNotice] = useState<{ id: string; text: string } | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [revealHeld, setRevealHeld] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
   const groups = useMemo(() => {
@@ -518,13 +519,19 @@ export function PaymentsCalendar({
                               aria-pressed={Boolean(p.reveal_banking)}
                               onClick={() =>
                                 startTransition(async () => {
-                                  await updatePaymentFlags(p.id, { reveal_banking: !p.reveal_banking });
+                                  const r = await updatePaymentFlags(p.id, { reveal_banking: !p.reveal_banking });
+                                  setRevealHeld("reason" in r && r.reason === "banking_not_verified" ? p.id : null);
                                   router.refresh();
                                 })
                               }
                             >
                               {p.reveal_banking ? t("revealOn") : t("revealOff")}
-                            </button>{" "}
+                            </button>
+                            {revealHeld === p.id && (
+                              <span role="alert" style={{ display: "block", fontSize: 12.5, color: "var(--bronze)" }}>
+                                {t("revealHeld")}
+                              </span>
+                            )}{" "}
                             <button
                               className="addnote"
                               onClick={() =>

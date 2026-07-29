@@ -1,11 +1,41 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { useTranslations } from "next-intl";
+import { useFormatter, useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import { refineVendorNote, saveVendorClientNote } from "@/app/actions/vendors";
-import { readVendorBanking, saveVendorBanking } from "@/app/actions/banking";
+import {
+  readVendorBanking,
+  saveVendorBanking,
+  verifyVendorBanking,
+  verifyPendingBanking,
+  dismissPendingBanking,
+  acceptBankingReading,
+  dismissBankingReading
+} from "@/app/actions/banking";
+import { ibanGroups } from "@/lib/banking-checks";
 import { Dictate } from "@/components/Dictate";
+
+/** A value the couple can carry away in one touch. */
+export function CopyLine({ label, value, copyValue }: { label: string; value: string; copyValue: string }) {
+  const [held, setHeld] = useState(false);
+  return (
+    <div style={{ display: "flex", gap: 10, alignItems: "baseline", flexWrap: "wrap" }}>
+      <span>{label}&nbsp;: <span className="num">{value}</span></span>
+      <button
+        className="addnote"
+        onClick={() => {
+          void navigator.clipboard?.writeText(copyValue).then(() => {
+            setHeld(true);
+            setTimeout(() => setHeld(false), 1800);
+          });
+        }}
+      >
+        {held ? "✓" : "⧉"}
+      </button>
+    </div>
+  );
+}
 
 /**
  * The sheet's note, under the language rule: Estelle's raw words stay
@@ -99,6 +129,396 @@ export function VendorNoteEditor({
   );
 }
 
+interface BankingMeta {
+  exists: boolean;
+  status: string;
+  verified_by: string | null;
+  verified_at: string | null;
+  verification_method: string | null;
+  pending_read_at: string | null;
+}
+
+interface BankingReadingRow {
+  id: string;
+  label: string;
+  created_at: string;
+  payload: Record<string, unknown>;
+}
+
+type F = { value?: string | null; raw?: string | null; confidence?: number; page?: number | null };
+interface ReadBlock {
+  identifies?: string | null;
+  corridor?: string;
+  beneficiary?: Record<string, F>;
+  account?: Record<string, F>;
+  bank?: Record<string, F>;
+  intermediary?: Record<string, F> | null;
+  terms?: Record<string, F>;
+  flagged?: { field: string; reason: string; quote?: string; position?: string | null }[];
+}
+
+/**
+ * The banking desk of the vendor sheet (banking brief §3–§6): drop a
+ * paper, review the reading field by field beside its raw print,
+ * verify de vive voix, and never let a change slip in silently.
+ */
+export function BankingDesk({
+  weddingId,
+  vendorId,
+  meta,
+  readings
+}: {
+  weddingId: string;
+  vendorId: string;
+  meta: BankingMeta;
+  readings: BankingReadingRow[];
+}) {
+  const t = useTranslations("budget.fiche.banking");
+  const format = useFormatter();
+  const router = useRouter();
+  const [dropBusy, setDropBusy] = useState(false);
+  const [dropNote, setDropNote] = useState<string | null>(null);
+
+  async function readDocument(file: File) {
+    if (dropBusy) return;
+    setDropBusy(true);
+    setDropNote(null);
+    try {
+      const form = new FormData();
+      form.append("weddingId", weddingId);
+      form.append("vendorId", vendorId);
+      form.append("file", file);
+      const r = await fetch("/api/agents/banking", { method: "POST", body: form });
+      const d = await r.json();
+      setDropNote(d.text ?? t("readFailed"));
+      router.refresh();
+    } catch {
+      setDropNote(t("readFailed"));
+    }
+    setDropBusy(false);
+  }
+
+  const when = (iso: string | null) =>
+    iso ? format.dateTime(new Date(iso), { day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" }) : "";
+
+  return (
+    <div className="team-only" style={{ display: "grid", gap: 12 }}>
+      {/* The state, never ambiguous: read is not verified (§0). */}
+      {meta.exists && meta.status === "verified" && (
+        <p style={{ fontSize: 13.5, margin: 0 }}>
+          <span className="tag ok">{t("statusVerified")}</span>{" "}
+          {t("verifiedLine", {
+            by: meta.verified_by ?? "—",
+            when: when(meta.verified_at),
+            method: meta.verification_method === "in_person" ? t("methodInPerson") : t("methodCall")
+          })}
+        </p>
+      )}
+      {meta.exists && meta.status !== "verified" && (
+        <p style={{ fontSize: 13.5, margin: 0 }}>
+          <span className="tag int">{t("statusRead")}</span> {t("readLine")}
+        </p>
+      )}
+
+      {/* The number-one fraud signal — loud, never discreet (§6). */}
+      {meta.pending_read_at && (
+        <PendingAlert weddingId={weddingId} vendorId={vendorId} readAt={when(meta.pending_read_at)} />
+      )}
+
+      {readings.map((r) => (
+        <BankingReading key={r.id} weddingId={weddingId} vendorId={vendorId} reading={r} />
+      ))}
+
+      {/* Verification de vive voix — on a number obtained OUTSIDE the
+          document (§5). */}
+      {meta.exists && meta.status !== "verified" && meta.status !== "none" && (
+        <VerifyForm
+          onVerify={(method, contact) => verifyVendorBanking(vendorId, weddingId, { method, contact })}
+        />
+      )}
+
+      <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+        <label className="btn ghost sm" style={{ cursor: "pointer" }}>
+          {dropBusy ? "…" : t("dropDoc")}
+          <input
+            type="file"
+            accept=".pdf,.png,.jpg,.jpeg,.webp"
+            hidden
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              if (f) void readDocument(f);
+              e.target.value = "";
+            }}
+          />
+        </label>
+        <BankingEditor weddingId={weddingId} vendorId={vendorId} />
+      </div>
+      {dropNote && (
+        <p className="ia-quote" style={{ fontSize: 14.5 }} aria-live="polite">{dropNote}</p>
+      )}
+      <p style={{ fontSize: 12.5, color: "var(--ink2)", margin: 0 }}>{t("vaultNote")}</p>
+    </div>
+  );
+}
+
+function VerifyForm({
+  onVerify,
+  title
+}: {
+  onVerify: (method: "call" | "in_person", contact: string) => Promise<{ ok: boolean }>;
+  title?: string;
+}) {
+  const t = useTranslations("budget.fiche.banking");
+  const router = useRouter();
+  const [open, setOpen] = useState(false);
+  const [method, setMethod] = useState<"call" | "in_person">("call");
+  const [contact, setContact] = useState("");
+  const [pending, startTransition] = useTransition();
+
+  if (!open) {
+    return (
+      <button className="addnote" style={{ justifySelf: "start" }} onClick={() => setOpen(true)}>
+        {title ?? t("verifyOpen")}
+      </button>
+    );
+  }
+  return (
+    <div style={{ border: "1px dashed var(--champagne)", padding: "12px 14px", display: "grid", gap: 8 }}>
+      <p style={{ fontSize: 13, margin: 0 }}>{t("verifyRule")}</p>
+      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+        <select value={method} onChange={(e) => setMethod(e.target.value as "call" | "in_person")} style={{ padding: "8px 10px", border: "1px solid var(--line)" }}>
+          <option value="call">{t("methodCall")}</option>
+          <option value="in_person">{t("methodInPerson")}</option>
+        </select>
+        <input
+          value={contact}
+          onChange={(e) => setContact(e.target.value)}
+          placeholder={t("contactPlaceholder")}
+          style={{ flex: 1, minWidth: 220 }}
+        />
+      </div>
+      <div style={{ display: "flex", gap: 8 }}>
+        <button
+          className="btn sm"
+          disabled={pending || !contact.trim()}
+          onClick={() =>
+            startTransition(async () => {
+              const r = await onVerify(method, contact.trim());
+              if (r.ok) {
+                setOpen(false);
+                router.refresh();
+              }
+            })
+          }
+        >
+          {pending ? "…" : t("verifyConfirm")}
+        </button>
+        <button className="btn ghost sm" onClick={() => setOpen(false)}>{t("verifyLater")}</button>
+      </div>
+    </div>
+  );
+}
+
+function PendingAlert({ weddingId, vendorId, readAt }: { weddingId: string; vendorId: string; readAt: string }) {
+  const t = useTranslations("budget.fiche.banking");
+  const router = useRouter();
+  const [pending, startTransition] = useTransition();
+  return (
+    <div role="alert" style={{ border: "2px solid var(--bronze)", background: "oklch(0.478 0.0677 77.73 / 0.08)", padding: "14px 16px", display: "grid", gap: 8 }}>
+      <div className="eyebrow" style={{ color: "var(--bronze)" }}>{t("pendingTitle")}</div>
+      <p style={{ fontSize: 14, margin: 0 }}>{t("pendingBody", { when: readAt })}</p>
+      <VerifyForm
+        title={t("pendingVerify")}
+        onVerify={(method, contact) => verifyPendingBanking(vendorId, weddingId, { method, contact })}
+      />
+      <button
+        className="addnote"
+        style={{ justifySelf: "start" }}
+        disabled={pending}
+        onClick={() =>
+          startTransition(async () => {
+            await dismissPendingBanking(vendorId, weddingId);
+            router.refresh();
+          })
+        }
+      >
+        {t("pendingDismiss")}
+      </button>
+    </div>
+  );
+}
+
+/**
+ * The validation screen (§ execution 4): each block field by field —
+ * normalised value, the raw print, confidence, page — accepted only
+ * by Estelle's own tick. Rejected-by-checksum fields arrive empty and
+ * flagged; they cannot be ticked into existence.
+ */
+function BankingReading({
+  weddingId,
+  vendorId,
+  reading
+}: {
+  weddingId: string;
+  vendorId: string;
+  reading: BankingReadingRow;
+}) {
+  const t = useTranslations("budget.fiche.banking");
+  const router = useRouter();
+  const blocks = (reading.payload.blocks as ReadBlock[] | undefined) ?? [];
+  const [blockIdx, setBlockIdx] = useState(0);
+  const block = blocks[blockIdx];
+  const [accepted, setAccepted] = useState<Set<string>>(() => {
+    const s = new Set<string>();
+    const b = blocks[0];
+    if (b) {
+      for (const group of ["beneficiary", "account", "bank", "intermediary", "terms"] as const) {
+        const g = b[group];
+        if (g && typeof g === "object") {
+          for (const [k, f] of Object.entries(g)) {
+            if (f?.value && (f.confidence ?? 0) >= 0.7) s.add(`${group}.${k}`);
+          }
+        }
+      }
+    }
+    return s;
+  });
+  const [pending, startTransition] = useTransition();
+  const [note, setNote] = useState<string | null>(null);
+  if (!block) return null;
+
+  const toggle = (path: string) =>
+    setAccepted((v) => {
+      const next = new Set(v);
+      if (next.has(path)) next.delete(path);
+      else next.add(path);
+      return next;
+    });
+
+  const rows: { path: string; label: string; f: F }[] = [];
+  for (const group of ["beneficiary", "account", "bank", "intermediary", "terms"] as const) {
+    const g = block[group];
+    if (g && typeof g === "object") {
+      for (const [k, f] of Object.entries(g)) {
+        if (f && (f.value || f.raw)) rows.push({ path: `${group}.${k}`, label: `${group}.${k}`, f });
+      }
+    }
+  }
+
+  return (
+    <div className="card" style={{ marginBottom: 0, border: "1px solid var(--champagne)" }}>
+      <div className="eyebrow" style={{ marginBottom: 8 }}>
+        {t("readingTitle")} — {reading.label}
+      </div>
+      {blocks.length > 1 && (
+        <div style={{ display: "flex", gap: 8, marginBottom: 8, flexWrap: "wrap" }}>
+          {blocks.map((b, i) => (
+            <button key={i} className={`viewpick${i === blockIdx ? " on" : ""}`} onClick={() => setBlockIdx(i)}>
+              {b.identifies || `${t("blockN", { n: i + 1 })}`}
+            </button>
+          ))}
+        </div>
+      )}
+      <p style={{ fontSize: 13, color: "var(--ink2)", margin: "0 0 8px" }}>
+        {t("corridorLine", { corridor: block.corridor ?? "unknown" })}
+      </p>
+      <div style={{ overflowX: "auto" }}>
+        <table className="sheet-table">
+          <thead>
+            <tr>
+              <th></th>
+              <th>{t("colField")}</th>
+              <th>{t("colValue")}</th>
+              <th>{t("colRaw")}</th>
+              <th className="num">{t("colConfidence")}</th>
+              <th className="num">{t("colPage")}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map(({ path, f }) => (
+              <tr key={path}>
+                <td>
+                  <input
+                    type="checkbox"
+                    style={{ width: "auto" }}
+                    checked={accepted.has(path)}
+                    disabled={!f.value}
+                    onChange={() => toggle(path)}
+                  />
+                </td>
+                <td style={{ fontSize: 13 }}>{path}</td>
+                <td className="num" style={{ fontVariantNumeric: "tabular-nums" }}>
+                  {f.value
+                    ? path === "account.iban"
+                      ? ibanGroups(f.value)
+                      : f.value
+                    : <em style={{ color: "var(--bronze)" }}>{t("rejected")}</em>}
+                </td>
+                <td style={{ fontSize: 12.5, color: "var(--ink2)" }}>{f.raw ?? ""}</td>
+                <td className="num" style={{ color: (f.confidence ?? 0) < 0.7 ? "var(--bronze)" : undefined }}>
+                  {f.confidence != null ? Math.round(f.confidence * 100) + " %" : ""}
+                </td>
+                <td className="num">{f.page ?? ""}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      {(block.flagged?.length ?? 0) > 0 && (
+        <div style={{ marginTop: 10 }}>
+          <div className="eyebrow" style={{ color: "var(--bronze)", marginBottom: 4 }}>{t("flaggedTitle")}</div>
+          <ul style={{ margin: 0, paddingLeft: 18 }}>
+            {block.flagged!.map((fl, i) => (
+              <li key={i} style={{ fontSize: 13 }}>
+                <b>{fl.field}</b> — {fl.reason}
+                {fl.position ? ` (${t("position")} ${fl.position})` : ""}
+                {fl.quote ? <> : <em>&ldquo;{fl.quote}&rdquo;</em></> : null}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+      <div style={{ display: "flex", gap: 8, marginTop: 12, flexWrap: "wrap", alignItems: "center" }}>
+        <button
+          className="btn sm"
+          disabled={pending || [...accepted].every((p) => !p.startsWith("account."))}
+          onClick={() =>
+            startTransition(async () => {
+              const r = await acceptBankingReading({
+                readingId: reading.id,
+                vendorId,
+                weddingId,
+                blockIndex: blockIdx,
+                accepted: [...accepted]
+              });
+              if (!r.ok) setNote(t("acceptFailed"));
+              else {
+                setNote(r.heldForVerification ? t("acceptHeld") : t("acceptDone"));
+                router.refresh();
+              }
+            })
+          }
+        >
+          {pending ? "…" : t("acceptSelection")}
+        </button>
+        <button
+          className="btn ghost sm"
+          disabled={pending}
+          onClick={() =>
+            startTransition(async () => {
+              await dismissBankingReading(reading.id);
+              router.refresh();
+            })
+          }
+        >
+          {t("dismiss")}
+        </button>
+        {note && <span style={{ fontSize: 12.5, color: "var(--bronze)" }} role="status">{note}</span>}
+      </div>
+    </div>
+  );
+}
+
 /** Banking details — typed once, encrypted, revealed per instalment. */
 export function BankingEditor({ weddingId, vendorId }: { weddingId: string; vendorId: string }) {
   const t = useTranslations("budget.fiche.banking");
@@ -111,7 +531,9 @@ export function BankingEditor({ weddingId, vendorId }: { weddingId: string; vend
   const [loaded, setLoaded] = useState(false);
   const [failed, setFailed] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [held, setHeld] = useState(false);
   const [pending, startTransition] = useTransition();
+  const router = useRouter();
 
   async function openAndLoad() {
     setOpen(true);
@@ -119,10 +541,10 @@ export function BankingEditor({ weddingId, vendorId }: { weddingId: string; vend
     try {
       const r = await readVendorBanking(vendorId);
       if (r.details) {
-        setHolder(r.details.holder ?? "");
-        setIban(r.details.iban ?? "");
-        setSwift(r.details.swift ?? "");
-        setBank(r.details.bank ?? "");
+        setHolder(r.details.beneficiary?.legal_name ?? "");
+        setIban(r.details.account?.iban ?? "");
+        setSwift(r.details.account?.bic ?? "");
+        setBank(r.details.bank?.name ?? "");
       }
     } catch {
       /* empty slate */
@@ -160,15 +582,19 @@ export function BankingEditor({ weddingId, vendorId }: { weddingId: string; vend
                 bank: bank.trim() || undefined
               });
               setFailed(Boolean(r.needsMigration));
+              setHeld(Boolean(r.heldForVerification));
               setSaved(r.ok);
+              router.refresh();
             })
           }
         >
           {pending ? "…" : tc("save")}
         </button>
         <button className="btn ghost sm" onClick={() => setOpen(false)}>{tc("close")}</button>
-        {saved && <span className="tag ok">{t("saved")}</span>}
+        {saved && !held && <span className="tag ok">{t("saved")}</span>}
+        {held && <span className="tag int">{t("heldTag")}</span>}
       </div>
+      {held && <p role="alert" style={{ fontSize: 12.5, color: "var(--bronze)" }}>{t("acceptHeld")}</p>}
       {failed && <p role="alert" style={{ fontSize: 12.5, color: "var(--bronze)" }}>{t("needsMigration")}</p>}
     </div>
   );

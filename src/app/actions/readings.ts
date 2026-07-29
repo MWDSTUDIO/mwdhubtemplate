@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { requireHouseSession } from "@/lib/session";
-import { encryptBanking } from "@/lib/banking";
+import { saveVendorBanking } from "@/app/actions/banking";
 
 async function teamSession() {
   const session = await requireHouseSession();
@@ -222,22 +222,16 @@ export async function acceptReading(input: {
     }
   }
 
-  // ── The banking details — encrypted at rest, never displayed ──
+  // ── The banking details — through the single guarded door: never
+  // a silent overwrite of verified coordinates, always "read" until
+  // Estelle's own out-of-band verification (banking brief §5, §6).
   if (vendorId && input.acceptBanking && p.banking && (p.banking.iban || p.banking.swift)) {
-    await supabase.from("vendor_banking").upsert(
-      {
-        vendor_id: vendorId,
-        wedding_id: weddingId,
-        enc: encryptBanking({
-          holder: p.banking.account_name ?? undefined,
-          iban: p.banking.iban ?? undefined,
-          swift: p.banking.swift ?? undefined,
-          bank: p.banking.bank ?? undefined
-        }),
-        updated_at: new Date().toISOString()
-      },
-      { onConflict: "vendor_id" }
-    );
+    await saveVendorBanking(vendorId, weddingId, {
+      holder: p.banking.account_name ?? undefined,
+      iban: p.banking.iban ?? undefined,
+      swift: p.banking.swift ?? undefined,
+      bank: p.banking.bank ?? undefined
+    });
   }
 
   await supabase

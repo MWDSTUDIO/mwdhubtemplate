@@ -117,7 +117,11 @@ export default async function BudgetPage({
   const lineLabels: Record<string, string> = Object.fromEntries(allLines.map((l) => [l.id, l.label]));
 
   // Each reading beside what the hub currently holds for its vendor.
-  const readings: ReadingRow[] = (readingsRes.data ?? []).map((r) => {
+  // Banking readings live on the vendor sheet, never on this desk.
+  const readingRows = (readingsRes.data ?? []).filter(
+    (r) => (r.payload as { kind?: string } | null)?.kind !== "banking"
+  );
+  const readings: ReadingRow[] = readingRows.map((r) => {
     const line = allLines.find((l) => l.vendor_id === r.vendor_id && !l.parent_line_id);
     const lineItems = line ? items.filter((it) => it.budget_line_id === line.id) : [];
     const linePayments = line

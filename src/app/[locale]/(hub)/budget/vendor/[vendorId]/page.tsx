@@ -4,9 +4,11 @@ import { Link } from "@/i18n/navigation";
 import { requireHouseSession } from "@/lib/session";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { decryptBanking, type BankingDetails } from "@/lib/banking";
+import { decryptProfile, type BankingProfile } from "@/lib/banking";
+import { ibanGroups } from "@/lib/banking-checks";
+import { logActivity } from "@/lib/activity";
 import type { BudgetLine, BudgetLineItem, Payment } from "@/lib/types";
-import { VendorNoteEditor, BankingEditor } from "./vendor-client";
+import { VendorNoteEditor, BankingDesk, CopyLine } from "./vendor-client";
 
 /**
  * The vendor sheet — what the couple pays this house, in full clarity:
@@ -51,12 +53,73 @@ export default async function VendorSheetPage({
     (p) => p.budget_line_id && lineIds.has(p.budget_line_id)
   );
 
-  // Banking reaches the page only when an instalment carries the reveal.
-  let banking: BankingDetails | null = null;
+  // Banking reaches the page only when an instalment carries the
+  // reveal — and, once migration 0016 stands, only when a human of
+  // the house has verified the coordinates out of band (§5, §8).
+  // Every clear-text rendering leaves a trace (§9), never the
+  // coordinates themselves.
+  let banking: BankingProfile | null = null;
   if (vendorPayments.some((p) => p.reveal_banking)) {
     const admin = createAdminClient();
-    const { data: enc } = await admin.from("vendor_banking").select("enc").eq("vendor_id", vendorId).maybeSingle();
-    if (enc) banking = decryptBanking(enc.enc);
+    const { data: row } = await admin
+      .from("vendor_banking")
+      .select("*")
+      .eq("vendor_id", vendorId)
+      .maybeSingle<{ enc: string; status?: string }>();
+    const verifiedOrLegacy = row && (row.status === undefined || row.status === null || row.status === "verified");
+    if (row && verifiedOrLegacy) {
+      banking = decryptProfile(row.enc);
+      await logActivity(
+        admin,
+        wedding.id,
+        session.isTeam ? session.profile.full_name : wedding.couple_display_name,
+        "banking_access",
+        { vendorId, via: "vendor_sheet" }
+      );
+    }
+  }
+
+  // The banking readings awaiting Estelle's eye — this vendor's only.
+  const bankingReadingsRes = session.isTeam
+    ? await supabase
+        .from("document_readings")
+        .select("id, label, payload, created_at")
+        .eq("wedding_id", wedding.id)
+        .eq("vendor_id", vendorId)
+        .eq("status", "proposed")
+        .order("created_at", { ascending: false })
+    : { data: null };
+  const bankingReadings = (bankingReadingsRes.data ?? []).filter(
+    (r) => (r.payload as { kind?: string } | null)?.kind === "banking"
+  );
+
+  // The verification state, without ever decrypting for display here.
+  let bankingMeta: {
+    exists: boolean;
+    status: string;
+    verified_by: string | null;
+    verified_at: string | null;
+    verification_method: string | null;
+    pending_read_at: string | null;
+  } | null = null;
+  if (session.isTeam) {
+    const { data: metaRow } = await supabase
+      .from("vendor_banking")
+      .select("*")
+      .eq("vendor_id", vendorId)
+      .maybeSingle<Record<string, unknown>>();
+    if (metaRow) {
+      bankingMeta = {
+        exists: true,
+        status: (metaRow.status as string) ?? "legacy",
+        verified_by: (metaRow.verified_by as string) ?? null,
+        verified_at: (metaRow.verified_at as string) ?? null,
+        verification_method: (metaRow.verification_method as string) ?? null,
+        pending_read_at: (metaRow.pending_read_at as string) ?? null
+      };
+    } else {
+      bankingMeta = { exists: false, status: "none", verified_by: null, verified_at: null, verification_method: null, pending_read_at: null };
+    }
   }
 
   const money = (n: number | null | undefined, currency = "EUR") =>
@@ -199,26 +262,48 @@ export default async function VendorSheetPage({
           {banking && (
             <div style={{ marginTop: 14, background: "var(--parchment)", padding: "14px 16px" }}>
               <div className="eyebrow" style={{ marginBottom: 6 }}>{t("banking.title")}</div>
-              <p style={{ fontSize: 13.5, fontVariantNumeric: "tabular-nums" }}>
-                {banking.holder && <>{banking.holder}<br /></>}
-                IBAN&nbsp;: {banking.iban}
-                {banking.swift && <><br />SWIFT&nbsp;: {banking.swift}</>}
-                {banking.bank && <><br />{banking.bank}</>}
-              </p>
-              <p style={{ fontSize: 12.5, color: "var(--ink2)", marginTop: 6 }}>{t("banking.revealNote")}</p>
+              <div style={{ fontSize: 14.5, fontVariantNumeric: "tabular-nums", lineHeight: 1.7 }}>
+                {banking.beneficiary?.legal_name && <div>{banking.beneficiary.legal_name}</div>}
+                {banking.account?.iban && (
+                  <CopyLine label="IBAN" value={ibanGroups(banking.account.iban)} copyValue={banking.account.iban.replace(/\s+/g, "")} />
+                )}
+                {banking.account?.bic && <CopyLine label="BIC" value={banking.account.bic} copyValue={banking.account.bic} />}
+                {banking.account?.sort_code && <CopyLine label="Sort code" value={banking.account.sort_code} copyValue={banking.account.sort_code} />}
+                {banking.account?.account_number && (
+                  <CopyLine label={t("banking.accountNumber")} value={banking.account.account_number} copyValue={banking.account.account_number} />
+                )}
+                {banking.bank?.name && <div>{banking.bank.name}</div>}
+                {banking.terms?.payment_reference && (
+                  <CopyLine label={t("banking.reference")} value={banking.terms.payment_reference} copyValue={banking.terms.payment_reference} />
+                )}
+              </div>
+              {/* The sentence that protects better than any device (§8):
+                  the couple emits the wire. */}
+              <p style={{ fontSize: 13, color: "var(--ink2)", marginTop: 10 }}>{t("banking.neverByEmail")}</p>
+              <p style={{ fontSize: 12.5, color: "var(--ink2)", marginTop: 4 }}>{t("banking.revealNote")}</p>
             </div>
           )}
         </div>
       )}
 
-      {session.isTeam && (
+      {session.isTeam && bankingMeta && (
         <div className="ia team-only">
           <div className="eyebrow">
             {t("banking.internalTitle")} <span className="tag int">{tc("internal")}</span>
           </div>
           <p style={{ marginTop: 8, fontSize: 13 }}>{t("banking.internalBlurb")}</p>
           <div style={{ marginTop: 8 }}>
-            <BankingEditor weddingId={wedding.id} vendorId={vendorId} />
+            <BankingDesk
+              weddingId={wedding.id}
+              vendorId={vendorId}
+              meta={bankingMeta}
+              readings={bankingReadings.map((r) => ({
+                id: r.id,
+                label: r.label,
+                created_at: r.created_at,
+                payload: r.payload as Record<string, unknown>
+              }))}
+            />
           </div>
         </div>
       )}

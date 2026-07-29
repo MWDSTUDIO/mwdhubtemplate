@@ -2,13 +2,14 @@
   "name": "the-inner-house",
   "version": "0.1.0",
   "private": true,
-  "description": "The Inner House — the client portal of Madame Wedding Design, a Parisian house of wedding planning and production. Multi-wedding template.",
+  "description": "The Inner House \u2014 the client portal of Madame Wedding Design, a Parisian house of wedding planning and production. Multi-wedding template.",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test:banking": "node --test tests/banking-checks.test.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.115.0",
