@@ -19,6 +19,7 @@ import {
 } from "./budget-client";
 import { ScopeStudio, ScopeAnalysisDrop } from "./scope-client";
 import { MasterTable, PaymentsCalendar, RiskBuffer } from "./mgmt-client";
+import { ReadingsDesk, type ReadingPayload, type ReadingRow } from "./readings-client";
 
 export default async function BudgetPage({
   params
@@ -67,6 +68,17 @@ export default async function BudgetPage({
       : Promise.resolve({ data: null })
   ]);
 
+  // The analyst's desk — readings proposed by a dropped document,
+  // awaiting Estelle's word (absent until migration 0013).
+  const readingsRes = session.isTeam
+    ? await supabase
+        .from("document_readings")
+        .select("*, vendors(name)")
+        .eq("wedding_id", wedding.id)
+        .eq("status", "proposed")
+        .order("created_at", { ascending: false })
+    : { data: null };
+
   const allLines = (lines ?? []) as BudgetLine[];
   const allPayments = (payments ?? []) as Payment[];
   const items = (itemsRes.data ?? []) as BudgetLineItem[];
@@ -103,6 +115,29 @@ export default async function BudgetPage({
 
   const lineLabels: Record<string, string> = Object.fromEntries(allLines.map((l) => [l.id, l.label]));
 
+  // Each reading beside what the hub currently holds for its vendor.
+  const readings: ReadingRow[] = (readingsRes.data ?? []).map((r) => {
+    const line = allLines.find((l) => l.vendor_id === r.vendor_id && !l.parent_line_id);
+    const lineItems = line ? items.filter((it) => it.budget_line_id === line.id) : [];
+    const linePayments = line
+      ? allPayments.filter((p) => p.budget_line_id === line.id && !p.paid_at)
+      : [];
+    return {
+      id: r.id,
+      label: r.label,
+      created_at: r.created_at,
+      vendorName: (r.vendors as { name?: string } | null)?.name ?? null,
+      payload: r.payload as ReadingPayload,
+      current: {
+        committed: line?.committed ?? null,
+        itemsCount: lineItems.length,
+        itemsTotal: lineItems.reduce((s, it) => s + Number(it.total_ttc ?? it.total_ht ?? 0), 0),
+        paymentsCount: linePayments.length,
+        paymentsTotal: linePayments.reduce((s, p) => s + Number(p.amount ?? 0), 0)
+      }
+    };
+  });
+
   const scopePanel = (
     <>
       <div className="card" style={{ background: "var(--parchment)", border: "1px solid var(--line)" }}>
@@ -127,6 +162,8 @@ export default async function BudgetPage({
   const mgmtPanel = (
     <>
       {session.isTeam && <PublishBar weddingId={wedding.id} draftCount={draftCount} />}
+
+      {session.isTeam && <ReadingsDesk readings={readings} />}
       <div className="grid3" style={{ marginBottom: 18 }}>
         <div className="card" style={{ marginBottom: 0 }}>
           <div className="eyebrow">{t("mgmt.total")}</div>

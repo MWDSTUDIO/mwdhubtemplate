@@ -32,6 +32,16 @@ const SPECIALISATIONS: Record<string, string> = {
     "Specialisation: replies to client form submissions, pre-written for Estelle to approve — in the house's voice, addressed to the clients by first name."
 };
 
+/** The house's everyday pen — writing, notes, letters. */
+export const HOUSE_MODEL = process.env.ANTHROPIC_MODEL || "claude-sonnet-4-5";
+
+/**
+ * The reading of financial documents never runs on a fast or economic
+ * model (brief §3): quotes, contracts and invoices are read by the most
+ * capable tier available. One constant, changeable in one place.
+ */
+export const ANALYSIS_MODEL = process.env.ANALYSIS_MODEL || "claude-opus-5";
+
 export interface AgentInput {
   weddingId: string;
   agent: keyof typeof SPECIALISATIONS | string;
@@ -39,6 +49,10 @@ export interface AgentInput {
   maxTokens?: number;
   extraSystem?: string;
   documents?: { mediaType: string; base64: string }[];
+  /** Override the model for this call — the analyst reads on ANALYSIS_MODEL. */
+  model?: string;
+  /** Reasoning effort where the model supports it. */
+  effort?: "low" | "medium" | "high";
 }
 
 /** Build the permanent context for a wedding, within the caller's rights. */
@@ -139,12 +153,27 @@ export async function runAgentFull(
     { type: "text", text: input.prompt }
   ];
 
-  const response = await anthropic.messages.create({
-    model: process.env.ANTHROPIC_MODEL || "claude-sonnet-4-5",
+  const params: Anthropic.MessageCreateParamsNonStreaming = {
+    model: input.model ?? HOUSE_MODEL,
     max_tokens: input.maxTokens ?? 900,
     system,
     messages: [{ role: "user", content }]
-  });
+  };
+  if (input.effort) {
+    params.output_config = { effort: input.effort };
+  }
+
+  let response: Anthropic.Message;
+  try {
+    response = await anthropic.messages.create(params);
+  } catch (e) {
+    // A model the key cannot reach must never silence the house:
+    // fall back to the everyday pen rather than fail the reading.
+    const notFound = e instanceof Anthropic.APIError && (e.status === 404 || e.status === 403);
+    if (!notFound || params.model === HOUSE_MODEL) throw e;
+    console.error(`model ${params.model} unavailable, falling back to ${HOUSE_MODEL}`);
+    response = await anthropic.messages.create({ ...params, model: HOUSE_MODEL, output_config: undefined });
+  }
 
   const text = response.content
     .filter((b): b is Anthropic.TextBlock => b.type === "text")

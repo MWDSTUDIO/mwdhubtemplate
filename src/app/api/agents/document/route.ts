@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { gate, agentError } from "../_shared";
-import { runAgentFull } from "@/lib/agents/run";
+import { runAgentFull, ANALYSIS_MODEL, HOUSE_MODEL } from "@/lib/agents/run";
 
 const READABLE = new Set([
   "application/pdf",
@@ -12,10 +12,33 @@ const READABLE = new Set([
 ]);
 
 /**
- * Drop a document on Madame: she identifies its type (contract,
- * proposal, invoice, guest list…), extracts amounts, schedules and
- * terms, stores the file, and implements the data where it belongs —
- * always as drafts awaiting Estelle's word.
+ * The analyst's system prompt — a finance director of hospitality and
+ * events (brief C8): minimum spends, service charges, buyouts, European
+ * VAT rates and their per-post differences, the invoicing usage of
+ * châteaux and fine caterers. The cardinal rule is stated in so many
+ * words: a flagged empty field is worth infinitely more than an
+ * invented figure.
+ */
+const ANALYST_SYSTEM =
+  `You are also the house's finance director for hospitality and events: fluent in minimum spends, ` +
+  `service charges, venue buyouts, European VAT rates and how they differ by post (catering vs rental vs service), ` +
+  `deposit and caution customs, and the invoicing habits of châteaux, fine caterers, florists and rental houses.\n` +
+  `THE CARDINAL RULE: never invent. A flagged empty field is worth infinitely more than an invented figure. ` +
+  `When a value is ambiguous, unreadable or absent, leave the field null and record it in "flagged" with the ` +
+  `document's exact words.\n` +
+  `THE SCHEDULE BELONGS TO THE VENDOR (absolute): reproduce instalments exactly as the document states them — ` +
+  `no normalisation, no rounding, no template. NEVER compute a date that is not written: when an instalment is ` +
+  `expressed as a condition ("at signature", "60 days before the event", "on settlement of the minimum spend"), ` +
+  `keep the condition word for word in "trigger" and leave "due_date" null — an invented date would one day ` +
+  `notify a client falsely. NEVER complete a partial schedule: if the document says nothing of the balance, ` +
+  `stop and flag it — do not deduce the last instalment by subtraction.`;
+
+/**
+ * Drop a document on the house: the analyst reads it whole on the most
+ * capable model, and the reading lands as a PROPOSAL — vendor, totals,
+ * every line, the schedule as written, terms, banking — side by side
+ * with what the hub holds, awaiting Estelle's word. Nothing writes
+ * itself into the budget (brief C6). The paper itself is always filed.
  */
 export async function POST(request: Request) {
   const g = await gate(true);
@@ -38,71 +61,90 @@ export async function POST(request: Request) {
       .select("id, name, category")
       .eq("wedding_id", weddingId);
 
-    // Store the original in the internal bucket first — whatever the
-    // reading yields, the paper itself is never lost.
+    // The original is filed first — whatever the reading yields.
     const path = `${weddingId}/${Date.now()}-${file.name}`;
     await supabase.storage.from("internal").upload(path, buffer, {
       contentType: file.type || "application/octet-stream"
     });
 
     const intro = mediaType
-      ? "Read the attached document."
+      ? "Read the attached document in its entirety — every page, every line."
       : `A file named "${file.name}" was dropped (its format cannot be read inline).`;
     const baseFields =
-      `Reply with STRICT JSON only — no prose before or after: {"doc_type": "proposal"|"contract"|"invoice"|"guest_list"|"other", ` +
+      `Reply with STRICT JSON only — no prose before or after: {` +
+      `"doc_type": "proposal"|"contract"|"invoice"|"guest_list"|"other", ` +
       `"vendor_id": string|null (an existing vendor id if the document belongs to one), ` +
-      `"vendor_name": string|null, "vendor_category": string|null (Floral, Catering, Image…), ` +
+      `"vendor_name": string|null, "vendor_category": string|null (Venue, Floral, Catering, Image…), ` +
+      `"vendor_country": string|null, ` +
       `"label": string (short display label), ` +
-      `"total_amount": number|null, "currency": string|null, ` +
-      `"schedule": [{"label": string, "amount": number, "due_date": "yyyy-mm-dd"|null, "refundable": boolean (deposits/cautions marked refundable)}], `;
+      `"currency": string|null, "total_ht": number|null, "total_ttc": number|null, ` +
+      `"total_amount": number|null (the committed total, TTC when known), ` +
+      `"vat_summary": [{"rate": number, "base": number|null, "amount": number|null}]|null, ` +
+      `"service_charge": {"pct": number|null, "amount": number|null}|null, ` +
+      `"minimum_spend": number|null (to carry as a NEGATIVE credit line when consumed), ` +
+      `"buyout": number|null, ` +
+      `"deposit": {"amount": number|null, "refundable": boolean|null, "deadline": string|null}|null, ` +
+      `"cancellation_terms": string|null (one or two lines, the sliding scale if any), ` +
+      `"validity_date": "yyyy-mm-dd"|null (how long the offer stands), ` +
+      `"banking": {"account_name": string|null, "iban": string|null, "swift": string|null, "bank": string|null}|null ` +
+      `(if printed on the document — it will be stored encrypted, never shown), ` +
+      `"schedule": [{"label": string, "amount": number, "percentage": number|null, ` +
+      `"due_date": "yyyy-mm-dd"|null (ONLY a date written in the document), ` +
+      `"trigger": string|null (the condition word for word when no date is written), ` +
+      `"refundable": boolean (true ONLY when the document expressly says so), "page": number|null}], `;
     const preamble =
       `${intro}\n` +
       `Known vendors: ${JSON.stringify(vendors)}.\n` +
-      `Estelle handed this document to the house's budget herself: if it is a vendor proposal, contract or invoice — ` +
-      `even a sample drawn from another wedding — classify it as such and extract its vendor, amounts and schedule, ` +
-      `so the drafts await her word. Only classify as "other" what is genuinely not vendor paper.\n`;
+      `Estelle handed this document to the house herself: if it is a vendor proposal, contract or invoice — even a ` +
+      `sample drawn from another wedding — classify it as such and extract everything. Only classify as "other" what ` +
+      `is genuinely not vendor paper.\n`;
     const fullPrompt =
       preamble +
       baseFields +
-      `"items": [{"event": string|null (the wedding moment this line belongs to, e.g. "Rehearsal dinner — April 30"), ` +
-      `"label": string, "qty": number|null, "unit_price": number|null, "total_ht": number|null, "vat_pct": number|null, "total_ttc": number|null}] ` +
-      `(EVERY priced line of the quote, grouped by event — a florist or caterer quote may hold dozens; keep them all, ` +
-      `with labels kept short; legal boilerplate is not a line; past 40 lines, fold the smallest into grouped lines so the set stays under 40), ` +
+      `"items": [{"event": string|null (the wedding moment the line belongs to), "label": string (short), ` +
+      `"qty": number|null, "unit_price": number|null, "total_ht": number|null, "vat_pct": number|null, ` +
+      `"total_ttc": number|null, "page": number|null}] ` +
+      `(EVERY priced line of the quote, grouped by event, at the document's own granularity — never aggregate, ` +
+      `never truncate; legal boilerplate is not a line), ` +
       `"terms": string|null (one line), ` +
-      `"summary": string (2–3 sentences to Estelle, in the house's voice, describing what you read and what you have prepared as drafts)}`;
-    // A long contract read in one breath needs room — a truncated JSON
-    // is exactly the "could not be read" failure this replaces.
+      `"confidence": {"vendor": number, "totals": number, "items": number, "schedule": number} (0 to 1 each), ` +
+      `"flagged": [{"field": string, "reason": string, "quote": string (the document's exact words)}], ` +
+      `"summary": string (2–3 sentences to Estelle, in the house's voice, stating what you read and what now awaits her word)}`;
     const slimPrompt =
       preamble +
       baseFields +
       `"items": [] (leave empty this time), ` +
       `"terms": string|null (one line), ` +
+      `"confidence": {"vendor": number, "totals": number, "items": number, "schedule": number}, ` +
+      `"flagged": [{"field": string, "reason": string, "quote": string}], ` +
       `"summary": string (2–3 sentences to Estelle, in the house's voice)}`;
 
     const documents = mediaType ? [{ mediaType, base64: buffer.toString("base64") }] : undefined;
     let parsed: Record<string, unknown> & {
       doc_type?: string; vendor_id?: string | null; vendor_name?: string | null;
-      vendor_category?: string | null; label?: string; total_amount?: number | null;
-      currency?: string | null; terms?: string | null; summary?: string;
-      schedule?: { label: string; amount: number; due_date: string | null; refundable?: boolean }[];
-      items?: { event?: string; label?: string; qty?: number; unit_price?: number; total_ht?: number; vat_pct?: number; total_ttc?: number }[];
+      vendor_category?: string | null; label?: string; summary?: string;
     } | null = null;
+    let itemsLost = false;
     try {
+      // The full reading, on the most capable model, with room for a
+      // long quote read whole (C2 — no line cap, ever).
       const first = await runAgentFull({
-        weddingId, agent: "budget", maxTokens: 4000, documents, prompt: fullPrompt
+        weddingId, agent: "budget", maxTokens: 8000, documents, prompt: fullPrompt,
+        model: ANALYSIS_MODEL, effort: "medium", extraSystem: ANALYST_SYSTEM
       });
       if (first.stopReason === "max_tokens") throw new Error("truncated");
       parsed = JSON.parse(first.text.replace(/^```(?:json)?\s*|\s*```$/g, ""));
     } catch (err) {
       console.error("document read, full pass:", err);
-      // The full reading resisted (truncation or malformed JSON): read
-      // once more without the line detail, so the vendor, the amount and
-      // the schedule still land. Estelle can re-drop for the sub-lines.
+      // The fallback reads without the line detail — and SAYS SO (C3):
+      // a silent loss is a lie by omission.
       try {
         const second = await runAgentFull({
-          weddingId, agent: "budget", maxTokens: 1500, documents, prompt: slimPrompt
+          weddingId, agent: "budget", maxTokens: 2500, documents, prompt: slimPrompt,
+          model: HOUSE_MODEL, extraSystem: ANALYST_SYSTEM
         });
         parsed = JSON.parse(second.text.replace(/^```(?:json)?\s*|\s*```$/g, ""));
+        itemsLost = true;
       } catch (err2) {
         console.error("document read, slim pass:", err2);
         parsed = null;
@@ -110,7 +152,6 @@ export async function POST(request: Request) {
     }
 
     if (!parsed) {
-      // Even unread, the paper is filed where the team can find it.
       const { error: docErr } = await supabase.from("documents").insert({
         wedding_id: weddingId,
         label: file.name,
@@ -127,9 +168,8 @@ export async function POST(request: Request) {
       });
     }
 
-    // Resolve the vendor — by explicit choice, by the agent's match,
-    // by name, or by creating it on the spot: a dropped contract must
-    // land in the budget even for a wedding whose file is brand new.
+    // Resolve the vendor — by explicit choice, by the analyst's match,
+    // by name, or by creating the record (identity only; figures wait).
     const docType = parsed.doc_type ?? "other";
     let matchedVendor: string | null = vendorId ?? parsed.vendor_id ?? null;
     if (
@@ -160,153 +200,76 @@ export async function POST(request: Request) {
       if (docType === "contract") {
         await supabase.from("vendors").update({ stage: "contracted" }).eq("id", matchedVendor);
       }
-      // The same paper dropped again replaces its previous reading —
-      // never a duplicate stacking silently into the budget.
+      // The paper joins the vendor's file — re-drops replace, never stack.
       await supabase
         .from("vendor_documents")
         .delete()
         .eq("vendor_id", matchedVendor)
         .eq("type", docType)
         .eq("label", parsed.label ?? file.name);
-      await supabase.from("vendor_documents").insert({
-        vendor_id: matchedVendor,
+      const { data: vendorDoc } = await supabase
+        .from("vendor_documents")
+        .insert({
+          vendor_id: matchedVendor,
+          wedding_id: weddingId,
+          type: docType,
+          label: parsed.label ?? file.name,
+          storage_path: `internal/${path}`,
+          extraction: parsed,
+          client_visible: false
+        })
+        .select("id")
+        .single();
+
+      // C6 — the reading lands as a PROPOSAL. Nothing touches the
+      // budget until Estelle's word; the comparison waits in the hub.
+      // A re-drop of the same paper replaces its previous proposal.
+      const { error: readErr } = await supabase
+        .from("document_readings")
+        .delete()
+        .eq("vendor_id", matchedVendor)
+        .eq("label", parsed.label ?? file.name)
+        .eq("status", "proposed");
+      const { error: insErr } = await supabase.from("document_readings").insert({
         wedding_id: weddingId,
-        type: docType,
+        vendor_id: matchedVendor,
+        vendor_document_id: vendorDoc?.id ?? null,
         label: parsed.label ?? file.name,
         storage_path: `internal/${path}`,
-        extraction: parsed,
-        client_visible: false
+        payload: { ...parsed, items_lost: itemsLost }
       });
+      void readErr;
 
-      // The budget line: reworked if the vendor already has one,
-      // opened as a draft if not — Estelle publishes when she is ready.
-      let lineId: string | null = null;
-      const { data: line } = await supabase
-        .from("budget_lines")
-        .select("id")
-        .eq("wedding_id", weddingId)
-        .eq("vendor_id", matchedVendor)
-        .limit(1)
-        .maybeSingle();
-      if (line) {
-        lineId = line.id;
-        if (parsed.total_amount) {
-          await supabase
-            .from("budget_lines")
-            .update({ committed: parsed.total_amount, status: "draft" })
-            .eq("id", line.id);
-        }
-      } else if (parsed.total_amount) {
-        const { count } = await supabase
-          .from("budget_lines")
-          .select("id", { count: "exact", head: true })
-          .eq("wedding_id", weddingId);
-        const { data: newLine } = await supabase
-          .from("budget_lines")
-          .insert({
-            wedding_id: weddingId,
-            vendor_id: matchedVendor,
-            label: parsed.vendor_name ?? parsed.label ?? file.name,
-            committed: parsed.total_amount,
-            status: "draft",
-            sort: (count ?? 0) + 1
-          })
-          .select("id")
-          .single();
-        lineId = newLine?.id ?? null;
+      let text = parsed.summary ?? "Read and filed.";
+      if (!insErr) {
+        text +=
+          " — The reading awaits your word in the Budget: the document's figures sit beside the hub's, and nothing moves until you accept.";
+      } else {
+        // Before migration 0013 the desk is absent — say so honestly.
+        text += " — Run migration 0013 to review readings before they enter the budget.";
       }
+      if (itemsLost) {
+        text +=
+          " NOTE: the line-by-line detail could not be kept this time — totals and schedule stand, but the sub-lines were lost; drop the document once more to recover them.";
+      }
+      return NextResponse.json({ text, extraction: parsed });
+    }
 
-      // The quote's own lines, grouped by event — they power the unfold
-      // and the client sheet, and the subtotal rolls up on its own.
-      if (lineId && Array.isArray(parsed.items) && parsed.items.length) {
-        const rows = parsed.items.map(
-          (
-            it: { event?: string; label?: string; qty?: number; unit_price?: number; total_ht?: number; vat_pct?: number; total_ttc?: number },
-            i: number
-          ) => ({
-            wedding_id: weddingId,
-            budget_line_id: lineId,
-            event_label: it.event ?? null,
-            label: it.label ?? "—",
-            qty: it.qty ?? null,
-            unit_price: it.unit_price ?? null,
-            total_ht: it.total_ht ?? null,
-            vat_pct: it.vat_pct ?? null,
-            total_ttc: it.total_ttc ?? null,
-            sort: i + 1
-          })
-        );
-        // Replace this document's previous reading rather than stacking.
-        await supabase.from("budget_line_items").delete().eq("budget_line_id", lineId);
-        const { error: itemsErr } = await supabase.from("budget_line_items").insert(rows);
-        // Before migration 0011 the table is absent — the line stands alone.
-        if (!itemsErr) {
-          const rollup = rows.reduce(
-            (s: number, r: { total_ttc: number | null; total_ht: number | null }) =>
-              s + Number(r.total_ttc ?? r.total_ht ?? 0),
-            0
-          );
-          if (rollup > 0) {
-            await supabase
-              .from("budget_lines")
-              .update({ committed: Math.round(rollup), committed_note: null, status: "draft" })
-              .eq("id", lineId);
-          }
-        }
-      }
-
-      // A contract or invoice feeds the payment schedule — as data the
-      // team reviews, never straight to the client. A re-read replaces
-      // its own unpaid instalments instead of stacking them.
-      if (lineId && (parsed.schedule ?? []).length) {
-        await supabase
-          .from("payments")
-          .delete()
-          .eq("budget_line_id", lineId)
-          .is("paid_at", null)
-          .like("label", `${parsed.label ?? file.name} — %`);
-      }
-      for (const instalment of parsed.schedule ?? []) {
-        const base = {
-          wedding_id: weddingId,
-          budget_line_id: lineId,
-          label: `${parsed.label ?? file.name} — ${instalment.label}`,
-          amount: instalment.amount,
-          due_date: instalment.due_date
-        };
-        const { error: payErr } = await supabase.from("payments").insert({
-          ...base,
-          currency: parsed.currency ?? "EUR",
-          amount_eur: (parsed.currency ?? "EUR") === "EUR" ? instalment.amount : null,
-          refundable: Boolean(instalment.refundable)
-        });
-        if (payErr) await supabase.from("payments").insert(base);
-      }
-    } else {
-      const { error: docErr } = await supabase.from("documents").insert({
+    // Not vendor paper — it goes to the internal register as before.
+    const { error: docErr } = await supabase.from("documents").insert({
+      wedding_id: weddingId,
+      label: parsed.label ?? file.name,
+      internal: true,
+      storage_path: `internal/${path}`
+    });
+    if (docErr) {
+      await supabase.from("documents").insert({
         wedding_id: weddingId,
         label: parsed.label ?? file.name,
-        internal: true,
-        storage_path: `internal/${path}`
+        internal: true
       });
-      // Before migration 0010 the column is absent — keep the register.
-      if (docErr) {
-        await supabase.from("documents").insert({
-          wedding_id: weddingId,
-          label: parsed.label ?? file.name,
-          internal: true
-        });
-      }
     }
-
-    // State plainly what was implanted — the narration must match the act.
-    let text = parsed.summary ?? "Read and filed.";
-    if (["proposal", "contract", "invoice"].includes(docType) && matchedVendor) {
-      text += parsed.total_amount
-        ? ` — The vendor and a draft budget line of ${parsed.total_amount} are in place below; publish when you are ready.`
-        : ` — The vendor record is in place.`;
-    }
-    return NextResponse.json({ text, extraction: parsed });
+    return NextResponse.json({ text: parsed.summary ?? "Read and filed.", extraction: parsed });
   } catch (e) {
     return agentError(e);
   }
