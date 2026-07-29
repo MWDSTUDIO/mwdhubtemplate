@@ -47,7 +47,10 @@ export const DEFAULT_FORMS: { title: string; status: "awaiting" | "to_come"; due
 export interface EnvelopeDraft {
   id?: string;
   label: string;
+  /** Forecast — the allocation arbitrated with the couple. */
   percent: number;
+  /** Recommended by the house — the counsel, distinct from the forecast. */
+  recommendedPct?: number | null;
   priority: "high" | "standard";
   locked: boolean;
   sort: number;

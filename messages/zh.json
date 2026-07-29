@@ -323,9 +323,6 @@
       "saveScope": "保存蓝图",
       "saveBlocked": "超过 100 % 时无法保存",
       "committedLine": "迄今已承诺：{committed}。",
-      "varianceOver": "超出分配 {amount}。",
-      "varianceUnder": "尚余 {amount} 的余裕。",
-      "varianceEven": "恰在分配之内。",
       "madameTitle": "与 Madame 一起塑造蓝图",
       "madameGo": "交由 Madame 塑造",
       "madamePlaceholder": "加一个 3 % 的烟花信封 · 把「影像」改名「摄影」 · 给花艺更多权重…",
@@ -360,7 +357,21 @@
         "internalTitle": "提醒与本家心得",
         "neverVisible": "客户永不可见",
         "filedNote": "已归入您的内部预算备注。"
-      }
+      },
+      "recommended": "本家建议",
+      "forecast": "预定",
+      "committedLevel": "已承诺",
+      "recommendedShort": "本家",
+      "forecastShort": "预定",
+      "recommendedPct": "{name} 的建议占比",
+      "overForecast": "超出预定 {amount}。",
+      "stillToPlace": "尚有 {amount} 待安排。",
+      "onForecast": "与预定相符。",
+      "notYetPlaced": "尚未承诺。",
+      "counselGap": "预定与本家建议相差 {dir}{gap} 个百分点——下方的一句话向新人解释缘由。",
+      "headTotal": "您的预算",
+      "headCommitted": "已承诺",
+      "headStillToPlace": "待安排"
     },
     "master": {
       "unfold": "展开（{count}）",

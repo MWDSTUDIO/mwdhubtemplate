@@ -323,9 +323,6 @@
       "saveScope": "Save the scope",
       "saveBlocked": "The scope cannot save above 100 %",
       "committedLine": "Committed so far: {committed}.",
-      "varianceOver": "Over the allocation by {amount}.",
-      "varianceUnder": "{amount} still breathing.",
-      "varianceEven": "On the allocation.",
       "madameTitle": "Shape the scope with Madame",
       "madameGo": "Let Madame shape it",
       "madamePlaceholder": "Add a fireworks envelope at 3 % · rename Image to Photography · give florals more weight…",
@@ -360,7 +357,21 @@
         "internalTitle": "Warnings & the house's tricks",
         "neverVisible": "Never visible to clients",
         "filedNote": "Filed with your internal budget notes."
-      }
+      },
+      "recommended": "Recommended by the house",
+      "forecast": "Forecast",
+      "committedLevel": "Committed",
+      "recommendedShort": "House",
+      "forecastShort": "Forecast",
+      "recommendedPct": "Recommended share of {name}",
+      "overForecast": "Over the forecast by {amount}.",
+      "stillToPlace": "{amount} still to place.",
+      "onForecast": "On the forecast.",
+      "notYetPlaced": "Not yet placed.",
+      "counselGap": "The forecast sits {dir}{gap} pts from the house's counsel — a word below explains it to the couple.",
+      "headTotal": "Your budget",
+      "headCommitted": "Committed",
+      "headStillToPlace": "Still to place"
     },
     "master": {
       "unfold": "Unfold ({count})",

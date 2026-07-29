@@ -323,9 +323,6 @@
       "saveScope": "見取り図を保存",
       "saveBlocked": "100 % を超えたままでは保存できません",
       "committedLine": "これまでのお約束：{committed}。",
-      "varianceOver": "配分を {amount} 上回っております。",
-      "varianceUnder": "あと {amount} のゆとり。",
-      "varianceEven": "配分どおり。",
       "madameTitle": "マダムと見取り図を仕立てる",
       "madameGo": "マダムに委ねる",
       "madamePlaceholder": "花火の封筒を 3 % で加える · 「映像」を「写真」に改める · フローラルに重みを…",
@@ -360,7 +357,21 @@
         "internalTitle": "注意点と当家の工夫",
         "neverVisible": "お客様には表示されません",
         "filedNote": "内部の予算メモに収めました。"
-      }
+      },
+      "recommended": "当家のおすすめ",
+      "forecast": "予定",
+      "committedLevel": "契約済み",
+      "recommendedShort": "当家",
+      "forecastShort": "予定",
+      "recommendedPct": "{name} のおすすめ配分",
+      "overForecast": "予定を {amount} 上回っています。",
+      "stillToPlace": "あと {amount} を置けます。",
+      "onForecast": "予定どおりです。",
+      "notYetPlaced": "まだ何も置かれていません。",
+      "counselGap": "予定は当家のおすすめから {dir}{gap} pt 離れています——下のひとことがお二人へその理由を伝えます。",
+      "headTotal": "ご予算",
+      "headCommitted": "契約済み",
+      "headStillToPlace": "残り"
     },
     "master": {
       "unfold": "ひらく（{count}）",

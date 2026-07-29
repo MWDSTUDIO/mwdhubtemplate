@@ -323,9 +323,6 @@
       "saveScope": "Enregistrer le scope",
       "saveBlocked": "Le scope ne s'enregistre pas au-dessus de 100 %",
       "committedLine": "Engagé à ce jour : {committed}.",
-      "varianceOver": "Au-delà de l'allocation de {amount}.",
-      "varianceUnder": "{amount} encore de respiration.",
-      "varianceEven": "Sur l'allocation.",
       "madameTitle": "Façonner le scope avec Madame",
       "madameGo": "Laisser Madame façonner",
       "madamePlaceholder": "Ajoute une enveloppe artificier à 3 % · renomme Image en Photographie · donne plus de poids au floral…",
@@ -360,7 +357,21 @@
         "internalTitle": "Avertissements & astuces de la maison",
         "neverVisible": "Jamais visible des clients",
         "filedNote": "Classée avec vos notes budgétaires internes."
-      }
+      },
+      "recommended": "Le conseil de la maison",
+      "forecast": "Prévisionnel",
+      "committedLevel": "Engagé",
+      "recommendedShort": "Maison",
+      "forecastShort": "Prévu",
+      "recommendedPct": "Part conseillée de {name}",
+      "overForecast": "Au-delà du prévisionnel de {amount}.",
+      "stillToPlace": "{amount} encore à placer.",
+      "onForecast": "Au prévisionnel.",
+      "notYetPlaced": "Rien d'engagé encore.",
+      "counselGap": "Le prévisionnel s'écarte de {dir}{gap} pts du conseil de la maison — un mot ci-dessous l'explique au couple.",
+      "headTotal": "Votre budget",
+      "headCommitted": "Engagé",
+      "headStillToPlace": "Encore à placer"
     },
     "master": {
       "unfold": "Déplier ({count})",

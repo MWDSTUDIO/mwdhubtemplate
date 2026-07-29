@@ -160,11 +160,14 @@ export interface BudgetEnvelope {
   id: string;
   wedding_id: string;
   label: string;
+  /** Forecast — the allocation arbitrated with the couple. */
   percent: number | null;
   sort: number;
   /** Scope v2 (migration 0011). */
   priority?: "high" | "standard";
   locked?: boolean;
+  /** Recommended by the house — the counsel (migration 0014). */
+  recommended_pct?: number | null;
 }
 
 export interface EnvelopeNote {

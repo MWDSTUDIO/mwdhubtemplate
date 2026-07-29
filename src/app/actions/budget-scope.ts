@@ -46,16 +46,26 @@ export async function saveScope(weddingId: string, envelopes: EnvelopeDraft[]) {
       percent: Math.round(Number(env.percent) * 10) / 10,
       sort: i + 1
     };
-    const rowFull = { ...row, priority: env.priority, locked: env.locked };
+    const rowV2 = { ...row, priority: env.priority, locked: env.locked };
+    const rowFull = {
+      ...rowV2,
+      recommended_pct:
+        env.recommendedPct != null ? Math.round(Number(env.recommendedPct) * 10) / 10 : null
+    };
     if (env.id) {
       let { error } = await supabase.from("budget_envelopes").update(rowFull).eq("id", env.id);
-      // Before migration 0011 priority/locked are absent.
+      // Before migration 0014 the counsel column is absent…
+      if (error) ({ error } = await supabase.from("budget_envelopes").update(rowV2).eq("id", env.id));
+      // …and before 0011, priority/locked too.
       if (error) ({ error } = await supabase.from("budget_envelopes").update(row).eq("id", env.id));
       if (error) return { ok: false as const, reason: "save" as const };
     } else {
       let { error } = await supabase
         .from("budget_envelopes")
         .insert({ wedding_id: weddingId, ...rowFull });
+      if (error) {
+        ({ error } = await supabase.from("budget_envelopes").insert({ wedding_id: weddingId, ...rowV2 }));
+      }
       if (error) {
         ({ error } = await supabase.from("budget_envelopes").insert({ wedding_id: weddingId, ...row }));
       }
@@ -76,9 +86,11 @@ export async function adoptHouseEnvelopes(weddingId: string) {
     .eq("wedding_id", weddingId);
   if ((count ?? 0) > 0) return { ok: true as const };
   for (const env of HOUSE_ENVELOPES) {
+    // The house's default weights are the counsel itself: at adoption,
+    // Recommended and Forecast start as one — arbitrage separates them.
     const { error } = await supabase
       .from("budget_envelopes")
-      .insert({ wedding_id: weddingId, label: env.label, percent: env.percent, sort: env.sort, priority: env.priority, locked: env.locked });
+      .insert({ wedding_id: weddingId, label: env.label, percent: env.percent, sort: env.sort, priority: env.priority, locked: env.locked, recommended_pct: env.percent });
     if (error) {
       await supabase
         .from("budget_envelopes")

@@ -323,9 +323,6 @@
       "saveScope": "Guardar el scope",
       "saveBlocked": "El scope no se guarda por encima del 100 %",
       "committedLine": "Comprometido hasta hoy: {committed}.",
-      "varianceOver": "Por encima de la asignación en {amount}.",
-      "varianceUnder": "{amount} aún de margen.",
-      "varianceEven": "En la asignación.",
       "madameTitle": "Dar forma al scope con Madame",
       "madameGo": "Que Madame le dé forma",
       "madamePlaceholder": "Añade un sobre de fuegos artificiales al 3 % · renombra Imagen a Fotografía · da más peso a lo floral…",
@@ -360,7 +357,21 @@
         "internalTitle": "Advertencias y astucias de la casa",
         "neverVisible": "Nunca visible para los clientes",
         "filedNote": "Guardada con sus notas presupuestarias internas."
-      }
+      },
+      "recommended": "El consejo de la casa",
+      "forecast": "Previsto",
+      "committedLevel": "Comprometido",
+      "recommendedShort": "Casa",
+      "forecastShort": "Previsto",
+      "recommendedPct": "Parte aconsejada de {name}",
+      "overForecast": "Más allá de lo previsto en {amount}.",
+      "stillToPlace": "{amount} aún por colocar.",
+      "onForecast": "En lo previsto.",
+      "notYetPlaced": "Nada comprometido aún.",
+      "counselGap": "Lo previsto se aparta {dir}{gap} pts del consejo de la casa — una palabra abajo se lo explica a la pareja.",
+      "headTotal": "Su presupuesto",
+      "headCommitted": "Comprometido",
+      "headStillToPlace": "Aún por colocar"
     },
     "master": {
       "unfold": "Desplegar ({count})",

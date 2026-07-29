@@ -938,3 +938,26 @@ ul.steps { list-style: none; }
   .doc-viewer { padding: 0; }
   .doc-viewer-frame { width: 100%; }
 }
+
+/* ── the scope's three levels, read as a house page ─────────────────── */
+.scope-head {
+  display: flex; gap: 28px; flex-wrap: wrap;
+  padding: 14px 0 18px; margin-bottom: 6px;
+  border-bottom: 1px solid var(--line);
+}
+.scope-head > div { display: flex; flex-direction: column; gap: 2px; min-width: 130px; }
+.scope-head-label { font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink2); }
+.scope-head-figure { font-size: 22px; }
+.scope-envcard { padding: 16px 0; border-bottom: 1px solid var(--line-soft); }
+.scope-envcard:last-child { border-bottom: none; }
+.scope-levels {
+  display: flex; gap: 26px; flex-wrap: wrap; margin-top: 10px;
+}
+.scope-levels > div { display: flex; flex-direction: column; gap: 2px; min-width: 150px; }
+.scope-level-label { font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink2); }
+.scope-level-amount { margin-left: 8px; color: var(--ink2); font-size: 12.5px; }
+@media (max-width: 480px) {
+  .scope-head { gap: 12px; flex-direction: column; }
+  .scope-levels { flex-direction: column; gap: 8px; }
+  .scope-levels > div { flex-direction: row; justify-content: space-between; align-items: baseline; }
+}

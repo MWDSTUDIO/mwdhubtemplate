@@ -46,6 +46,7 @@ export function ScopeStudio({
       id: e.id,
       label: e.label,
       percent: Number(e.percent ?? 0),
+      recommendedPct: e.recommended_pct != null ? Number(e.recommended_pct) : null,
       priority: e.priority ?? "standard",
       locked: e.locked ?? false,
       sort: e.sort ?? i + 1
@@ -126,11 +127,13 @@ export function ScopeStudio({
     try {
       const r = await scopeViaMadame(weddingId, order, drafts);
       if (r.ok && r.envelopes.length) {
-        setDrafts(
+        setDrafts((prev) =>
           r.envelopes.map((e, i) => ({
             id: e.id ?? undefined,
             label: e.label,
             percent: Number(e.percent) || 0,
+            // Madame reworks the forecast; the house's counsel stands.
+            recommendedPct: prev.find((x) => x.id && x.id === e.id)?.recommendedPct ?? null,
             priority: e.priority === "high" ? "high" : "standard",
             locked: Boolean(e.locked),
             sort: i + 1
@@ -147,27 +150,69 @@ export function ScopeStudio({
   }
 
   if (!isTeam) {
-    // The couple's reading: quiet, published notes only.
+    // The couple's reading — never a cold ledger. Three figures at the
+    // head of the page, then each envelope as a small house page:
+    // the counsel, the decision, the real (brief §4).
+    const committedAll = envelopes.reduce((s, e) => s + committedFor(e.id), 0);
+    const stillToPlace = Math.max(0, total - committedAll);
     return (
       <div className="card">
         <div className="eyebrow" style={{ marginBottom: 14 }}>{t("clientTitle")}</div>
+        {total > 0 && (
+          <div className="scope-head">
+            <div>
+              <span className="scope-head-label">{t("headTotal")}</span>
+              <span className="serif num scope-head-figure">{money(total)}</span>
+            </div>
+            <div>
+              <span className="scope-head-label">{t("headCommitted")}</span>
+              <span className="serif num scope-head-figure">{money(committedAll)}</span>
+            </div>
+            <div>
+              <span className="scope-head-label">{t("headStillToPlace")}</span>
+              <span className="serif num scope-head-figure">{money(stillToPlace)}</span>
+            </div>
+          </div>
+        )}
         {envelopes.map((env) => {
           const note = noteFor(env.id);
+          const forecastAmt = total > 0 && env.percent != null ? (env.percent / 100) * total : null;
+          const recAmt =
+            total > 0 && env.recommended_pct != null ? (Number(env.recommended_pct) / 100) * total : null;
+          const committed = committedFor(env.id);
+          const left = forecastAmt != null ? forecastAmt - committed : null;
           return (
-            <div key={env.id}>
-              <div className="env">
-                <span>{env.label}</span>
-                <span className="serif num">
-                  {env.percent != null ? `${env.percent} %` : "—"}
-                  {total > 0 && env.percent != null && (
-                    <span style={{ fontSize: 13, marginLeft: 10, color: "var(--ink2)" }}>
-                      {money((env.percent / 100) * total)}
-                    </span>
-                  )}
-                </span>
-              </div>
+            <div key={env.id} className="scope-envcard">
+              <div className="serif" style={{ fontSize: 17 }}>{env.label}</div>
               {note?.status === "published" && note.body && (
-                <div className="envnote">&ldquo;{note.body}&rdquo; — Estelle</div>
+                <div className="envnote" style={{ marginTop: 4 }}>&ldquo;{note.body}&rdquo; — Estelle</div>
+              )}
+              <div className="scope-levels">
+                <div>
+                  <span className="scope-level-label">{t("recommended")}</span>
+                  <span className="num">
+                    {env.recommended_pct != null ? `${env.recommended_pct} %` : "—"}
+                    {recAmt != null && <span className="scope-level-amount">{money(recAmt)}</span>}
+                  </span>
+                </div>
+                <div>
+                  <span className="scope-level-label">{t("forecast")}</span>
+                  <span className="num">
+                    {env.percent != null ? `${env.percent} %` : "—"}
+                    {forecastAmt != null && <span className="scope-level-amount">{money(forecastAmt)}</span>}
+                  </span>
+                </div>
+                <div>
+                  <span className="scope-level-label">{t("committedLevel")}</span>
+                  <span className="num">
+                    {committed > 0 ? money(committed) : <em style={{ color: "var(--ink2)" }}>{t("notYetPlaced")}</em>}
+                  </span>
+                </div>
+              </div>
+              {committed > 0 && left != null && left > 0.5 && (
+                <p style={{ fontSize: 12.5, color: "var(--ink2)", margin: "6px 0 0" }}>
+                  {t("stillToPlace", { amount: money(left) })}
+                </p>
               )}
             </div>
           );
@@ -233,6 +278,8 @@ export function ScopeStudio({
           const committed = committedFor(d.id);
           const allocated = (Number(d.percent) / 100) * total;
           const variance = committed - allocated;
+          const counselGap =
+            d.recommendedPct != null ? Math.round((Number(d.percent) - Number(d.recommendedPct)) * 10) / 10 : null;
           const note = noteFor(d.id);
           return (
             <div key={d.id ?? `new-${i}`} style={{ borderTop: i > 0 ? "1px solid var(--line-soft, oklch(0.7749 0.0521 76.74 / 0.22))" : "none", padding: "14px 0" }}>
@@ -243,16 +290,34 @@ export function ScopeStudio({
                   aria-label={t("envName")}
                   style={{ flex: "1 1 220px", fontSize: 14.5 }}
                 />
-                <input
-                  type="number"
-                  min={0}
-                  max={100}
-                  step={0.5}
-                  value={d.percent}
-                  onChange={(e) => patch(i, { percent: Number(e.target.value) })}
-                  aria-label={t("envPct", { name: d.label })}
-                  style={{ flex: "0 0 84px", textAlign: "right", borderColor: over ? "var(--bronze)" : undefined }}
-                />
+                <label style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 11.5, color: "var(--ink2)" }}>
+                  {t("recommendedShort")}
+                  <input
+                    type="number"
+                    min={0}
+                    max={100}
+                    step={0.5}
+                    value={d.recommendedPct ?? ""}
+                    onChange={(e) =>
+                      patch(i, { recommendedPct: e.target.value === "" ? null : Number(e.target.value) })
+                    }
+                    aria-label={t("recommendedPct", { name: d.label })}
+                    style={{ width: 68, textAlign: "right" }}
+                  />
+                </label>
+                <label style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 11.5, color: "var(--ink2)" }}>
+                  {t("forecastShort")}
+                  <input
+                    type="number"
+                    min={0}
+                    max={100}
+                    step={0.5}
+                    value={d.percent}
+                    onChange={(e) => patch(i, { percent: Number(e.target.value) })}
+                    aria-label={t("envPct", { name: d.label })}
+                    style={{ width: 68, textAlign: "right", borderColor: over ? "var(--bronze)" : undefined }}
+                  />
+                </label>
                 <span style={{ fontSize: 13, color: "var(--ink2)", minWidth: 92, textAlign: "right", fontVariantNumeric: "tabular-nums" }}>
                   {total > 0 ? money(allocated) : "—"}
                 </span>
@@ -296,14 +361,25 @@ export function ScopeStudio({
                 aria-label={t("envPct", { name: d.label })}
                 style={{ width: "100%", marginTop: 8, accentColor: "var(--hunter)" }}
               />
-              {committed > 0 && total > 0 && (
+              {total > 0 && (
                 <p style={{ fontSize: 12.5, marginTop: 6, color: Math.abs(variance) < 1 ? "var(--ink2)" : variance > 0 ? "var(--bronze)" : "var(--ink2)" }}>
-                  {t("committedLine", { committed: money(committed) })}{" "}
-                  {variance > 0.5
-                    ? t("varianceOver", { amount: money(variance) })
-                    : variance < -0.5
-                      ? t("varianceUnder", { amount: money(-variance) })
-                      : t("varianceEven")}
+                  {committed > 0 ? (
+                    <>
+                      {t("committedLine", { committed: money(committed) })}{" "}
+                      {variance > 0.5
+                        ? t("overForecast", { amount: money(variance) })
+                        : variance < -0.5
+                          ? t("stillToPlace", { amount: money(-variance) })
+                          : t("onForecast")}
+                    </>
+                  ) : (
+                    <em style={{ color: "var(--ink2)" }}>{t("notYetPlaced")}</em>
+                  )}
+                </p>
+              )}
+              {counselGap != null && Math.abs(counselGap) >= 3 && (
+                <p style={{ fontSize: 12.5, marginTop: 4, color: "var(--bronze)" }}>
+                  {t("counselGap", { gap: Math.abs(counselGap), dir: counselGap > 0 ? "+" : "−" })}
                 </p>
               )}
               <ScopeNote
@@ -322,7 +398,7 @@ export function ScopeStudio({
             onClick={() => {
               setDrafts((list) => [
                 ...list,
-                { label: "", percent: 0, priority: "standard", locked: false, sort: list.length + 1 }
+                { label: "", percent: 0, recommendedPct: null, priority: "standard", locked: false, sort: list.length + 1 }
               ]);
               setDirty(true);
             }}
