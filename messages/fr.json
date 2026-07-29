@@ -422,7 +422,19 @@
       "due": "Échéance",
       "methodPh": "Virement",
       "payerPh": "Qui règle",
-      "noLine": "Sans ligne"
+      "noLine": "Sans ligne",
+      "compose": "Composer un échéancier",
+      "addedCount": "{count} posée(s) — le formulaire reste ouvert.",
+      "tplDeposit": "Acompte",
+      "tplSecond": "Deuxième règlement",
+      "tplBalance": "Solde",
+      "committedIs": "Engagé : {amount}",
+      "noCommitted": "Pas encore de montant engagé sur cette ligne.",
+      "addRow": "Une échéance de plus",
+      "scheduleGo": "Poser l'échéancier",
+      "scheduleEven": "L'échéancier rejoint le montant engagé.",
+      "notYetScheduled": "{amount} pas encore échéancé.",
+      "scheduledOver": "{amount} au-delà de l'engagé."
     },
     "fiche": {
       "eyebrow": "Fiche prestataire · {category}",
@@ -520,6 +532,40 @@
       "dismiss": "Écarter",
       "dismissConfirm": "Écarter cette lecture ? Le document reste classé ; le budget reste intact.",
       "draftNote": "Tout arrive en brouillon — le couple ne voit rien avant votre publication."
+    },
+    "views": {
+      "switch": "Choisir sa lecture",
+      "ledger": "The Ledger",
+      "housebook": "The House Book",
+      "noEnvelope": "Hors enveloppes",
+      "filter": "Filtrer par état",
+      "status": {
+        "all": "Tout",
+        "committed": "Engagé",
+        "awaiting": "En attente de devis",
+        "paid": "Réglé",
+        "open": "Ouvert",
+        "draft": "Brouillon"
+      },
+      "colLine": "Poste",
+      "colCurrency": "Dev.",
+      "colVat": "TVA",
+      "colPaid": "Payé",
+      "colRemaining": "Reste",
+      "colNext": "Prochaine échéance",
+      "colStatus": "État",
+      "comfortable": "Confortable",
+      "compact": "Compact",
+      "saving": "Écriture…",
+      "savedNote": "Tenu.",
+      "total": "Total",
+      "ledgerHint": "Une cellule s'édite sur place : clic ou Entrée, flèches pour circuler, Tab pour traverser, Échap pour sortir, Cmd/Ctrl+Z pour défaire. Collez directement depuis Excel ou Sheets.",
+      "notYetPlaced": "Rien encore",
+      "gauge": "{pct}% réglé",
+      "paidShort": "Réglé {amount}",
+      "remainingShort": "Reste {amount}",
+      "scheduleTitle": "Les échéances",
+      "settled": "Réglé"
     }
   },
   "vendors": {

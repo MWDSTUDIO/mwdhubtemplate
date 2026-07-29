@@ -422,7 +422,19 @@
       "due": "到期日",
       "methodPh": "银行转账",
       "payerPh": "付款人",
-      "noLine": "不挂条目"
+      "noLine": "不挂条目",
+      "compose": "编排付款计划",
+      "addedCount": "已放入 {count} 期——表单保持打开。",
+      "tplDeposit": "定金",
+      "tplSecond": "第二期",
+      "tplBalance": "尾款",
+      "committedIs": "已承诺:{amount}",
+      "noCommitted": "此行尚无承诺金额。",
+      "addRow": "再加一期",
+      "scheduleGo": "放入付款计划",
+      "scheduleEven": "付款计划与承诺金额相符。",
+      "notYetScheduled": "尚有 {amount} 未排期。",
+      "scheduledOver": "超出承诺金额 {amount}。"
     },
     "fiche": {
       "eyebrow": "供应商账单 · {category}",
@@ -520,6 +532,40 @@
       "dismiss": "搁置",
       "dismissConfirm": "搁置这份读单?文件仍归档,预算不受影响。",
       "draftNote": "一切以草稿落账——发布之前,新人什么也看不到。"
+    },
+    "views": {
+      "switch": "选择您的读法",
+      "ledger": "The Ledger",
+      "housebook": "The House Book",
+      "noEnvelope": "信封之外",
+      "filter": "按状态筛选",
+      "status": {
+        "all": "全部",
+        "committed": "已承诺",
+        "awaiting": "待报价",
+        "paid": "已结清",
+        "open": "未定",
+        "draft": "草稿"
+      },
+      "colLine": "项目",
+      "colCurrency": "币种",
+      "colVat": "增值税",
+      "colPaid": "已付",
+      "colRemaining": "余额",
+      "colNext": "下一期",
+      "colStatus": "状态",
+      "comfortable": "舒适",
+      "compact": "紧凑",
+      "saving": "写入中…",
+      "savedNote": "已存。",
+      "total": "合计",
+      "ledgerHint": "单元格就地编辑:点击或回车进入,方向键移动,Tab 横移,Esc 退出,Cmd/Ctrl+Z 撤销。可直接从 Excel 或 Sheets 粘贴。",
+      "notYetPlaced": "尚无",
+      "gauge": "已结清 {pct}%",
+      "paidShort": "已结 {amount}",
+      "remainingShort": "余 {amount}",
+      "scheduleTitle": "付款期",
+      "settled": "已结清"
     }
   },
   "vendors": {

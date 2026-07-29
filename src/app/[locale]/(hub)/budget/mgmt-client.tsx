@@ -12,6 +12,7 @@ import {
   markPaymentPaid,
   saveLineItem,
   sendPaymentNotice,
+  updatePayment,
   updatePaymentFlags
 } from "@/app/actions/budget";
 import { deleteRisk, saveRisk } from "@/app/actions/budget-scope";
@@ -398,6 +399,8 @@ export function PaymentsCalendar({
   const format = useFormatter();
   const router = useRouter();
   const [adding, setAdding] = useState(false);
+  const [scheduling, setScheduling] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [notice, setNotice] = useState<{ id: string; text: string } | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
@@ -427,13 +430,22 @@ export function PaymentsCalendar({
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 14, flexWrap: "wrap", marginBottom: 8 }}>
         <div className="eyebrow">{t("title")}</div>
         {isTeam && (
-          <button className="addnote team-only" onClick={() => setAdding((v) => !v)}>
-            {adding ? tc("cancel") : t("add")}
-          </button>
+          <span className="team-only" style={{ display: "inline-flex", gap: 12 }}>
+            <button className="addnote" onClick={() => { setScheduling((v) => !v); setAdding(false); }}>
+              {scheduling ? tc("cancel") : t("compose")}
+            </button>
+            <button className="addnote" onClick={() => { setAdding((v) => !v); setScheduling(false); }}>
+              {adding ? tc("cancel") : t("add")}
+            </button>
+          </span>
         )}
       </div>
+      {/* An instalment may pay a precise post: child lines stand too (G5). */}
       {adding && isTeam && (
-        <AddPaymentRow weddingId={weddingId} lines={lines.filter((l) => !l.parent_line_id)} onDone={() => setAdding(false)} />
+        <AddPaymentRow weddingId={weddingId} lines={lines} onDone={() => setAdding(false)} />
+      )}
+      {scheduling && isTeam && (
+        <ScheduleEditor weddingId={weddingId} lines={lines} onDone={() => setScheduling(false)} />
       )}
       {groups.length === 0 && (
         <p className="serif" style={{ fontStyle: "italic", color: "var(--ink2)", padding: "10px 0" }}>{t("empty")}</p>
@@ -481,6 +493,12 @@ export function PaymentsCalendar({
                           <td className="team-only" style={{ whiteSpace: "nowrap" }}>
                             <button
                               className="addnote"
+                              onClick={() => setEditingId(editingId === p.id ? null : p.id)}
+                            >
+                              {editingId === p.id ? tc("close") : tc("edit")}
+                            </button>{" "}
+                            <button
+                              className="addnote"
                               disabled={pending}
                               onClick={() =>
                                 startTransition(async () => {
@@ -521,6 +539,13 @@ export function PaymentsCalendar({
                           </td>
                         )}
                       </tr>
+                      {editingId === p.id && (
+                        <tr className="team-only">
+                          <td colSpan={7} style={{ background: "var(--parchment)" }}>
+                            <PaymentEditor payment={p} onClose={() => setEditingId(null)} />
+                          </td>
+                        </tr>
+                      )}
                       {notice?.id === p.id && (
                         <tr className="team-only">
                           <td colSpan={7} style={{ background: "var(--parchment)" }}>
@@ -570,6 +595,59 @@ const toNum = (s: string): number | null => {
   return d ? Number(d) : null;
 };
 
+/** One instalment under the hand — corrected in place, never redone (G1/G6). */
+function PaymentEditor({ payment, onClose }: { payment: Payment; onClose: () => void }) {
+  const t = useTranslations("budget.cal");
+  const tc = useTranslations("common");
+  const router = useRouter();
+  const [label, setLabel] = useState(payment.label);
+  const [amount, setAmount] = useState(String(payment.amount ?? ""));
+  const [currency, setCurrency] = useState(payment.currency ?? "EUR");
+  const [eur, setEur] = useState(payment.amount_eur != null ? String(payment.amount_eur) : "");
+  const [due, setDue] = useState(payment.due_date ?? "");
+  const [method, setMethod] = useState(payment.method ?? "");
+  const [payer, setPayer] = useState(payment.payer ?? "");
+  const [pending, startTransition] = useTransition();
+
+  return (
+    <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center", padding: "10px 6px" }}>
+      <input value={label} onChange={(e) => setLabel(e.target.value)} style={{ flex: "1 1 200px" }} aria-label={t("labelPh")} />
+      <input value={amount} onChange={(e) => setAmount(e.target.value)} style={{ flex: "0 0 100px", textAlign: "right" }} aria-label={t("amount")} />
+      <select value={currency} onChange={(e) => setCurrency(e.target.value)} style={{ padding: "10px", border: "1px solid var(--line)", background: "#fff" }} aria-label={t("currency")}>
+        {["EUR", "USD", "GBP", "CHF"].map((c) => <option key={c}>{c}</option>)}
+      </select>
+      {currency !== "EUR" && (
+        <input value={eur} onChange={(e) => setEur(e.target.value)} placeholder={t("eurPh")} style={{ flex: "0 0 110px", textAlign: "right" }} aria-label={t("eurPh")} />
+      )}
+      <input type="date" value={due} onChange={(e) => setDue(e.target.value)} style={{ flex: "0 0 150px" }} aria-label={t("due")} />
+      <input value={method} onChange={(e) => setMethod(e.target.value)} placeholder={t("methodPh")} style={{ flex: "0 0 130px" }} />
+      <input value={payer} onChange={(e) => setPayer(e.target.value)} placeholder={t("payerPh")} style={{ flex: "0 0 120px" }} />
+      <button
+        className="btn sm"
+        disabled={pending || !label.trim() || !toNum(amount)}
+        onClick={() =>
+          startTransition(async () => {
+            await updatePayment(payment.id, {
+              label,
+              amount: toNum(amount)!,
+              currency,
+              amountEur: currency === "EUR" ? toNum(amount) : toNum(eur),
+              dueDate: due || null,
+              method,
+              payer
+            });
+            onClose();
+            router.refresh();
+          })
+        }
+      >
+        {tc("save")}
+      </button>
+      <button className="btn ghost sm" onClick={onClose}>{tc("cancel")}</button>
+    </div>
+  );
+}
+
 function AddPaymentRow({
   weddingId,
   lines,
@@ -589,8 +667,11 @@ function AddPaymentRow({
   const [method, setMethod] = useState("Bank transfer");
   const [payer, setPayer] = useState("");
   const [refundable, setRefundable] = useState(false);
+  const [added, setAdded] = useState(0);
+  const labelRef = React.useRef<HTMLInputElement>(null);
   const [pending, startTransition] = useTransition();
   const router = useRouter();
+  void onDone;
 
   return (
     <div className="team-only" style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center", padding: "10px 0", borderBottom: "1px solid var(--line)" }}>
@@ -600,7 +681,7 @@ function AddPaymentRow({
           <option key={l.id} value={l.id}>{l.label}</option>
         ))}
       </select>
-      <input value={label} onChange={(e) => setLabel(e.target.value)} placeholder={t("labelPh")} style={{ flex: "1 1 170px" }} />
+      <input ref={labelRef} value={label} onChange={(e) => setLabel(e.target.value)} placeholder={t("labelPh")} style={{ flex: "1 1 170px" }} />
       <input value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="8 000" style={{ flex: "0 0 90px", textAlign: "right" }} aria-label={t("amount")} />
       <select value={currency} onChange={(e) => setCurrency(e.target.value)} style={{ padding: "10px", border: "1px solid var(--line)", background: "#fff" }} aria-label={t("currency")}>
         {["EUR", "USD", "GBP", "CHF"].map((c) => <option key={c}>{c}</option>)}
@@ -633,12 +714,145 @@ function AddPaymentRow({
               refundable
             });
             router.refresh();
-            onDone();
+            // A 30/40/30 is three passes: the form stays open, cleared,
+            // the pen back on the first field (G2).
+            setLabel("");
+            setAmount("");
+            setEur("");
+            setDue("");
+            setRefundable(false);
+            setAdded((n) => n + 1);
+            labelRef.current?.focus();
           })
         }
       >
         {pending ? "…" : t("addGo")}
       </button>
+      {added > 0 && (
+        <span style={{ fontSize: 12, color: "var(--bronze)" }} role="status">
+          {t("addedCount", { count: added })}
+        </span>
+      )}
+    </div>
+  );
+}
+
+/**
+ * The schedule editor (G3): n instalments in one sitting for one line,
+ * with 30/40/30 and 50/50 as mere shortcuts — never a template imposed.
+ * The sum is watched against the committed figure and speaks plainly,
+ * without ever blocking: Estelle decides (G4).
+ */
+export function ScheduleEditor({
+  weddingId,
+  lines,
+  onDone
+}: {
+  weddingId: string;
+  lines: BudgetLine[];
+  onDone: () => void;
+}) {
+  const t = useTranslations("budget.cal");
+  const tc = useTranslations("common");
+  const format = useFormatter();
+  const router = useRouter();
+  const [lineId, setLineId] = useState(lines.find((l) => l.committed)?.id ?? lines[0]?.id ?? "");
+  const [rows, setRows] = useState<{ label: string; amount: string; due: string }[]>([
+    { label: "", amount: "", due: "" },
+    { label: "", amount: "", due: "" }
+  ]);
+  const [pending, startTransition] = useTransition();
+
+  const line = lines.find((l) => l.id === lineId);
+  const committed = Number(line?.committed ?? 0);
+  const sum = rows.reduce((s, r) => s + (toNum(r.amount) ?? 0), 0);
+  const gap = committed - sum;
+
+  const patch = (i: number, p: Partial<{ label: string; amount: string; due: string }>) =>
+    setRows((list) => list.map((r, j) => (j === i ? { ...r, ...p } : r)));
+
+  const applyTemplate = (parts: number[]) => {
+    if (!committed) return;
+    const labels = [t("tplDeposit"), t("tplSecond"), t("tplBalance")];
+    setRows(
+      parts.map((pct, i) => ({
+        label: `${labels[Math.min(i, 2)]} ${pct}%`,
+        amount: String(Math.round((committed * pct) / 100)),
+        due: ""
+      }))
+    );
+  };
+
+  return (
+    <div className="team-only" style={{ padding: "12px 0", borderBottom: "1px solid var(--line)" }}>
+      <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
+        <select value={lineId} onChange={(e) => setLineId(e.target.value)} style={{ padding: "10px", border: "1px solid var(--line)", background: "#fff", maxWidth: 240 }}>
+          {lines.map((l) => (
+            <option key={l.id} value={l.id}>{l.parent_line_id ? `↳ ${l.label}` : l.label}</option>
+          ))}
+        </select>
+        <span style={{ fontSize: 12.5, color: "var(--ink2)" }}>
+          {committed ? t("committedIs", { amount: money(format, committed) }) : t("noCommitted")}
+        </span>
+        <button className="addnote" onClick={() => applyTemplate([30, 40, 30])} disabled={!committed}>30 / 40 / 30</button>
+        <button className="addnote" onClick={() => applyTemplate([50, 50])} disabled={!committed}>50 / 50</button>
+      </div>
+      {rows.map((r, i) => (
+        <div key={i} style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 8, alignItems: "center" }}>
+          <input value={r.label} onChange={(e) => patch(i, { label: e.target.value })} placeholder={t("labelPh")} style={{ flex: "1 1 200px" }} />
+          <input value={r.amount} onChange={(e) => patch(i, { amount: e.target.value })} placeholder="8 000" style={{ flex: "0 0 100px", textAlign: "right" }} aria-label={t("amount")} />
+          <input type="date" value={r.due} onChange={(e) => patch(i, { due: e.target.value })} style={{ flex: "0 0 150px" }} aria-label={t("due")} />
+          <button
+            className="addnote"
+            onClick={() => setRows((list) => list.filter((_, j) => j !== i))}
+            aria-label={t("remove")}
+            style={{ color: "var(--bronze)" }}
+          >
+            ×
+          </button>
+        </div>
+      ))}
+      <div style={{ display: "flex", gap: 10, marginTop: 10, flexWrap: "wrap", alignItems: "center" }}>
+        <button className="addnote" onClick={() => setRows((list) => [...list, { label: "", amount: "", due: "" }])}>
+          + {t("addRow")}
+        </button>
+        <button
+          className="btn sm"
+          disabled={pending || !lineId || !rows.some((r) => r.label.trim() && toNum(r.amount))}
+          onClick={() =>
+            startTransition(async () => {
+              for (const r of rows) {
+                if (!r.label.trim() || !toNum(r.amount)) continue;
+                await addPayment({
+                  weddingId,
+                  budgetLineId: lineId,
+                  label: r.label,
+                  amount: toNum(r.amount)!,
+                  currency: "EUR",
+                  amountEur: toNum(r.amount),
+                  dueDate: r.due || null,
+                  method: "Bank transfer",
+                  payer: "",
+                  refundable: false
+                });
+              }
+              router.refresh();
+              onDone();
+            })
+          }
+        >
+          {pending ? "…" : t("scheduleGo")}
+        </button>
+        {committed > 0 && sum > 0 && (
+          <span style={{ fontSize: 12.5, color: Math.abs(gap) < 1 ? "var(--hunter)" : "var(--bronze)" }} role="status">
+            {Math.abs(gap) < 1
+              ? t("scheduleEven")
+              : gap > 0
+                ? t("notYetScheduled", { amount: money(format, gap) })
+                : t("scheduledOver", { amount: money(format, -gap) })}
+          </span>
+        )}
+      </div>
     </div>
   );
 }

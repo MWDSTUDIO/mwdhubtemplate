@@ -18,7 +18,8 @@ import {
   InternalNotes
 } from "./budget-client";
 import { ScopeStudio, ScopeAnalysisDrop } from "./scope-client";
-import { MasterTable, PaymentsCalendar, RiskBuffer } from "./mgmt-client";
+import { PaymentsCalendar, RiskBuffer } from "./mgmt-client";
+import { BudgetViews } from "./ledger-client";
 import { ReadingsDesk, type ReadingPayload, type ReadingRow } from "./readings-client";
 
 export default async function BudgetPage({
@@ -195,21 +196,25 @@ export default async function BudgetPage({
         </div>
       </div>
 
-      <MasterTable
+      <BudgetViews
         lines={allLines}
         items={items}
-        weddingId={wedding.id}
-        isTeam={session.isTeam}
+        payments={allPayments}
+        envelopes={(envelopes ?? []) as BudgetEnvelope[]}
+        envelopeNotes={(notes ?? []) as EnvelopeNote[]}
         nextByLine={nextByLine}
+        isTeam={session.isTeam}
       />
 
-      <PaymentsCalendar
-        payments={allPayments}
-        lineLabels={lineLabels}
-        weddingId={wedding.id}
-        lines={allLines}
-        isTeam={session.isTeam}
-      />
+      {session.isTeam && (
+        <PaymentsCalendar
+          payments={allPayments}
+          lineLabels={lineLabels}
+          weddingId={wedding.id}
+          lines={allLines}
+          isTeam={session.isTeam}
+        />
+      )}
 
       {/* The house's analysis reads to everyone; Madame answers the
           team alone — the client's questions go to the house itself. */}

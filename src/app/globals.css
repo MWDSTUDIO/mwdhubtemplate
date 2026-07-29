@@ -961,3 +961,44 @@ ul.steps { list-style: none; }
   .scope-levels { flex-direction: column; gap: 8px; }
   .scope-levels > div { flex-direction: row; justify-content: space-between; align-items: baseline; }
 }
+
+/* ── the two readings of the budget ─────────────────────────────────── */
+.viewpick {
+  border: 1px solid var(--line); background: #fff; padding: 8px 16px;
+  font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--ink2); cursor: pointer;
+}
+.viewpick.on { background: var(--hunter, oklch(0.3178 0.0365 157.6)); color: #fff; border-color: transparent; }
+.ledger-wrap { overflow: auto; max-height: 70vh; outline: none; }
+.ledger-wrap:focus-visible { box-shadow: 0 0 0 2px var(--champagne); }
+.ledger thead th {
+  position: sticky; top: 0; background: #fff; z-index: 3;
+  border-bottom: 1px solid var(--line);
+}
+.ledger td:nth-child(2), .ledger th:nth-child(2) {
+  position: sticky; left: 0; background: #fff; z-index: 2; min-width: 220px;
+}
+.ledger thead th:nth-child(2) { z-index: 4; }
+.ledger-group td { background: var(--parchment) !important; font-size: 12.5px; }
+.ledger .cell-focus { box-shadow: inset 0 0 0 2px var(--champagne); }
+.ledger.dense td, .ledger.dense th { padding-top: 4px; padding-bottom: 4px; font-size: 12.3px; }
+.housebook { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 14px; }
+.hb-card { margin: 0; }
+.hb-gauge {
+  height: 3px; background: var(--parchment); margin-top: 10px; position: relative;
+}
+.hb-gauge span { position: absolute; inset: 0 auto 0 0; background: var(--champagne); }
+.hb-line { border-top: 1px solid var(--line-soft); }
+.hb-linehead {
+  display: flex; justify-content: space-between; gap: 12px; width: 100%;
+  background: none; border: none; padding: 9px 0; font: inherit; font-size: 13.5px;
+  text-align: left; color: inherit; align-items: baseline;
+}
+.hb-detail { padding: 2px 0 10px; }
+.hb-item {
+  display: flex; justify-content: space-between; gap: 12px;
+  font-size: 12.5px; color: var(--ink2); padding: 3px 0;
+}
+@media (max-width: 480px) {
+  .housebook { grid-template-columns: 1fr; }
+}

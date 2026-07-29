@@ -422,7 +422,19 @@
       "due": "Due date",
       "methodPh": "Bank transfer",
       "payerPh": "Who settles it",
-      "noLine": "No line"
+      "noLine": "No line",
+      "compose": "Compose a schedule",
+      "addedCount": "{count} placed — the form stays open.",
+      "tplDeposit": "Deposit",
+      "tplSecond": "Second instalment",
+      "tplBalance": "Balance",
+      "committedIs": "Committed: {amount}",
+      "noCommitted": "No committed figure on this line yet.",
+      "addRow": "One more instalment",
+      "scheduleGo": "Place the schedule",
+      "scheduleEven": "The schedule meets the committed figure.",
+      "notYetScheduled": "{amount} not yet scheduled.",
+      "scheduledOver": "{amount} beyond the committed figure."
     },
     "fiche": {
       "eyebrow": "Vendor sheet · {category}",
@@ -520,6 +532,40 @@
       "dismiss": "Set aside",
       "dismissConfirm": "Set this reading aside? The paper stays filed; the budget stays untouched.",
       "draftNote": "Everything lands as drafts — the couple sees nothing before you publish."
+    },
+    "views": {
+      "switch": "Choose your reading",
+      "ledger": "The Ledger",
+      "housebook": "The House Book",
+      "noEnvelope": "Beyond the envelopes",
+      "filter": "Filter by state",
+      "status": {
+        "all": "Everything",
+        "committed": "Committed",
+        "awaiting": "Awaiting quote",
+        "paid": "Settled",
+        "open": "Open",
+        "draft": "Draft"
+      },
+      "colLine": "Line",
+      "colCurrency": "Cur.",
+      "colVat": "VAT",
+      "colPaid": "Paid",
+      "colRemaining": "Remaining",
+      "colNext": "Next instalment",
+      "colStatus": "State",
+      "comfortable": "Comfortable",
+      "compact": "Compact",
+      "saving": "Writing…",
+      "savedNote": "Held.",
+      "total": "Total",
+      "ledgerHint": "A cell edits where it stands: click or Enter, arrows to move, Tab across, Esc to leave, Cmd/Ctrl+Z to undo. Paste straight from Excel or Sheets.",
+      "notYetPlaced": "Not yet placed",
+      "gauge": "{pct}% settled",
+      "paidShort": "Settled {amount}",
+      "remainingShort": "{amount} remains",
+      "scheduleTitle": "The instalments",
+      "settled": "Settled"
     }
   },
   "vendors": {

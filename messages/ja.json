@@ -422,7 +422,19 @@
       "due": "期日",
       "methodPh": "銀行振込",
       "payerPh": "お支払い主",
-      "noLine": "行に結ばない"
+      "noLine": "行に結ばない",
+      "compose": "支払計画を組む",
+      "addedCount": "{count} 件を置きました——フォームは開いたままです。",
+      "tplDeposit": "手付金",
+      "tplSecond": "第二回",
+      "tplBalance": "残金",
+      "committedIs": "契約額:{amount}",
+      "noCommitted": "この行にはまだ契約額がありません。",
+      "addRow": "支払期をもう一つ",
+      "scheduleGo": "支払計画を置く",
+      "scheduleEven": "支払計画は契約額と揃っています。",
+      "notYetScheduled": "あと {amount} が未計画です。",
+      "scheduledOver": "契約額を {amount} 超えています。"
     },
     "fiche": {
       "eyebrow": "お取引先明細 · {category}",
@@ -520,6 +532,40 @@
       "dismiss": "見送る",
       "dismissConfirm": "この読み取りを見送りますか?資料は保管されたまま、予算には触れません。",
       "draftNote": "すべて下書きとして収まります——公開まで、お二人には何も見えません。"
+    },
+    "views": {
+      "switch": "読み方を選ぶ",
+      "ledger": "The Ledger",
+      "housebook": "The House Book",
+      "noEnvelope": "封筒の外",
+      "filter": "状態で絞る",
+      "status": {
+        "all": "すべて",
+        "committed": "契約済み",
+        "awaiting": "見積待ち",
+        "paid": "精算済み",
+        "open": "未定",
+        "draft": "下書き"
+      },
+      "colLine": "項目",
+      "colCurrency": "通貨",
+      "colVat": "税率",
+      "colPaid": "支払済",
+      "colRemaining": "残り",
+      "colNext": "次の支払期",
+      "colStatus": "状態",
+      "comfortable": "ゆったり",
+      "compact": "密に",
+      "saving": "記帳中…",
+      "savedNote": "収めました。",
+      "total": "合計",
+      "ledgerHint": "セルはその場で編集できます:クリックか Enter で入り、矢印で移動、Tab で横へ、Esc で抜け、Cmd/Ctrl+Z で戻します。Excel や Sheets から直接貼り付けられます。",
+      "notYetPlaced": "まだありません",
+      "gauge": "{pct}% 精算済み",
+      "paidShort": "精算済 {amount}",
+      "remainingShort": "残り {amount}",
+      "scheduleTitle": "支払期",
+      "settled": "精算済み"
     }
   },
   "vendors": {

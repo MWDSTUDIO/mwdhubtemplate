@@ -346,6 +346,46 @@ export async function addPayment(input: {
 }
 
 /** One press: the instalment is settled (date editable), totals follow. */
+/**
+ * An instalment corrected by hand — amount, date, label, method (G1).
+ * No more delete-and-recreate: the schedule stays under Estelle's
+ * hand at every moment.
+ */
+export async function updatePayment(
+  paymentId: string,
+  input: {
+    label: string;
+    amount: number;
+    currency: string;
+    amountEur: number | null;
+    dueDate: string | null;
+    method: string;
+    payer: string;
+  }
+) {
+  await teamSession();
+  const supabase = await createClient();
+  const base = {
+    label: input.label.trim(),
+    amount: input.amount,
+    due_date: input.dueDate,
+    method: input.method.trim() || null,
+    payer: input.payer.trim() || null
+  };
+  let { error } = await supabase
+    .from("payments")
+    .update({
+      ...base,
+      currency: input.currency,
+      amount_eur: input.currency === "EUR" ? input.amount : input.amountEur
+    })
+    .eq("id", paymentId);
+  // Before migration 0011 the currency columns are absent.
+  if (error) ({ error } = await supabase.from("payments").update(base).eq("id", paymentId));
+  revalidatePath("/budget");
+  return { ok: !error };
+}
+
 export async function markPaymentPaid(paymentId: string, paidAt: string | null) {
   await teamSession();
   const supabase = await createClient();

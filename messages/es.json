@@ -422,7 +422,19 @@
       "due": "Vencimiento",
       "methodPh": "Transferencia",
       "payerPh": "Quién paga",
-      "noLine": "Sin línea"
+      "noLine": "Sin línea",
+      "compose": "Componer un calendario",
+      "addedCount": "{count} colocado(s) — el formulario sigue abierto.",
+      "tplDeposit": "Anticipo",
+      "tplSecond": "Segundo pago",
+      "tplBalance": "Saldo",
+      "committedIs": "Comprometido: {amount}",
+      "noCommitted": "Aún no hay importe comprometido en esta línea.",
+      "addRow": "Un vencimiento más",
+      "scheduleGo": "Colocar el calendario",
+      "scheduleEven": "El calendario alcanza el importe comprometido.",
+      "notYetScheduled": "{amount} aún sin calendario.",
+      "scheduledOver": "{amount} más allá de lo comprometido."
     },
     "fiche": {
       "eyebrow": "Ficha del proveedor · {category}",
@@ -520,6 +532,40 @@
       "dismiss": "Apartar",
       "dismissConfirm": "¿Apartar esta lectura? El documento queda archivado; el presupuesto, intacto.",
       "draftNote": "Todo llega como borrador — la pareja no ve nada antes de su publicación."
+    },
+    "views": {
+      "switch": "Elegir su lectura",
+      "ledger": "The Ledger",
+      "housebook": "The House Book",
+      "noEnvelope": "Fuera de sobres",
+      "filter": "Filtrar por estado",
+      "status": {
+        "all": "Todo",
+        "committed": "Comprometido",
+        "awaiting": "A la espera de presupuesto",
+        "paid": "Saldado",
+        "open": "Abierto",
+        "draft": "Borrador"
+      },
+      "colLine": "Partida",
+      "colCurrency": "Div.",
+      "colVat": "IVA",
+      "colPaid": "Pagado",
+      "colRemaining": "Resta",
+      "colNext": "Próximo vencimiento",
+      "colStatus": "Estado",
+      "comfortable": "Cómodo",
+      "compact": "Compacto",
+      "saving": "Escribiendo…",
+      "savedNote": "Guardado.",
+      "total": "Total",
+      "ledgerHint": "Cada celda se edita en su sitio: clic o Intro, flechas para moverse, Tab para cruzar, Esc para salir, Cmd/Ctrl+Z para deshacer. Pegue directamente desde Excel o Sheets.",
+      "notYetPlaced": "Nada aún",
+      "gauge": "{pct}% saldado",
+      "paidShort": "Saldado {amount}",
+      "remainingShort": "Resta {amount}",
+      "scheduleTitle": "Los vencimientos",
+      "settled": "Saldado"
     }
   },
   "vendors": {
