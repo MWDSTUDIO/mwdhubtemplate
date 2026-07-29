@@ -179,6 +179,50 @@ read  →  verified  →  releasable
 
 ---
 
+## 5 bis. Qui vérifie quoi — la règle de proportionnalité
+
+**Point capital, à ne pas confondre :** la vérification de vive voix se fait **auprès du PRESTATAIRE**, jamais auprès du client. Estelle n'appelle pas un couple américain : elle appelle le château, le traiteur, le photographe — ceux dont elle va payer le compte. Une fois par prestataire, pas par échéance.
+
+**Et côté client, le hub est entièrement automatique** : le couple se connecte, l'échéance est là, l'IBAN est là. Plus aucune saisie, plus aucun email à écrire. C'est plus automatisé qu'avant, pas moins.
+
+### Le moteur de règles
+
+Toutes les coordonnées ne portent pas le même risque. La vérification téléphonique n'est donc **pas systématique** : elle se déclenche sur des critères, calculés par le système.
+
+| Situation | Vérification exigée |
+|---|---|
+| Nouveau prestataire · **SEPA en euros** · coordonnées issues d'un contrat reçu par un canal connu · montant sous le seuil | **Aucun appel.** Le contrôle mod-97 valide la forme, le nom légal est enregistré, et la vérification du bénéficiaire de la banque d'Estelle fait le contrôle nom/IBAN au moment du premier virement (voir §7). Statut : `verified by document` |
+| Nouveau prestataire · **hors SEPA ou hors euro** (États-Unis, Royaume-Uni en livres, Suisse, Maroc, reste du monde) | **Appel obligatoire.** Aucun filet automatique n'existe sur ces corridors. |
+| **Tout changement de coordonnées** sur un prestataire existant | **Appel obligatoire, sans exception.** C'est le scénario de fraude n° 1. Aucune règle ne le contourne. |
+| Montant cumulé du prestataire **au-dessus du seuil** (à fixer par Estelle, par exemple 50 000 €) | **Appel obligatoire.** |
+| Coordonnées reçues **par email** plutôt que dans un contrat signé | **Appel obligatoire.** |
+| Honoraires MWD (compte de la maison) | Aucune vérification — c'est son propre compte. |
+
+**En pratique, sur un mariage :** deux à quatre appels, à des prestataires, une fois chacun. Pas un appel par échéance, et aucun appel à un client.
+
+### Ce qui compte comme « hors bande »
+
+Le principe n'est pas « un appel téléphonique » : c'est **un canal qui n'a pas été fourni par le document lui-même**. Comptent donc :
+
+- un appel sur un numéro pris sur l'en-tête du contrat papier, le site du prestataire, ou déjà connu de la maison avant l'arrivée du document ;
+- une visioconférence déjà programmée avec ce prestataire ;
+- une rencontre en personne — un repérage, une dégustation ;
+- un message vocal sur un numéro que la maison avait **avant** de recevoir le document.
+
+Ne comptent pas : le numéro figurant dans le document qui porte les coordonnées, une signature d'email, un rappel à un numéro qui vient d'appeler.
+
+### Ce que le système fait tout seul
+
+Pour ne laisser à Estelle que le geste irréductible :
+
+- **Il calcule si l'appel est requis** et l'affiche sur la fiche : *« verification required — non-SEPA corridor »* ou *« no call required — SEPA, within threshold »*.
+- **Il prépare l'appel** : le numéro à composer, pris hors du document et signalé comme tel, le nom légal à faire confirmer, les quatre derniers caractères de l'IBAN à faire relire — jamais l'IBAN entier à dicter.
+- **Il enregistre la vérification en deux clics** : qui, quand, quel numéro, quel interlocuteur.
+- **Il n'oublie pas** : une fiche en attente de vérification apparaît dans les alertes tant qu'elle bloque une échéance à venir, avec le délai restant.
+
+
+---
+
 ## 6. La détection de changement — le signal de fraude numéro un
 
 À la première lecture vérifiée, calculer une **empreinte** (hash) des champs de compte et la stocker.

@@ -134,28 +134,46 @@ Un **lien direct vers la page de l'échéance** dans le hub. Un clic depuis l'em
 
 ---
 
+## 4 bis. Les neuf briefs — inventaire complet
+
+Le chantier tient dans **neuf fichiers**. Si l'un manque, le dire tout de suite et attendre : ne pas reconstituer son contenu par déduction.
+
+| Fichier | Ce qu'il couvre |
+|---|---|
+| `BRIEF-inner-house-corrections.md` | Le brief principal (buts A→I) + l'annexe d'audit du dépôt |
+| `BRIEF-inner-house-lisibilite.md` | Graisse, interlettrage, échelle typographique, plein écran des planches, URL des planches, fatigue |
+| `BRIEF-inner-house-ledger-cellule-active.md` | Cellule active du Ledger + badge brouillon |
+| `BRIEF-inner-house-budget-ajout-lignes.md` | Régression : ajout manuel de lignes et sous-lignes |
+| `BRIEF-inner-house-budget-chiffres-visuels.md` | Les trois grands chiffres, le dépassement, barre principale, répartition par enveloppe |
+| `BRIEF-inner-house-budget-application-financiere.md` | Cadrage financier : fondations, trésorerie, devises, TVA, rapprochement, alertes, scénarios, clôture |
+| `BRIEF-inner-house-coordonnees-bancaires.md` | Lecture, structure par corridor, contrôles, vérification proportionnée, historique |
+| `BRIEF-inner-house-notifications-et-vitesse.md` | Notifications (base) + vitesse du hub |
+| `BRIEF-inner-house-notifications-et-ordre-de-marche.md` | **Ce fichier** — rappels programmables, autorisations, migrations, ordre |
+
+---
+
 ## 5. L'ordre des chantiers
 
 Les briefs à traiter, dans cet ordre. Un commit et une validation par bloc.
 
 | # | Chantier | Brief |
 |---|---|---|
-| 1 | **Vitesse** : les huit `revalidatePath("/", "layout")`, puis le `Promise.all` sur toutes les pages | `notifications-et-vitesse.md` §7–8 |
-| 2 | **Lisibilité** : graisse 300 → 400, interlettrage plafonné à 0,18em | `lisibilite.md` §I.1–I.2 |
-| 3 | **Ledger** : cellule active, badge brouillon | `ledger-cellule-active.md` |
-| 4 | **Régression** : ajout de lignes et de sous-lignes à la main | `budget-ajout-lignes.md` |
-| 5 | **Budget, exactitude** : le pourcentage faux, le libellé du dépassement | `budget-chiffres-visuels.md` §1–2 |
-| 6 | **Documents** : le téléchargement | `corrections.md` §B |
-| 7 | **Fondations financières** : devise sur les lignes, taux de change, arrondi | `budget-application-financiere.md` §1 |
-| 8 | **Analyse de documents** : `ANALYSIS_MODEL`, plafonds, confiance, signalements | `corrections.md` §C |
-| 9 | **Coordonnées bancaires** : structure, contrôles, vérification, historique | `coordonnees-bancaires.md` |
+| 1 | **Vitesse** : les huit `revalidatePath("/", "layout")`, puis le `Promise.all` sur toutes les pages | `BRIEF-inner-house-notifications-et-vitesse.md` §7–8 |
+| 2 | **Lisibilité** : graisse 300 → 400, interlettrage plafonné à 0,18em | `BRIEF-inner-house-lisibilite.md` §I.1–I.2 |
+| 3 | **Ledger** : cellule active, badge brouillon | `BRIEF-inner-house-ledger-cellule-active.md` |
+| 4 | **Régression** : ajout de lignes et de sous-lignes à la main | `BRIEF-inner-house-budget-ajout-lignes.md` |
+| 5 | **Budget, exactitude** : le pourcentage faux, le libellé du dépassement | `BRIEF-inner-house-budget-chiffres-visuels.md` §1–2 |
+| 6 | **Documents** : le téléchargement | `BRIEF-inner-house-corrections.md` §B |
+| 7 | **Fondations financières** : devise sur les lignes, taux de change, arrondi | `BRIEF-inner-house-budget-application-financiere.md` §1 |
+| 8 | **Analyse de documents** : `ANALYSIS_MODEL`, plafonds, confiance, signalements | `BRIEF-inner-house-corrections.md` §C |
+| 9 | **Coordonnées bancaires** : structure, contrôles, vérification, historique | `BRIEF-inner-house-coordonnees-bancaires.md` |
 | 10 | **Notifications** : rappels programmables, contenu, verrous | ce brief, Partie I |
-| 11 | **Budget, visuels** : barre principale, répartition par enveloppe, trésorerie | `budget-chiffres-visuels.md` §3–4 · `application-financiere.md` §2.1 |
-| 12 | **Scope Budget** : le troisième niveau, le vocabulaire | `corrections.md` §D |
-| 13 | **Mobile** : marges de sécurité iOS, point de rupture téléphone | `lisibilite.md` §I / `corrections.md` §I |
-| 14 | **Plein écran des planches** | `lisibilite.md` §II.1 |
-| 15 | **Alertes** et **rapprochement des documents** | `application-financiere.md` §5–6 |
-| 16 | **Le reste** : scénarios, clôture, indicateurs de la maison | `application-financiere.md` §7–9 |
+| 11 | **Budget, visuels** : barre principale, répartition par enveloppe, trésorerie | `BRIEF-inner-house-budget-chiffres-visuels.md` §3–4 · `BRIEF-inner-house-budget-application-financiere.md` §2.1 |
+| 12 | **Scope Budget** : le troisième niveau, le vocabulaire | `BRIEF-inner-house-corrections.md` §D |
+| 13 | **Mobile** : marges de sécurité iOS, point de rupture téléphone | `BRIEF-inner-house-lisibilite.md` §I / `BRIEF-inner-house-corrections.md` §I |
+| 14 | **Plein écran des planches** | `BRIEF-inner-house-lisibilite.md` §II.1 |
+| 15 | **Alertes** et **rapprochement des documents** | `BRIEF-inner-house-budget-application-financiere.md` §5–6 |
+| 16 | **Le reste** : scénarios, clôture, indicateurs de la maison | `BRIEF-inner-house-budget-application-financiere.md` §7–9 |
 
 **Après chaque bloc :** `/impeccable audit`, puis une capture avant/après, puis attendre la validation d'Estelle.
 
