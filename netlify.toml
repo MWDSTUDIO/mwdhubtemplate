@@ -11,6 +11,14 @@
 [functions]
   directory = "netlify/functions"
 
+# The technical address bows out: anyone holding an old netlify.app
+# link is walked to the house's own door.
+[[redirects]]
+  from = "https://the-inner-house-mwd.netlify.app/*"
+  to = "https://innerhouse.madamewedding.design/:splat"
+  status = 301
+  force = true
+
 # Vendor outreach leaves from Estelle's inbox through Netlify Forms.
 # The static form definition lives in public/netlify-forms.html so the
 # build bot registers it; submissions post to /vendor-outreach.
