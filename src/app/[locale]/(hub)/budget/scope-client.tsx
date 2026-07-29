@@ -290,7 +290,7 @@ export function ScopeStudio({
                   aria-label={t("envName")}
                   style={{ flex: "1 1 220px", fontSize: 14.5 }}
                 />
-                <label style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 11.5, color: "var(--ink2)" }}>
+                <label style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 12.5, color: "var(--ink2)" }}>
                   {t("recommendedShort")}
                   <input
                     type="number"
@@ -305,7 +305,7 @@ export function ScopeStudio({
                     style={{ width: 68, textAlign: "right" }}
                   />
                 </label>
-                <label style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 11.5, color: "var(--ink2)" }}>
+                <label style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 12.5, color: "var(--ink2)" }}>
                   {t("forecastShort")}
                   <input
                     type="number"
@@ -694,7 +694,7 @@ export function ScopeAnalysisDrop({ weddingId }: { weddingId: string }) {
           {tips.map((x, i) => (
             <p key={`t${i}`} style={{ fontSize: 13, color: "var(--ink2)", marginTop: 4 }}>— {x}</p>
           ))}
-          <p style={{ fontSize: 11.5, color: "var(--ink2)", marginTop: 8 }}>{t("filedNote")}</p>
+          <p style={{ fontSize: 12.5, color: "var(--ink2)", marginTop: 8 }}>{t("filedNote")}</p>
         </div>
       )}
     </div>

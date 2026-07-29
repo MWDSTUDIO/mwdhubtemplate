@@ -441,7 +441,7 @@ export function LinesTable({
         </table>
       </div>
       {isTeam && (
-        <p className="team-only" style={{ fontSize: 11.5, color: "var(--ink2)", marginTop: 10 }}>{tl("hint")}</p>
+        <p className="team-only" style={{ fontSize: 12.5, color: "var(--ink2)", marginTop: 10 }}>{tl("hint")}</p>
       )}
     </div>
   );

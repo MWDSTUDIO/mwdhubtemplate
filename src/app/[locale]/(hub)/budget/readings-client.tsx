@@ -201,7 +201,7 @@ function Reading({ reading }: { reading: ReadingRow }) {
                     <td className="num">{it.total_ht != null ? `HT ${money(it.total_ht)}` : ""}</td>
                     <td className="num">{it.vat_pct != null ? `${t("vat")} ${it.vat_pct}%` : ""}</td>
                     <td className="num">{money(it.total_ttc ?? it.total_ht)}</td>
-                    <td className="num" style={{ color: "var(--ink2)", fontSize: 11 }}>{it.page != null ? t("page", { n: it.page }) : ""}</td>
+                    <td className="num" style={{ color: "var(--ink2)", fontSize: 12 }}>{it.page != null ? t("page", { n: it.page }) : ""}</td>
                   </tr>
                 ))}
               </tbody>
@@ -292,7 +292,7 @@ function Reading({ reading }: { reading: ReadingRow }) {
         >
           {t("dismiss")}
         </button>
-        <span style={{ fontSize: 11.5, color: "var(--ink2)", alignSelf: "center" }}>{t("draftNote")}</span>
+        <span style={{ fontSize: 12.5, color: "var(--ink2)", alignSelf: "center" }}>{t("draftNote")}</span>
       </div>
     </div>
   );

@@ -110,7 +110,7 @@ export function ProposedMoments({
           )}
         </div>
       ))}
-      <p style={{ fontSize: 11.5, color: "var(--ink2)", marginTop: 12 }}>{t("hint")}</p>
+      <p style={{ fontSize: 12.5, color: "var(--ink2)", marginTop: 12 }}>{t("hint")}</p>
     </div>
   );
 }

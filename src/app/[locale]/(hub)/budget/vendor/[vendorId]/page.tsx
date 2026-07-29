@@ -205,7 +205,7 @@ export default async function VendorSheetPage({
                 {banking.swift && <><br />SWIFT&nbsp;: {banking.swift}</>}
                 {banking.bank && <><br />{banking.bank}</>}
               </p>
-              <p style={{ fontSize: 11.5, color: "var(--ink2)", marginTop: 6 }}>{t("banking.revealNote")}</p>
+              <p style={{ fontSize: 12.5, color: "var(--ink2)", marginTop: 6 }}>{t("banking.revealNote")}</p>
             </div>
           )}
         </div>

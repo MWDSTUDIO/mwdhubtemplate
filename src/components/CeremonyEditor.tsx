@@ -117,7 +117,7 @@ export function CeremonyForm({
       {failed !== null && (
         <p role="alert" style={{ marginTop: 12, fontSize: 13, color: "var(--bronze)" }}>
           {t("saveFailed")}
-          {failed && <span style={{ display: "block", fontSize: 11.5 }}>{failed}</span>}
+          {failed && <span style={{ display: "block", fontSize: 12.5 }}>{failed}</span>}
         </p>
       )}
     </div>

@@ -152,7 +152,7 @@ export function AddGuestForm({
               setLineTouched(true);
             }}
           />
-          <span style={{ fontSize: 11.5, color: "var(--bronze)" }}>{t("lineHint")}</span>
+          <span style={{ fontSize: 12.5, color: "var(--bronze)" }}>{t("lineHint")}</span>
         </div>
         <div className="field">
           <label className="eyebrow">{t("addressField")}</label>
@@ -297,7 +297,7 @@ export function GuestList({
                     <td className="serif" style={{ fontSize: 16 }}>
                       {guest.invitation_line}
                       {guest.dietary && (
-                        <span style={{ display: "block", fontSize: 11.5, color: "var(--bronze)", fontFamily: "var(--font-ui)" }}>
+                        <span style={{ display: "block", fontSize: 12.5, color: "var(--bronze)", fontFamily: "var(--font-ui)" }}>
                           {guest.dietary}
                         </span>
                       )}

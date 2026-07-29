@@ -53,7 +53,7 @@ export function AskHouse({ weddingId }: { weddingId: string }) {
           &ldquo;{answer}&rdquo;
         </p>
       )}
-      <p style={{ fontSize: 11.5, color: "var(--ink2)", marginTop: 8 }}>{t("meetNote")}</p>
+      <p style={{ fontSize: 12.5, color: "var(--ink2)", marginTop: 8 }}>{t("meetNote")}</p>
     </div>
   );
 }

@@ -134,7 +134,7 @@ export function ProposeMoment({ weddingId, timezone }: { weddingId: string; time
             </div>
           </>
         )}
-        <p style={{ fontSize: 11.5, color: "var(--ink2)", marginTop: 10 }}>
+        <p style={{ fontSize: 12.5, color: "var(--ink2)", marginTop: 10 }}>
           {t("tzNote", { tz: clientTz, houseTz: timezone })}
         </p>
         <div style={{ marginTop: 16, display: "flex", gap: 12, alignItems: "center" }}>

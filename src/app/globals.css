@@ -33,15 +33,27 @@
 * { margin: 0; padding: 0; box-sizing: border-box; }
 html { scroll-behavior: smooth; }
 
+/* Light lives in the large corps only — under 24px, a 300 weight makes
+   the eye rebuild each glyph, and over a day that is the first fatigue
+   of this interface (readability brief, I.1). */
 body {
   background: var(--cream);
   color: var(--hunter);
   font-family: var(--font-ui);
-  font-weight: 300;
-  font-size: 15px;
+  font-weight: 400;
+  font-size: 16px;
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
 }
+
+/* Running text never stretches past what the eye can carry back to the
+   next line (I.4). Tables and grids are exempt by nature; centred
+   blocks keep their centre. */
+p { max-width: 72ch; }
+[style*="text-align:center"] p, .lock p, .auth-card p { margin-inline: auto; }
+
+/* Large display figures keep the house's Light (I.1). */
+.serif.num { font-weight: 300; }
 
 ::selection { background: var(--champagne); color: var(--hunter); }
 
@@ -70,8 +82,8 @@ h1, h2, h3 { text-wrap: balance; }
 .serif { font-family: var(--font-display); }
 
 .eyebrow {
-  font-size: 10px;
-  letter-spacing: 0.28em;
+  font-size: 12px;
+  letter-spacing: 0.18em;
   text-transform: uppercase;
   color: var(--ink2);
   font-weight: 400;
@@ -97,8 +109,8 @@ aside.house {
 .house .logo img { width: 150px; display: block; }
 .house .logo span {
   display: block;
-  font-size: 9px;
-  letter-spacing: 0.3em;
+  font-size: 12px;
+  letter-spacing: 0.22em;
   text-transform: uppercase;
   color: var(--champagne);
   margin-top: 8px;
@@ -108,7 +120,7 @@ aside.house {
   padding: 9px 28px;
   color: oklch(0.9801 0.0074 80.72 / 0.72);
   text-decoration: none;
-  font-size: 13px;
+  font-size: 14px;
   letter-spacing: 0.06em;
   border-left: 2px solid transparent;
   transition: color 0.25s var(--ease-out), background 0.25s var(--ease-out);
@@ -121,8 +133,8 @@ aside.house {
 }
 .house nav .grp {
   padding: 20px 28px 8px;
-  font-size: 9px;
-  letter-spacing: 0.3em;
+  font-size: 12px;
+  letter-spacing: 0.18em;
   text-transform: uppercase;
   color: oklch(0.7749 0.0521 76.74 / 0.75);
 }
@@ -130,7 +142,7 @@ aside.house {
   padding: 26px 28px 0;
   margin-top: 26px;
   border-top: 1px solid oklch(0.7749 0.0521 76.74 / 0.25);
-  font-size: 11px;
+  font-size: 12px;
   color: oklch(0.9801 0.0074 80.72 / 0.55);
   letter-spacing: 0.05em;
 }
@@ -153,8 +165,8 @@ main.hub { padding: 0 0 90px; min-width: 0; }
 .topbar .who .serif { font-size: 19px; font-weight: 400; }
 .topbar .who small {
   display: block;
-  font-size: 10px;
-  letter-spacing: 0.22em;
+  font-size: 12px;
+  letter-spacing: 0.18em;
   text-transform: uppercase;
   color: var(--ink2);
 }
@@ -165,7 +177,7 @@ main.hub { padding: 0 0 90px; min-width: 0; }
   border: 1px solid var(--line);
   border-radius: 99px;
   overflow: hidden;
-  font-size: 11px;
+  font-size: 12px;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
@@ -186,7 +198,7 @@ main.hub { padding: 0 0 90px; min-width: 0; }
   border: 1px solid var(--line);
   border-radius: 99px;
   padding: 8px 15px;
-  font-size: 11px;
+  font-size: 12px;
   letter-spacing: 0.14em;
   background: none;
   cursor: pointer;
@@ -211,7 +223,7 @@ main.hub { padding: 0 0 90px; min-width: 0; }
   padding: 10px 16px;
   background: none;
   border: none;
-  font-size: 12.5px;
+  font-size: 13.5px;
   letter-spacing: 0.08em;
   cursor: pointer;
   color: var(--hunter);
@@ -220,7 +232,9 @@ main.hub { padding: 0 0 90px; min-width: 0; }
 .lang-menu button.on { color: var(--bronze); }
 
 /* ── sections & typography ─────────────────────────────────────── */
-section.sheet { padding: 52px 48px; max-width: 1520px; animation: fade 0.4s var(--ease-out); }
+/* 0.2s, not 0.4 — several hundred navigations a day make a page fade
+   a real cost (II.4). Ease-out, no bounce, as ever. */
+section.sheet { padding: 52px 48px; max-width: 1520px; animation: fade 0.2s var(--ease-out); }
 section.sheet > .lead, section.sheet > .title { max-width: 72ch; }
 @keyframes fade {
   from { opacity: 0; transform: translateY(6px); }
@@ -248,8 +262,8 @@ h1.title {
 
 .tag {
   display: inline-block;
-  font-size: 9px;
-  letter-spacing: 0.2em;
+  font-size: 12px;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
   padding: 4px 10px;
   border: 1px solid var(--line);
@@ -266,7 +280,7 @@ h1.title {
 
 .doc {
   display: inline-block;
-  font-size: 10px;
+  font-size: 12px;
   letter-spacing: 0.1em;
   padding: 3px 9px;
   border: 1px solid var(--line);
@@ -282,8 +296,8 @@ h1.title {
   background: var(--hunter);
   color: var(--cream);
   border: none;
-  font-size: 11px;
-  letter-spacing: 0.2em;
+  font-size: 12px;
+  letter-spacing: 0.18em;
   text-transform: uppercase;
   cursor: pointer;
   text-decoration: none;
@@ -292,13 +306,13 @@ h1.title {
 .btn:hover { opacity: 0.85 }
 .btn:disabled { opacity: 0.5; cursor: default; }
 .btn.ghost { background: none; color: var(--hunter); border: 1px solid var(--hunter); }
-.btn.sm { padding: 8px 16px; font-size: 10px; }
+.btn.sm { padding: 8px 16px; font-size: 12px; }
 
-table.sheet-table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+table.sheet-table { width: 100%; border-collapse: collapse; font-size: 15px; }
 .sheet-table th {
   text-align: left;
-  font-size: 10px;
-  letter-spacing: 0.2em;
+  font-size: 12px;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--ink2);
   font-weight: 400;
@@ -326,7 +340,7 @@ ul.steps { list-style: none; }
   border-bottom: 1px solid var(--line-soft);
   align-items: baseline;
 }
-.steps .d { font-size: 11px; letter-spacing: 0.1em; color: var(--ink2); min-width: 74px; }
+.steps .d { font-size: 12px; letter-spacing: 0.1em; color: var(--ink2); min-width: 74px; }
 
 /* ── timeline frise ────────────────────────────────────────────── */
 .frise { position: relative; padding: 46px 0 16px; overflow-x: auto; }
@@ -348,12 +362,12 @@ ul.steps { list-style: none; }
 .mo .m {
   position: absolute;
   top: 8px;
-  font-size: 10px;
-  letter-spacing: 0.22em;
+  font-size: 12px;
+  letter-spacing: 0.18em;
   text-transform: uppercase;
   color: var(--ink2);
 }
-.mo p { font-size: 12.5px; line-height: 1.45; padding-right: 14px; }
+.mo p { font-size: 14px; line-height: 1.55; padding-right: 14px; }
 .mo button.edit {
   background: none; border: none; text-align: left; cursor: pointer;
   font: inherit; color: inherit; padding: 0;
@@ -384,7 +398,7 @@ ul.steps { list-style: none; }
 .planche .visu span { font-family: var(--font-display); font-style: italic; font-size: 15px; color: var(--ink2); }
 .planche .body { padding: 18px 20px 20px; }
 .planche h3 { font-family: var(--font-display); font-weight: 400; font-size: 20px; margin-bottom: 4px; }
-.planche .sub { font-size: 11px; color: var(--ink2); letter-spacing: 0.06em; margin-bottom: 12px; }
+.planche .sub { font-size: 12px; color: var(--ink2); letter-spacing: 0.06em; margin-bottom: 12px; }
 
 .swatch { width: 30px; height: 30px; display: inline-block; border: 1px solid var(--line); vertical-align: middle; }
 .swrow { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
@@ -392,7 +406,7 @@ ul.steps { list-style: none; }
   width: 110px;
   padding: 9px 10px;
   border: 1px solid var(--line);
-  font-size: 12.5px;
+  font-size: 13px;
   letter-spacing: 0.06em;
   background: var(--surface);
 }
@@ -402,8 +416,8 @@ ul.steps { list-style: none; }
 .tabs button {
   background: none;
   border: none;
-  font-size: 12px;
-  letter-spacing: 0.16em;
+  font-size: 13px;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
   padding: 12px 22px;
   cursor: pointer;
@@ -424,14 +438,14 @@ ul.steps { list-style: none; }
 .envnote {
   font-family: var(--font-display);
   font-style: italic;
-  font-size: 15.5px;
-  line-height: 1.55;
+  font-size: 16px;
+  line-height: 1.65;
   color: var(--ink2);
   padding: 4px 0 14px;
   border-bottom: 1px solid var(--line-soft);
 }
 .addnote {
-  font-size: 10px;
+  font-size: 12px;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--bronze);
@@ -455,10 +469,10 @@ ul.steps { list-style: none; }
 /* ── chat ──────────────────────────────────────────────────────── */
 .chat { background: var(--surface); border: 1px solid var(--line); height: 420px; display: flex; flex-direction: column; }
 .chat-msgs { flex: 1; padding: 26px; overflow-y: auto; display: flex; flex-direction: column; gap: 14px; }
-.bub { max-width: 65%; padding: 12px 16px; font-size: 13.5px; line-height: 1.5; }
+.bub { max-width: 65%; padding: 12px 16px; font-size: 15px; line-height: 1.55; }
 .bub small {
   display: block;
-  font-size: 10px;
+  font-size: 12px;
   letter-spacing: 0.1em;
   color: var(--ink2);
   margin-bottom: 4px;
@@ -468,7 +482,7 @@ ul.steps { list-style: none; }
 .bub.us { background: var(--hunter); color: var(--cream); align-self: flex-end; }
 .bub.us small { color: var(--champagne); }
 .chat-in { display: flex; border-top: 1px solid var(--line); }
-.chat-in input { flex: 1; border: none; padding: 16px 20px; font-size: 14px; background: none; outline: none; }
+.chat-in input { flex: 1; border: none; padding: 16px 20px; font-size: 15px; background: none; outline: none; }
 .chat-in:focus-within { border-color: var(--champagne); box-shadow: inset 0 2px 0 -1px var(--champagne); }
 
 /* agent surfaces */
@@ -492,7 +506,7 @@ ul.steps { list-style: none; }
   min-width: 220px;
   padding: 12px 14px;
   border: 1px solid var(--line);
-  font-size: 13.5px;
+  font-size: 15px;
   background: var(--surface);
 }
 
@@ -545,7 +559,7 @@ ul.steps { list-style: none; }
   background: oklch(0.7749 0.0521 76.74 / 0.08);
   padding: 18px;
   text-align: center;
-  font-size: 12.5px;
+  font-size: 14px;
   color: var(--ink2);
   cursor: pointer;
 }
@@ -554,8 +568,8 @@ ul.steps { list-style: none; }
 /* ── calendar (propose a moment) ───────────────────────────────── */
 .cal { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; margin-top: 12px; }
 .cal b {
-  font-size: 9px;
-  letter-spacing: 0.18em;
+  font-size: 12px;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--ink2);
   font-weight: 400;
@@ -584,7 +598,7 @@ ul.steps { list-style: none; }
 .slots button {
   padding: 7px 14px;
   border: 1px solid var(--line);
-  font-size: 11.5px;
+  font-size: 12.5px;
   letter-spacing: 0.08em;
   cursor: pointer;
   transition: background 0.2s var(--ease-out), color 0.2s var(--ease-out);
@@ -601,7 +615,7 @@ ul.steps { list-style: none; }
   padding: 11px 12px;
   border: 1px solid var(--line);
   background: var(--surface);
-  font-size: 13.5px;
+  font-size: 15px;
 }
 .field .suggested {
   border-color: var(--champagne);
@@ -656,7 +670,7 @@ ul.steps { list-style: none; }
   animation: rise 1.4s var(--ease-out) 0.9s forwards;
 }
 #gate .sub {
-  font-size: 10px;
+  font-size: 12px;
   letter-spacing: 0.32em;
   text-transform: uppercase;
   color: var(--champagne);
@@ -670,7 +684,7 @@ ul.steps { list-style: none; }
   border: 1px solid var(--champagne);
   color: var(--cream);
   font-family: var(--font-ui);
-  font-size: 11px;
+  font-size: 12px;
   letter-spacing: 0.34em;
   text-transform: uppercase;
   cursor: pointer;
@@ -705,7 +719,7 @@ ul.steps { list-style: none; }
   background: oklch(1 0 0 / 0.06);
   border: 1px solid oklch(0.7749 0.0521 76.74 / 0.45);
   color: var(--cream);
-  font-size: 14px;
+  font-size: 15px;
   margin-bottom: 12px;
 }
 .auth-card input::placeholder { color: oklch(0.9801 0.0074 80.72 / 0.7); }
@@ -752,7 +766,7 @@ ul.steps { list-style: none; }
   z-index: var(--z-gate);
   background: oklch(0.3178 0.0365 157.6 / 0.88);
   color: var(--cream);
-  font-size: 12.5px;
+  font-size: 13.5px;
   letter-spacing: 0.08em;
   padding: 10px 22px;
   border-radius: 999px;
@@ -779,7 +793,7 @@ ul.steps { list-style: none; }
 .bsheet .in { position: relative; z-index: 2; }
 
 .bsheet .hd { text-align: center; max-width: 720px; margin: 0 auto 34px; }
-.bsheet .hd .eyebrow { font-size: 10px; letter-spacing: 0.34em; }
+.bsheet .hd .eyebrow { font-size: 11px; letter-spacing: 0.34em; }
 .bsheet .hd h1 {
   font-family: var(--font-display);
   font-weight: 300;
@@ -794,10 +808,10 @@ ul.steps { list-style: none; }
   color: oklch(0.36 0.026 152);
   margin-top: 14px;
 }
-.bsheet .hd .sig { font-size: 8.5px; letter-spacing: 0.26em; text-transform: uppercase; color: var(--ink2); margin-top: 10px; }
+.bsheet .hd .sig { font-size: 11px; letter-spacing: 0.26em; text-transform: uppercase; color: var(--ink2); margin-top: 10px; }
 .bsheet .hd .links { display: flex; gap: 18px; justify-content: center; flex-wrap: wrap; margin-top: 14px; }
 .bsheet .hd .links a {
-  font-size: 9px; letter-spacing: 0.16em; text-transform: uppercase;
+  font-size: 10.5px; letter-spacing: 0.16em; text-transform: uppercase;
   color: var(--bronze); text-decoration: none;
   border-bottom: 1px solid var(--line); padding-bottom: 2px;
 }
@@ -815,8 +829,8 @@ ul.steps { list-style: none; }
   box-shadow: inset 0 1px 2px oklch(0 0 0 / 0.05);
 }
 .bsheet .pal input {
-  border: none; background: none; font-size: 8.5px; letter-spacing: 0.08em;
-  color: var(--ink2); outline: none; width: 58px; font-family: inherit;
+  border: none; background: none; font-size: 10.5px; letter-spacing: 0.08em;
+  color: var(--ink2); outline: none; width: 66px; font-family: inherit;
 }
 .bsheet .pal input:focus { background: oklch(0.7749 0.0521 76.74 / 0.14); }
 
@@ -836,12 +850,12 @@ ul.steps { list-style: none; }
 
 .bsheet .mats { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 24px; padding-left: 122px; }
 .bsheet .mats span {
-  font-size: 9px; letter-spacing: 0.18em; text-transform: uppercase;
+  font-size: 10.5px; letter-spacing: 0.18em; text-transform: uppercase;
   color: var(--ink2); background: oklch(0.938 0.019 92); padding: 8px 16px;
 }
 
 .bsheet .foot { display: flex; justify-content: space-between; align-items: flex-end; gap: 24px; margin-top: 20px; }
-.bsheet .foot .ref { font-size: 8.5px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--ink2); }
+.bsheet .foot .ref { font-size: 10.5px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--ink2); }
 .bsheet .mark { width: 104px; display: block; box-shadow: 0 4px 16px oklch(0.3178 0.0365 157.6 / 0.15); }
 
 .bsheet .tile {
@@ -914,8 +928,8 @@ ul.steps { list-style: none; }
   text-decoration: none; color: inherit;
 }
 .docline-main:hover .docline-label { color: var(--bronze); }
-.docline-label { font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.docline-meta { font-size: 11.5px; color: var(--ink2); letter-spacing: 0.02em; }
+.docline-label { font-size: 15px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.docline-meta { font-size: 13px; color: var(--ink2); letter-spacing: 0.02em; }
 .docline-actions { display: flex; gap: 10px; flex-shrink: 0; align-items: center; }
 .doc-viewer {
   position: fixed; inset: 0; z-index: 80;
@@ -946,7 +960,7 @@ ul.steps { list-style: none; }
   border-bottom: 1px solid var(--line);
 }
 .scope-head > div { display: flex; flex-direction: column; gap: 2px; min-width: 130px; }
-.scope-head-label { font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink2); }
+.scope-head-label { font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink2); }
 .scope-head-figure { font-size: 22px; }
 .scope-envcard { padding: 16px 0; border-bottom: 1px solid var(--line-soft); }
 .scope-envcard:last-child { border-bottom: none; }
@@ -954,8 +968,8 @@ ul.steps { list-style: none; }
   display: flex; gap: 26px; flex-wrap: wrap; margin-top: 10px;
 }
 .scope-levels > div { display: flex; flex-direction: column; gap: 2px; min-width: 150px; }
-.scope-level-label { font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink2); }
-.scope-level-amount { margin-left: 8px; color: var(--ink2); font-size: 12.5px; }
+.scope-level-label { font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink2); }
+.scope-level-amount { margin-left: 8px; color: var(--ink2); font-size: 13px; }
 @media (max-width: 480px) {
   .scope-head { gap: 12px; flex-direction: column; }
   .scope-levels { flex-direction: column; gap: 8px; }
@@ -979,9 +993,9 @@ ul.steps { list-style: none; }
   position: sticky; left: 0; background: #fff; z-index: 2; min-width: 220px;
 }
 .ledger thead th:nth-child(2) { z-index: 4; }
-.ledger-group td { background: var(--parchment) !important; font-size: 12.5px; }
+.ledger-group td { background: var(--parchment) !important; font-size: 13px; }
 .ledger .cell-focus { box-shadow: inset 0 0 0 2px var(--champagne); }
-.ledger.dense td, .ledger.dense th { padding-top: 4px; padding-bottom: 4px; font-size: 12.3px; }
+.ledger.dense td, .ledger.dense th { padding-top: 4px; padding-bottom: 4px; font-size: 13px; }
 .housebook { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 14px; }
 .hb-card { margin: 0; }
 .hb-gauge {
@@ -991,13 +1005,13 @@ ul.steps { list-style: none; }
 .hb-line { border-top: 1px solid var(--line-soft); }
 .hb-linehead {
   display: flex; justify-content: space-between; gap: 12px; width: 100%;
-  background: none; border: none; padding: 9px 0; font: inherit; font-size: 13.5px;
+  background: none; border: none; padding: 9px 0; font: inherit; font-size: 15px;
   text-align: left; color: inherit; align-items: baseline;
 }
 .hb-detail { padding: 2px 0 10px; }
 .hb-item {
   display: flex; justify-content: space-between; gap: 12px;
-  font-size: 12.5px; color: var(--ink2); padding: 3px 0;
+  font-size: 13.5px; color: var(--ink2); padding: 3px 0;
 }
 @media (max-width: 480px) {
   .housebook { grid-template-columns: 1fr; }

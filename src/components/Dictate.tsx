@@ -118,7 +118,7 @@ export function Dictate({
       </svg>
     </button>
     {trouble && (
-      <span role="status" style={{ fontSize: 11.5, color: "var(--bronze)", marginLeft: 8 }}>
+      <span role="status" style={{ fontSize: 12.5, color: "var(--bronze)", marginLeft: 8 }}>
         {trouble}
       </span>
     )}

@@ -172,7 +172,7 @@ export function MasterTable({
         </table>
       </div>
       {isTeam && (
-        <p className="team-only" style={{ fontSize: 11.5, color: "var(--ink2)", marginTop: 10 }}>{tm("hint")}</p>
+        <p className="team-only" style={{ fontSize: 12.5, color: "var(--ink2)", marginTop: 10 }}>{tm("hint")}</p>
       )}
     </div>
   );
@@ -370,7 +370,7 @@ function ItemEditor({
           {tc("save")}
         </button>
         <button className="btn ghost sm" onClick={onClose}>{tc("cancel")}</button>
-        <span style={{ fontSize: 11.5, color: "var(--ink2)" }}>{tm("autoHint")}</span>
+        <span style={{ fontSize: 12.5, color: "var(--ink2)" }}>{tm("autoHint")}</span>
       </div>
     </div>
   );
@@ -468,7 +468,7 @@ export function PaymentsCalendar({
                         <td>
                           {p.label}
                           {p.budget_line_id && lineLabels[p.budget_line_id] && (
-                            <span style={{ display: "block", fontSize: 11.5, color: "var(--ink2)" }}>
+                            <span style={{ display: "block", fontSize: 12.5, color: "var(--ink2)" }}>
                               {lineLabels[p.budget_line_id]}
                             </span>
                           )}

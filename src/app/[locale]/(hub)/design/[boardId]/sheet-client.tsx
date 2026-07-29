@@ -291,7 +291,7 @@ export function BoardSheet({
             </div>
             {isTeam && !target.sub && (
               <div className="team-only" style={{ marginTop: 10, display: "flex", justifyContent: "center", alignItems: "center", gap: 8 }}>
-                <span style={{ fontSize: 9, letterSpacing: "0.16em", textTransform: "uppercase", color: "var(--ink2)" }}>
+                <span style={{ fontSize: 12, letterSpacing: "0.16em", textTransform: "uppercase", color: "var(--ink2)" }}>
                   {t("relatedLabel")}
                 </span>
                 <select
@@ -299,7 +299,7 @@ export function BoardSheet({
                   onChange={(e) =>
                     persist({ related_board_id: e.target.value || null })
                   }
-                  style={{ border: "1px solid var(--line)", background: "none", fontSize: 10, padding: "3px 6px", color: "var(--ink2)" }}
+                  style={{ border: "1px solid var(--line)", background: "none", fontSize: 12, padding: "3px 6px", color: "var(--ink2)" }}
                 >
                   <option value="">{t("relatedAuto")}</option>
                   {links.options
@@ -328,7 +328,7 @@ export function BoardSheet({
                       onBlur={() => persist({ palette })}
                     />
                   ) : (
-                    <span style={{ fontSize: 8.5, letterSpacing: "0.08em", color: "var(--ink2)" }}>{hex}</span>
+                    <span style={{ fontSize: 10.5, letterSpacing: "0.08em", color: "var(--ink2)" }}>{hex}</span>
                   )}
                 </div>
               ))}
@@ -446,7 +446,7 @@ function StatusControl({ boardId, status }: { boardId: string; status: BoardStat
       className={status === s ? "on" : undefined}
       disabled={pending}
       onClick={() => status !== s && set(s)}
-      style={{ padding: "8px 14px", background: status === s ? "var(--hunter)" : "none", color: status === s ? "var(--cream)" : "var(--ink2)", border: "none", cursor: "pointer", fontSize: 10, letterSpacing: "0.14em", textTransform: "uppercase" }}
+      style={{ padding: "8px 14px", background: status === s ? "var(--hunter)" : "none", color: status === s ? "var(--cream)" : "var(--ink2)", border: "none", cursor: "pointer", fontSize: 12, letterSpacing: "0.14em", textTransform: "uppercase" }}
     >
       {label}
     </button>

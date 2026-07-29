@@ -441,7 +441,7 @@ function Ledger({
         <button className="addnote" onClick={() => exportSheet("csv")}>CSV</button>
         <button className="addnote" onClick={() => exportSheet("xlsx")}>XLSX</button>
         {isTeam && (
-          <span style={{ fontSize: 11.5, color: saved === "saving" ? "var(--bronze)" : "var(--ink2)" }} role="status" aria-live="polite">
+          <span style={{ fontSize: 12.5, color: saved === "saving" ? "var(--bronze)" : "var(--ink2)" }} role="status" aria-live="polite">
             {saved === "saving" ? t("saving") : saved === "saved" ? t("savedNote") : ""}
           </span>
         )}
@@ -507,7 +507,7 @@ function Ledger({
                               {r.parentId && "↳ "}
                               {r.label}
                               {r.vendorId && !r.parentId && (
-                                <Link className="addnote" style={{ marginLeft: 8, fontSize: 11 }} href={`/budget/vendor/${r.vendorId}`}>
+                                <Link className="addnote" style={{ marginLeft: 8, fontSize: 12 }} href={`/budget/vendor/${r.vendorId}`}>
                                   {tmaster("sheet")}
                                 </Link>
                               )}
@@ -529,7 +529,7 @@ function Ledger({
           </tbody>
         </table>
       </div>
-      {isTeam && <p className="team-only" style={{ fontSize: 11.5, color: "var(--ink2)", marginTop: 10 }}>{t("ledgerHint")}</p>}
+      {isTeam && <p className="team-only" style={{ fontSize: 12.5, color: "var(--ink2)", marginTop: 10 }}>{t("ledgerHint")}</p>}
     </div>
   );
 }
@@ -631,7 +631,7 @@ function HouseBook({
                         )}
                         {sched.length > 0 && (
                           <div>
-                            <div className="eyebrow" style={{ fontSize: 10, marginBottom: 4 }}>{t("scheduleTitle")}</div>
+                            <div className="eyebrow" style={{ marginBottom: 4 }}>{t("scheduleTitle")}</div>
                             {sched.map((x) => (
                               <div key={x.id} className="hb-item">
                                 <span>

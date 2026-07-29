@@ -120,7 +120,7 @@ export function AccessPanel({
           <div style={{ fontSize: 13.5 }}>
             {t("keyFor", { who: reveal.who })}{" "}
             <strong className="serif" style={{ fontSize: 17, letterSpacing: "0.04em" }}>{reveal.password}</strong>
-            <div style={{ fontSize: 11.5, color: "var(--ink2)" }}>{t("keyOnce")}</div>
+            <div style={{ fontSize: 12.5, color: "var(--ink2)" }}>{t("keyOnce")}</div>
           </div>
           <button className="btn ghost sm" onClick={() => setReveal(null)}>{t("keyHide")}</button>
         </div>

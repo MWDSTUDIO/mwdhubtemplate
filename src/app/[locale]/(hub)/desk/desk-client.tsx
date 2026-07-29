@@ -172,7 +172,7 @@ export function ClientSheet({
         </div>
         <div className="field" style={{ gridColumn: "1 / -1" }}>
           <label className="eyebrow">{t("events")}</label>
-          <span style={{ display: "block", fontSize: 11.5, color: "var(--ink2)", margin: "2px 0 8px" }}>
+          <span style={{ display: "block", fontSize: 12.5, color: "var(--ink2)", margin: "2px 0 8px" }}>
             {t("eventsHint")}
           </span>
           {eventRows.map((row, i) => (
@@ -236,7 +236,7 @@ export function ClientSheet({
             onChange={(e) => setBriefText(e.target.value)}
             placeholder={t("briefPlaceholder")}
           />
-          <span style={{ fontSize: 11.5, color: "var(--bronze)" }}>{t("briefHint")}</span>
+          <span style={{ fontSize: 12.5, color: "var(--bronze)" }}>{t("briefHint")}</span>
         </div>
       </div>
       <div style={{ marginTop: 18, display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>

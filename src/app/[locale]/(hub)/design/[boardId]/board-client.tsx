@@ -27,7 +27,7 @@ export function PaletteEditor({ board, isTeam }: { board: Board; isTeam: boolean
               <button
                 className="addnote team-only"
                 aria-label={t("removeTone", { tone })}
-                style={{ position: "absolute", top: -8, right: -6, fontSize: 11 }}
+                style={{ position: "absolute", top: -8, right: -6, fontSize: 12 }}
                 disabled={pending}
                 onClick={() => startTransition(() => removePaletteTone(board.id, i))}
               >
