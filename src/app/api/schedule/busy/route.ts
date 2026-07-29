@@ -11,10 +11,11 @@ const SLOTS = [
 /**
  * Which of the house's 30-minute slots are taken on a given day,
  * from Estelle's Google Calendar. Returns [] when the calendar is
- * not configured (every slot open).
+ * not configured (every slot open). TEAM ONLY — the house's diary is
+ * private; a client must never be able to reconstruct it.
  */
 export async function GET(request: Request) {
-  const g = await gate(false);
+  const g = await gate(true);
   if ("error" in g) return g.error;
 
   const url = new URL(request.url);

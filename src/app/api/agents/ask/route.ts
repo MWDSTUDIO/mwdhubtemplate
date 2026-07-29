@@ -8,7 +8,7 @@ import { runAgent } from "@/lib/agents/run";
  * merely filtered, they are unreadable.
  */
 export async function POST(request: Request) {
-  const g = await gate(false);
+  const g = await gate(true);
   if ("error" in g) return g.error;
   try {
     const { weddingId, prompt } = await request.json();

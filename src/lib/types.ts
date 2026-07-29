@@ -361,4 +361,11 @@ export interface DocumentRow {
   internal: boolean;
   /** "bucket/path…" of the filed original (migration 0010). */
   storage_path?: string | null;
+  /** contracts · proposals · invoices · design · practical · from_couple (0012). */
+  category?: string | null;
+  size_bytes?: number | null;
+  mime?: string | null;
+  /** 'house' — placed by the house · 'client' — transmitted by the couple (0012). */
+  source?: string | null;
+  created_at?: string;
 }

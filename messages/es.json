@@ -126,7 +126,8 @@
       "proposedBy": "{name} propuso — {minutes} minutos",
       "theCouple": "La pareja",
       "joinMeet": "Abrir el Meet",
-      "hint": "Confirmar crea el evento con las direcciones de la pareja y el buzón de la casa — en cuanto Google esté conectado."
+      "hint": "Confirmar crea el evento con las direcciones de la pareja y el buzón de la casa — en cuanto Google esté conectado.",
+      "diaryTaken": "Ocupado en su agenda"
     }
   },
   "timeline": {
@@ -509,7 +510,10 @@
       "choose": "Elegir un archivo",
       "failed": "El documento no ha podido leerse en este momento.",
       "removeDoc": "Retirar este documento",
-      "removeConfirm": "¿Retirar «{label}»? Sus pagos y cifras del presupuesto permanecen hasta que los retire donde viven."
+      "removeConfirm": "¿Retirar «{label}»? Sus pagos y cifras del presupuesto permanecen hasta que los retire donde viven.",
+      "placeInHands": "Poner en manos de la pareja",
+      "placeConfirm": "¿Colocar «{label}» en la página de Documentos de la pareja? Serán avisados.",
+      "placedTag": "En sus manos"
     },
     "outreach": {
       "title": "Plantillas de correo por categoría",
@@ -644,11 +648,41 @@
   },
   "documents": {
     "eyebrow": "Intercambios",
-    "headline": "Documentos",
-    "lead": "Conectado a su carpeta dedicada de Google Drive.",
-    "shared": "Compartidos con ustedes",
-    "internal": "Documentos internos",
-    "openDrive": "Abrir en Google Drive"
+    "headline": "Todo lo que la casa ha puesto en sus manos.",
+    "lead": "Contratos, propuestas y cada papel que concierne a su boda — guardados aquí, a su disposición en todo momento.",
+    "empty": "Aún no se ha depositado nada aquí. La casa se lo hará saber.",
+    "search": "Encontrar un documento",
+    "searchPh": "Un nombre, un proveedor…",
+    "categories": {
+      "contracts": "Contratos",
+      "proposals": "Propuestas",
+      "invoices": "Facturas",
+      "design": "Diseño",
+      "practical": "Práctico",
+      "from_couple": "Entregados por ustedes"
+    },
+    "placed": "entregado el {date}",
+    "download": "Descargar",
+    "preview": "Vista previa",
+    "close": "Cerrar",
+    "zipAll": "Descargar todo ({count})",
+    "withdraw": "Retirar",
+    "withdrawConfirm": "¿Retirar «{label}» de la página de la pareja? Vuelve al registro interno.",
+    "remove": "Eliminar",
+    "removeConfirm": "¿Eliminar «{label}» y su archivo por completo?",
+    "publish": "Poner en manos de la pareja",
+    "publishConfirm": "¿Poner «{label}» en manos de la pareja? Serán avisados.",
+    "internal": "Registro interno",
+    "backstage": "Los bastidores de la casa",
+    "openDrive": "Carpeta compartida en Drive",
+    "openDriveInternal": "Carpeta interna en Drive",
+    "transmit": {
+      "title": "Poner un documento en manos de la casa",
+      "blurb": "Un contrato firmado por su parte, una inspiración, un papel que debamos conservar — deposítelo aquí y la casa lo sabrá al instante.",
+      "choose": "Entregar un documento",
+      "received": "Recibido — la casa lo tiene en mano.",
+      "failed": "El documento no pudo entregarse en este momento — inténtelo de nuevo o escriba a la casa."
+    }
   },
   "messages": {
     "eyebrow": "Intercambios",

@@ -70,6 +70,7 @@ export default async function VendorsPage({
                             docId={doc.id}
                             typeLabel={t(`docTypes.${doc.type}`)}
                             label={doc.label}
+                            clientVisible={doc.client_visible}
                           />
                         ) : (
                           <span key={doc.id} className="doc">

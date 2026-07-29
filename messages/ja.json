@@ -126,7 +126,8 @@
       "proposedBy": "{name} さまのご提案——{minutes} 分",
       "theCouple": "おふたり",
       "joinMeet": "Meet をひらく",
-      "hint": "ご確約により、おふたりのアドレスと当館の窓口を添えた予定が作られます——Google の接続が調いましたら。"
+      "hint": "ご確約により、おふたりのアドレスと当館の窓口を添えた予定が作られます——Google の接続が調いましたら。",
+      "diaryTaken": "お手元の予定と重なっています"
     }
   },
   "timeline": {
@@ -509,7 +510,10 @@
       "choose": "ファイルを選ぶ",
       "failed": "ただいま書類を読み取れませんでした。",
       "removeDoc": "この書類を下げる",
-      "removeConfirm": "「{label}」を下げますか。お支払いと予算の数字は元の場所に残り、お手ずからの削除を待ちます。"
+      "removeConfirm": "「{label}」を下げますか。お支払いと予算の数字は元の場所に残り、お手ずからの削除を待ちます。",
+      "placeInHands": "お二人へ届ける",
+      "placeConfirm": "「{label}」をお二人の書類ページへ届けますか?お知らせが送られます。",
+      "placedTag": "お手元にあります"
     },
     "outreach": {
       "title": "分野ごとの文例",
@@ -643,12 +647,42 @@
     }
   },
   "documents": {
-    "eyebrow": "お取り交わし",
-    "headline": "書類",
-    "lead": "お二人専用の Google Drive フォルダとつながっております。",
-    "shared": "お二人と共有",
-    "internal": "社内の書類",
-    "openDrive": "Google Drive で開く"
+    "eyebrow": "やり取り",
+    "headline": "当家がお二人のお手元に届けたすべて。",
+    "lead": "ご契約書・ご提案書など、お二人の婚礼に関わる書類はすべてここに収め、いつでもお取りいただけます。",
+    "empty": "まだ何も収められておりません。折を見て当家よりお知らせいたします。",
+    "search": "書類を探す",
+    "searchPh": "名前、業者名など…",
+    "categories": {
+      "contracts": "契約書",
+      "proposals": "ご提案",
+      "invoices": "ご請求",
+      "design": "デザイン",
+      "practical": "実務",
+      "from_couple": "お二人より"
+    },
+    "placed": "{date} お届け",
+    "download": "ダウンロード",
+    "preview": "プレビュー",
+    "close": "閉じる",
+    "zipAll": "まとめてダウンロード({count})",
+    "withdraw": "引き下げる",
+    "withdrawConfirm": "「{label}」をお二人のページから引き下げますか?内部の登記簿に戻ります。",
+    "remove": "削除する",
+    "removeConfirm": "「{label}」とそのファイルを完全に削除しますか?",
+    "publish": "お二人のお手元へ届ける",
+    "publishConfirm": "「{label}」をお二人のお手元へ届けますか?お知らせが送られます。",
+    "internal": "内部登記簿",
+    "backstage": "当家の舞台裏",
+    "openDrive": "Drive の共有フォルダ",
+    "openDriveInternal": "Drive の内部フォルダ",
+    "transmit": {
+      "title": "書類を当家へお預けください",
+      "blurb": "お手元で署名されたご契約、心に留まった一枚、当家で保管すべき書類——ここにお預けいただければ、すぐに当家へ伝わります。",
+      "choose": "書類を預ける",
+      "received": "確かに承りました——当家の手元にございます。",
+      "failed": "ただいまお預かりできませんでした——今一度お試しいただくか、当家までお書きください。"
+    }
   },
   "messages": {
     "eyebrow": "お取り交わし",

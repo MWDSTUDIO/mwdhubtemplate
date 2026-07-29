@@ -7,7 +7,7 @@ import { runAgent } from "@/lib/agents/run";
  * appear on the envelope. Available to the couple building their list.
  */
 export async function POST(request: Request) {
-  const g = await gate(false);
+  const g = await gate(true);
   if ("error" in g) return g.error;
   try {
     const { weddingId, title, firstNames, surname, locale } = await request.json();

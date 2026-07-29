@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { useFormatter, useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import type { AvailabilityProposal } from "@/lib/types";
@@ -8,7 +8,10 @@ import { confirmMoment } from "@/app/actions/schedule";
 
 /**
  * The moments the couple proposed — the house picks one, and the
- * Google Meet invitation leaves for both sides. Team only.
+ * Google Meet invitation leaves for both sides. Team only. The
+ * crossing with Estelle's diary happens HERE, on her side of the
+ * house: slots that clash with her calendar are marked, never hers
+ * to reveal to the couple.
  */
 export function ProposedMoments({
   proposals,
@@ -21,7 +24,28 @@ export function ProposedMoments({
   const format = useFormatter();
   const [confirming, setConfirming] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+  const [busyByDate, setBusyByDate] = useState<Record<string, string[]>>({});
   const router = useRouter();
+
+  const pendingDates = [
+    ...new Set(
+      proposals
+        .filter((p) => p.status !== "confirmed")
+        .flatMap((p) => p.slots.map((s) => s.date))
+    )
+  ];
+  const datesKey = pendingDates.join(",");
+
+  useEffect(() => {
+    for (const date of datesKey.split(",").filter(Boolean)) {
+      if (busyByDate[date]) continue;
+      fetch(`/api/schedule/busy?date=${date}`)
+        .then((r) => (r.ok ? r.json() : { busy: [] }))
+        .then((d) => setBusyByDate((m) => ({ ...m, [date]: d.busy ?? [] })))
+        .catch(() => setBusyByDate((m) => ({ ...m, [date]: [] })));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [datesKey]);
 
   if (proposals.length === 0) return null;
 
@@ -54,28 +78,34 @@ export function ProposedMoments({
               )}
             </div>
           ) : (
-            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-              {p.slots.map((slot) => (
-                <button
-                  key={`${slot.date}-${slot.time}`}
-                  className="btn ghost sm"
-                  disabled={pending}
-                  onClick={() => {
-                    setConfirming(p.id);
-                    startTransition(async () => {
-                      await confirmMoment(p.id, slot);
-                      setConfirming(null);
-                      router.refresh();
-                    });
-                  }}
-                >
-                  {confirming === p.id && pending
-                    ? "…"
-                    : format.dateTime(new Date(`${slot.date}T${slot.time}:00`), {
-                        weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit"
-                      })}
-                </button>
-              ))}
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+              {p.slots.map((slot) => {
+                const clashes = (busyByDate[slot.date] ?? []).includes(slot.time);
+                return (
+                  <span key={`${slot.date}-${slot.time}`} style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                    <button
+                      className="btn ghost sm"
+                      disabled={pending}
+                      style={clashes ? { opacity: 0.55 } : undefined}
+                      onClick={() => {
+                        setConfirming(p.id);
+                        startTransition(async () => {
+                          await confirmMoment(p.id, slot);
+                          setConfirming(null);
+                          router.refresh();
+                        });
+                      }}
+                    >
+                      {confirming === p.id && pending
+                        ? "…"
+                        : format.dateTime(new Date(`${slot.date}T${slot.time}:00`), {
+                            weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit"
+                          })}
+                    </button>
+                    {clashes && <span className="tag wait">{t("diaryTaken")}</span>}
+                  </span>
+                );
+              })}
             </div>
           )}
         </div>

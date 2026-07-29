@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { proposeMoment } from "@/app/actions/schedule";
 
@@ -12,9 +12,9 @@ const TIMES = [
 
 /**
  * "Propose a moment" — an aesthetic month calendar (weekends softened),
- * a duration, and precise 30-minute slots shown in the client's time
- * zone, crossed with Estelle's Google Calendar: only her open slots
- * remain selectable.
+ * a duration, and precise 30-minute slots in the client's time zone.
+ * The couple simply proposes; the house's own diary never appears
+ * here — Estelle crosses her calendar when she reads the proposal.
  */
 export function ProposeMoment({ weddingId, timezone }: { weddingId: string; timezone: string }) {
   const t = useTranslations("home.propose");
@@ -25,7 +25,6 @@ export function ProposeMoment({ weddingId, timezone }: { weddingId: string; time
   const [selDates, setSelDates] = useState<string[]>([]);
   const [duration, setDuration] = useState<30 | 60>(30);
   const [selSlots, setSelSlots] = useState<{ date: string; time: string }[]>([]);
-  const [busyTimes, setBusyTimes] = useState<Record<string, string[]>>({});
   const [sent, setSent] = useState(false);
   const [sending, setSending] = useState(false);
 
@@ -36,15 +35,6 @@ export function ProposeMoment({ weddingId, timezone }: { weddingId: string; time
   const firstWeekday = (monthDate.getDay() + 6) % 7; // Monday first
 
   const activeDate = selDates[selDates.length - 1] ?? null;
-
-  // Only Estelle's free slots appear: fetch her busy windows per chosen day.
-  useEffect(() => {
-    if (!activeDate || busyTimes[activeDate]) return;
-    fetch(`/api/schedule/busy?date=${activeDate}`)
-      .then((r) => (r.ok ? r.json() : { busy: [] }))
-      .then((d) => setBusyTimes((m) => ({ ...m, [activeDate]: d.busy ?? [] })))
-      .catch(() => setBusyTimes((m) => ({ ...m, [activeDate]: [] })));
-  }, [activeDate, busyTimes]);
 
   const toggleDate = (day: number) => {
     const iso = `${monthKey}-${String(day).padStart(2, "0")}`;
@@ -130,13 +120,11 @@ export function ProposeMoment({ weddingId, timezone }: { weddingId: string; time
             </div>
             <div className="slots">
               {TIMES.map((time) => {
-                const taken = (busyTimes[activeDate] ?? []).includes(time);
                 const on = selSlots.some((s) => s.date === activeDate && s.time === time);
                 return (
                   <button
                     key={time}
                     className={on ? "sel" : undefined}
-                    disabled={taken}
                     onClick={() => toggleSlot(time)}
                   >
                     {time}

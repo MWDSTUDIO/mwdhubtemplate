@@ -142,7 +142,7 @@ export default async function HomePage({
 
       {session.isTeam && <ProposedMoments proposals={proposals} names={proposerNames} />}
 
-      <AskHouse weddingId={wedding.id} />
+      {session.isTeam && <AskHouse weddingId={wedding.id} />}
 
       <ProposeMoment weddingId={wedding.id} timezone={wedding.timezone} />
     </section>

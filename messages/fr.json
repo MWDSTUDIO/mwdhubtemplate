@@ -126,7 +126,8 @@
       "proposedBy": "{name} a proposé — {minutes} minutes",
       "theCouple": "Les mariés",
       "joinMeet": "Ouvrir le Meet",
-      "hint": "La confirmation crée l'événement avec les adresses des mariés et la boîte de la maison — dès que Google est connecté."
+      "hint": "La confirmation crée l'événement avec les adresses des mariés et la boîte de la maison — dès que Google est connecté.",
+      "diaryTaken": "Pris dans votre agenda"
     }
   },
   "timeline": {
@@ -509,7 +510,10 @@
       "choose": "Choisir un fichier",
       "failed": "Le document n'a pas pu être lu pour l'instant.",
       "removeDoc": "Retirer ce document",
-      "removeConfirm": "Retirer « {label} » ? Ses versements et chiffres du budget demeurent jusqu'à ce que vous les retiriez là où ils vivent."
+      "removeConfirm": "Retirer « {label} » ? Ses versements et chiffres du budget demeurent jusqu'à ce que vous les retiriez là où ils vivent.",
+      "placeInHands": "Remettre au couple",
+      "placeConfirm": "Remettre « {label} » sur la page Documents du couple ? Ils en seront avertis.",
+      "placedTag": "Entre leurs mains"
     },
     "outreach": {
       "title": "Modèles d'emails par catégorie",
@@ -644,11 +648,41 @@
   },
   "documents": {
     "eyebrow": "Échanges",
-    "headline": "Documents",
-    "lead": "Relié à votre dossier Google Drive dédié.",
-    "shared": "Partagés avec vous",
-    "internal": "Documents internes",
-    "openDrive": "Ouvrir dans Google Drive"
+    "headline": "Tout ce que la maison a remis entre vos mains.",
+    "lead": "Contrats, propositions et chaque papier qui concerne votre mariage — gardés ici, à votre disposition à tout instant.",
+    "empty": "Rien n'a encore été déposé ici. La maison vous le fera savoir.",
+    "search": "Retrouver un document",
+    "searchPh": "Un nom, un prestataire…",
+    "categories": {
+      "contracts": "Contrats",
+      "proposals": "Propositions",
+      "invoices": "Factures",
+      "design": "Design",
+      "practical": "Pratique",
+      "from_couple": "Remis par vous"
+    },
+    "placed": "remis le {date}",
+    "download": "Télécharger",
+    "preview": "Aperçu",
+    "close": "Fermer",
+    "zipAll": "Tout télécharger ({count})",
+    "withdraw": "Retirer",
+    "withdrawConfirm": "Retirer « {label} » de la page du couple ? Il revient au registre interne.",
+    "remove": "Supprimer",
+    "removeConfirm": "Supprimer « {label} » et son fichier entièrement ?",
+    "publish": "Remettre entre les mains du couple",
+    "publishConfirm": "Remettre « {label} » entre les mains du couple ? Ils en seront avertis.",
+    "internal": "Registre interne",
+    "backstage": "Les coulisses de la maison",
+    "openDrive": "Dossier partagé dans Drive",
+    "openDriveInternal": "Dossier interne dans Drive",
+    "transmit": {
+      "title": "Remettre un document entre les mains de la maison",
+      "blurb": "Un contrat signé de votre côté, une inspiration, un papier que nous devrions garder — déposez-le ici, la maison en est aussitôt avertie.",
+      "choose": "Remettre un document",
+      "received": "Bien reçu — la maison l'a en main.",
+      "failed": "Le document n'a pu être remis à l'instant — réessayez, ou écrivez à la maison."
+    }
   },
   "messages": {
     "eyebrow": "Échanges",

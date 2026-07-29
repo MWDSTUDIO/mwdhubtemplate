@@ -174,25 +174,33 @@ export default async function BudgetPage({
         isTeam={session.isTeam}
       />
 
-      <div className="ia">
-        <div className="eyebrow">{t("ask.title")}</div>
-        <p style={{ marginTop: 10, fontSize: 13, color: "var(--ink2)" }}>{t("ask.blurb")}</p>
-        {wedding.budget_analysis && (
-          <>
-            <hr className="hair" />
-            <p className="ia-quote" style={{ fontSize: 16.5 }}>
-              &ldquo;{wedding.budget_analysis}&rdquo;
-            </p>
-          </>
-        )}
-        <BudgetAsk weddingId={wedding.id} />
-      </div>
+      {/* The house's analysis reads to everyone; Madame answers the
+          team alone — the client's questions go to the house itself. */}
+      {(wedding.budget_analysis || session.isTeam) && (
+        <div className="ia">
+          <div className="eyebrow">{t("ask.title")}</div>
+          {session.isTeam && (
+            <p className="team-only" style={{ marginTop: 10, fontSize: 13, color: "var(--ink2)" }}>{t("ask.blurb")}</p>
+          )}
+          {wedding.budget_analysis && (
+            <>
+              <hr className="hair" />
+              <p className="ia-quote" style={{ fontSize: 16.5 }}>
+                &ldquo;{wedding.budget_analysis}&rdquo;
+              </p>
+            </>
+          )}
+          {session.isTeam && <BudgetAsk weddingId={wedding.id} />}
+        </div>
+      )}
 
-      <div className="ia" style={{ marginTop: 14 }}>
-        <div className="eyebrow">{t("docs.title")}</div>
-        <p style={{ marginTop: 8, fontSize: 13.5 }}>{t("docs.blurb")}</p>
-        <BudgetDocDrop weddingId={wedding.id} />
-      </div>
+      {session.isTeam && (
+        <div className="ia team-only" style={{ marginTop: 14 }}>
+          <div className="eyebrow">{t("docs.title")}</div>
+          <p style={{ marginTop: 8, fontSize: 13.5 }}>{t("docs.blurb")}</p>
+          <BudgetDocDrop weddingId={wedding.id} />
+        </div>
+      )}
 
       {session.isTeam && (
         <RiskBuffer weddingId={wedding.id} risks={risks} available={risksAvailable} />

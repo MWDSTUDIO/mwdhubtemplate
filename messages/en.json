@@ -126,7 +126,8 @@
       "proposedBy": "{name} proposed — {minutes} minutes",
       "theCouple": "The couple",
       "joinMeet": "Open the Meet",
-      "hint": "Confirming creates the calendar event with the couple's addresses and the house's inbox — once Google is connected."
+      "hint": "Confirming creates the calendar event with the couple's addresses and the house's inbox — once Google is connected.",
+      "diaryTaken": "Taken in your diary"
     }
   },
   "timeline": {
@@ -509,7 +510,10 @@
       "choose": "Choose a file",
       "failed": "The document could not be read just now.",
       "removeDoc": "Withdraw this document",
-      "removeConfirm": "Withdraw “{label}”? Its instalments and budget figures stay until you remove them where they live."
+      "removeConfirm": "Withdraw “{label}”? Its instalments and budget figures stay until you remove them where they live.",
+      "placeInHands": "Place in the couple's hands",
+      "placeConfirm": "Place “{label}” on the couple's Documents page? They will be told.",
+      "placedTag": "In their hands"
     },
     "outreach": {
       "title": "Email templates by category",
@@ -644,11 +648,41 @@
   },
   "documents": {
     "eyebrow": "Exchanges",
-    "headline": "Documents",
-    "lead": "Connected to your dedicated Google Drive folder.",
-    "shared": "Shared with you",
-    "internal": "Internal documents",
-    "openDrive": "Open in Google Drive"
+    "headline": "Everything the house has placed in your hands.",
+    "lead": "Contracts, proposals and every paper that concerns your wedding — kept here, ready whenever you wish.",
+    "empty": "Nothing has been placed here yet. The house will let you know.",
+    "search": "Find a document",
+    "searchPh": "A name, a vendor…",
+    "categories": {
+      "contracts": "Contracts",
+      "proposals": "Proposals",
+      "invoices": "Invoices",
+      "design": "Design",
+      "practical": "Practical",
+      "from_couple": "Placed by you"
+    },
+    "placed": "placed {date}",
+    "download": "Download",
+    "preview": "Preview",
+    "close": "Close",
+    "zipAll": "Download all ({count})",
+    "withdraw": "Withdraw",
+    "withdrawConfirm": "Withdraw “{label}” from the couple's page? It returns to the internal register.",
+    "remove": "Remove",
+    "removeConfirm": "Remove “{label}” and its file entirely?",
+    "publish": "Place in the couple's hands",
+    "publishConfirm": "Place “{label}” in the couple's hands? They will be told.",
+    "internal": "Internal register",
+    "backstage": "The house's backstage",
+    "openDrive": "Shared folder in Drive",
+    "openDriveInternal": "Internal folder in Drive",
+    "transmit": {
+      "title": "Place a document in the house's hands",
+      "blurb": "A contract you signed, an inspiration, a paper we should hold — hand it here and the house is told at once.",
+      "choose": "Hand a document",
+      "received": "Received — the house has it in hand.",
+      "failed": "The document could not be handed just now — try once more, or write to the house."
+    }
   },
   "messages": {
     "eyebrow": "Exchanges",

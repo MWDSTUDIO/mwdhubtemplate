@@ -126,7 +126,8 @@
       "proposedBy": "{name} 提议——{minutes} 分钟",
       "theCouple": "新人",
       "joinMeet": "打开 Meet",
-      "hint": "确认后将以新人的地址与本馆信箱创建日历邀请——待 Google 连接完成。"
+      "hint": "确认后将以新人的地址与本馆信箱创建日历邀请——待 Google 连接完成。",
+      "diaryTaken": "您的日程已有安排"
     }
   },
   "timeline": {
@@ -509,7 +510,10 @@
       "choose": "选择文件",
       "failed": "文件此刻未能读取。",
       "removeDoc": "撤下此文件",
-      "removeConfirm": "撤下「{label}」？其付款与预算数字仍在原处，须您亲手移除。"
+      "removeConfirm": "撤下「{label}」？其付款与预算数字仍在原处，须您亲手移除。",
+      "placeInHands": "交予新人",
+      "placeConfirm": "将“{label}”放到新人的文件页?他们会收到通知。",
+      "placedTag": "已在其手中"
     },
     "outreach": {
       "title": "分类邮件底稿",
@@ -644,11 +648,41 @@
   },
   "documents": {
     "eyebrow": "往来",
-    "headline": "文件",
-    "lead": "与您专属的 Google Drive 文件夹相连。",
-    "shared": "与您共享",
-    "internal": "内部文件",
-    "openDrive": "在 Google Drive 中打开"
+    "headline": "本家交到您手中的一切。",
+    "lead": "合同、提案与关乎您婚礼的每一份文件——都收存于此,随时供您取阅。",
+    "empty": "这里尚未存放任何文件。本家会及时告知您。",
+    "search": "查找文件",
+    "searchPh": "名称、供应商……",
+    "categories": {
+      "contracts": "合同",
+      "proposals": "提案",
+      "invoices": "账单",
+      "design": "设计",
+      "practical": "实务",
+      "from_couple": "由您交来"
+    },
+    "placed": "{date} 交付",
+    "download": "下载",
+    "preview": "预览",
+    "close": "关闭",
+    "zipAll": "全部下载({count})",
+    "withdraw": "撤回",
+    "withdrawConfirm": "将“{label}”从新人页面撤回?它将回到内部登记册。",
+    "remove": "删除",
+    "removeConfirm": "彻底删除“{label}”及其文件?",
+    "publish": "交到新人手中",
+    "publishConfirm": "将“{label}”交到新人手中?他们会收到通知。",
+    "internal": "内部登记册",
+    "backstage": "本家的后台",
+    "openDrive": "Drive 共享文件夹",
+    "openDriveInternal": "Drive 内部文件夹",
+    "transmit": {
+      "title": "将文件交到本家手中",
+      "blurb": "您签署的合同、一份灵感、一页应由我们保管的文件——放在这里,本家即刻知晓。",
+      "choose": "交付文件",
+      "received": "已妥收——文件已在本家手中。",
+      "failed": "此刻未能交付——请再试一次,或给本家留言。"
+    }
   },
   "messages": {
     "eyebrow": "往来",

@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import type { Vendor } from "@/lib/types";
 import { addVendor, deleteVendorDocument, draftOutreach, sendOutreach, setVendorStage } from "@/app/actions/vendors";
+import { publishVendorDocToCouple } from "@/app/actions/documents";
 import { Dictate } from "@/components/Dictate";
 
 const STAGES = ["scouted", "contacted", "proposal", "contracted"] as const;
@@ -239,14 +240,48 @@ export function OutreachComposer({ weddingId, vendors }: { weddingId: string; ve
   );
 }
 
-/** A document chip the house can withdraw — duplicates leave politely. */
-export function DocChip({ docId, typeLabel, label }: { docId: string; typeLabel: string; label: string }) {
+/**
+ * A document chip the house can withdraw — duplicates leave politely —
+ * or place in the couple's hands: the paper then appears on their
+ * Documents page, at Estelle's gesture, never on its own.
+ */
+export function DocChip({
+  docId,
+  typeLabel,
+  label,
+  clientVisible
+}: {
+  docId: string;
+  typeLabel: string;
+  label: string;
+  clientVisible?: boolean;
+}) {
   const t = useTranslations("vendors.docs");
   const [pending, startTransition] = useTransition();
+  const [placed, setPlaced] = useState(Boolean(clientVisible));
   const router = useRouter();
   return (
     <span className="doc" style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
       {typeLabel} <em>{label}</em>
+      {placed ? (
+        <span className="tag ok team-only">{t("placedTag")}</span>
+      ) : (
+        <button
+          type="button"
+          className="addnote team-only"
+          disabled={pending}
+          onClick={() => {
+            if (!confirm(t("placeConfirm", { label }))) return;
+            startTransition(async () => {
+              const r = await publishVendorDocToCouple(docId, true);
+              if (r.ok) setPlaced(true);
+              router.refresh();
+            });
+          }}
+        >
+          {pending ? "…" : t("placeInHands")}
+        </button>
+      )}
       <button
         type="button"
         className="team-only"

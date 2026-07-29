@@ -7,7 +7,7 @@ import { runAgent } from "@/lib/agents/run";
  * rendered in the reader's language, in the voice of the house.
  */
 export async function POST(request: Request) {
-  const g = await gate(false);
+  const g = await gate(true);
   if ("error" in g) return g.error;
   try {
     const { weddingId, text, target } = await request.json();

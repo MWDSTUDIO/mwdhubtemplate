@@ -22,11 +22,14 @@ const TITLES = [
 export function AddGuestForm({
   weddingId,
   events,
-  languages
+  languages,
+  aiSuggest = false
 }: {
   weddingId: string;
   events: WeddingEvent[];
   languages: string[];
+  /** The stationer's live suggestion — team hands only. */
+  aiSuggest?: boolean;
 }) {
   const t = useTranslations("guests.add");
   const [title, setTitle] = useState(TITLES[0]);
@@ -46,7 +49,7 @@ export function AddGuestForm({
   // The house suggests the envelope line as the names are typed —
   // per stationery conventions, always editable.
   function scheduleSuggest(nextNames: string, nextTitle: string, nextLocale: string) {
-    if (lineTouched) return;
+    if (!aiSuggest || lineTouched) return;
     if (suggestTimer.current) clearTimeout(suggestTimer.current);
     suggestTimer.current = setTimeout(async () => {
       const [firstNames, ...rest] = nextNames.trim().split(/\s+and\s+|\s+et\s+/i);

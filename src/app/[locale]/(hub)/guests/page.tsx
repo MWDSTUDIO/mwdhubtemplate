@@ -60,7 +60,12 @@ export default async function GuestsPage({
         </div>
       )}
 
-      <AddGuestForm weddingId={wedding.id} events={allEvents} languages={wedding.languages} />
+      <AddGuestForm
+        weddingId={wedding.id}
+        events={allEvents}
+        languages={wedding.languages}
+        aiSuggest={session.isTeam}
+      />
 
       <GuestList
         weddingId={wedding.id}
@@ -70,7 +75,7 @@ export default async function GuestsPage({
         canManage={!session.isCoordinator}
       />
 
-      <StationerReview weddingId={wedding.id} latestFlag={latestFlag} />
+      {session.isTeam && <StationerReview weddingId={wedding.id} latestFlag={latestFlag} />}
 
       {session.isTeam && (
         <div className="ia team-only" style={{ marginTop: 14 }}>
