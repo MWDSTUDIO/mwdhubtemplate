@@ -394,7 +394,9 @@ export async function runRemindersTick(
       const labels = [...new Set(inAppDue.map((d) => d.p.label))];
       await notifyCouple(weddingId, {
         kind: "payment_reminder",
-        title: inAppDue.length === 1 ? t("inAppTitle") : t("inAppTitleMany", { count: inAppDue.length }),
+        // Counted on the instalments, not the reminders: two reminders
+        // falling the same day on one instalment are still one word.
+        title: labels.length === 1 ? t("inAppTitle") : t("inAppTitleMany", { count: labels.length }),
         body: labels.join(" · "),
         url: "/budget"
       });

@@ -15,6 +15,8 @@ import {
 } from "@/app/actions/banking";
 import { ibanGroups } from "@/lib/banking-checks";
 import { Dictate } from "@/components/Dictate";
+import type { BudgetLineItem } from "@/lib/types";
+import { deleteLineItem, saveLineItem } from "@/app/actions/budget";
 
 /** A value the couple can carry away in one touch. */
 export function CopyLine({ label, value, copyValue }: { label: string; value: string; copyValue: string }) {
@@ -596,6 +598,269 @@ export function BankingEditor({ weddingId, vendorId }: { weddingId: string; vend
       </div>
       {held && <p role="alert" style={{ fontSize: 12.5, color: "var(--bronze)" }}>{t("acceptHeld")}</p>}
       {failed && <p role="alert" style={{ fontSize: 12.5, color: "var(--bronze)" }}>{t("needsMigration")}</p>}
+    </div>
+  );
+}
+
+/* ══════════ The quote's lines, under the hand again ══════════ */
+
+interface ItemDraft {
+  label: string;
+  qty: string;
+  unit: string;
+  ht: string;
+  vat: string;
+  ttc: string;
+  lineId: string;
+}
+
+const numOrNull = (s: string): number | null => {
+  const n = Number(s.replace(/\s/g, "").replace(",", "."));
+  return s.trim() === "" || !Number.isFinite(n) ? null : n;
+};
+
+/**
+ * The vendor sheet's items — read by the couple, held by the team.
+ * A reading fills them; a hand corrects, adds or removes them just as
+ * freely (the rule born of bloc 4: a component never loses its
+ * capabilities). HT computes from qty × unit, TTC from HT and VAT,
+ * and the line's committed figure recomposes itself server-side.
+ */
+export function QuoteItems({
+  weddingId,
+  lines,
+  items,
+  isTeam
+}: {
+  weddingId: string;
+  lines: { id: string; label: string }[];
+  items: BudgetLineItem[];
+  isTeam: boolean;
+}) {
+  const t = useTranslations("budget.fiche");
+  const tc = useTranslations("common");
+  const format = useFormatter();
+  const router = useRouter();
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [addingIn, setAddingIn] = useState<string | null>(null); // event label
+  const [newEvent, setNewEvent] = useState<string | null>(null); // null = closed
+  const [pending, startTransition] = useTransition();
+
+  const money = (n: number | null | undefined) =>
+    n == null ? "" : format.number(n, { style: "currency", currency: "EUR", maximumFractionDigits: 0 });
+
+  const groups = new Map<string, BudgetLineItem[]>();
+  for (const it of items) {
+    const k = it.event_label ?? t("noEvent");
+    groups.set(k, [...(groups.get(k) ?? []), it]);
+  }
+
+  const save = (draft: ItemDraft, eventLabel: string, id?: string) =>
+    startTransition(async () => {
+      await saveLineItem({
+        id,
+        weddingId,
+        budgetLineId: draft.lineId,
+        eventLabel,
+        label: draft.label,
+        qty: numOrNull(draft.qty),
+        unitPrice: numOrNull(draft.unit),
+        vatPct: numOrNull(draft.vat),
+        totalHt: numOrNull(draft.ht),
+        totalTtc: numOrNull(draft.ttc)
+      });
+      setEditingId(null);
+      setAddingIn(null);
+      setNewEvent(null);
+      router.refresh();
+    });
+
+  const remove = (it: BudgetLineItem) =>
+    startTransition(async () => {
+      await deleteLineItem(it.id, it.budget_line_id);
+      router.refresh();
+    });
+
+  if (groups.size === 0 && !isTeam) {
+    return (
+      <div className="card">
+        <p className="serif" style={{ fontStyle: "italic", color: "var(--ink2)" }}>{t("noItems")}</p>
+      </div>
+    );
+  }
+
+  return (
+    <>
+      {groups.size === 0 && (
+        <div className="card">
+          <p className="serif" style={{ fontStyle: "italic", color: "var(--ink2)" }}>{t("noItems")}</p>
+        </div>
+      )}
+      {[...groups.entries()].map(([event, rows]) => (
+        <div className="card" key={event}>
+          <div className="eyebrow" style={{ color: "var(--bronze)", marginBottom: 10 }}>{event}</div>
+          <div style={{ overflowX: "auto" }}>
+            <table className="sheet-table">
+              <thead>
+                <tr>
+                  <th>{t("item")}</th>
+                  <th className="num">{t("qty")}</th>
+                  <th className="num">{t("unit")}</th>
+                  <th className="num">HT</th>
+                  <th className="num">{t("vat")}</th>
+                  <th className="num">TTC</th>
+                  {isTeam && <th aria-label={tc("edit")} />}
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map((it) =>
+                  editingId === it.id ? (
+                    <tr key={it.id} className="team-only">
+                      <td colSpan={7}>
+                        <ItemForm
+                          lines={lines}
+                          initial={{
+                            label: it.label,
+                            qty: it.qty != null ? String(it.qty) : "",
+                            unit: it.unit_price != null ? String(it.unit_price) : "",
+                            ht: it.total_ht != null ? String(it.total_ht) : "",
+                            vat: it.vat_pct != null ? String(it.vat_pct) : "",
+                            ttc: it.total_ttc != null ? String(it.total_ttc) : "",
+                            lineId: it.budget_line_id
+                          }}
+                          pending={pending}
+                          onSave={(d) => save(d, it.event_label ?? "", it.id)}
+                          onCancel={() => setEditingId(null)}
+                        />
+                      </td>
+                    </tr>
+                  ) : (
+                    <tr key={it.id}>
+                      <td>{it.label}</td>
+                      <td className="num">{it.qty ?? ""}</td>
+                      <td className="num">{it.unit_price != null ? money(it.unit_price) : ""}</td>
+                      <td className="num">{it.total_ht != null ? money(it.total_ht) : ""}</td>
+                      <td className="num">{it.vat_pct != null ? `${it.vat_pct} %` : ""}</td>
+                      <td className="num">{money(it.total_ttc ?? it.total_ht) || "—"}</td>
+                      {isTeam && (
+                        <td className="team-only" style={{ whiteSpace: "nowrap" }}>
+                          <button className="addnote" onClick={() => { setEditingId(it.id); setAddingIn(null); }}>
+                            {tc("edit")}
+                          </button>{" "}
+                          <button className="addnote" disabled={pending} onClick={() => remove(it)} style={{ color: "var(--bronze)" }}>
+                            {t("itemsRemove")}
+                          </button>
+                        </td>
+                      )}
+                    </tr>
+                  )
+                )}
+                <tr style={{ background: "var(--parchment)" }}>
+                  <td>{t("subtotal")}</td>
+                  <td colSpan={2}></td>
+                  <td className="num">{money(rows.reduce((s, r) => s + Number(r.total_ht ?? 0), 0))}</td>
+                  <td></td>
+                  <td className="num"><b>{money(rows.reduce((s, r) => s + Number(r.total_ttc ?? r.total_ht ?? 0), 0))}</b></td>
+                  {isTeam && <td />}
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          {isTeam && addingIn === event && (
+            <div className="team-only" style={{ marginTop: 8 }}>
+              <ItemForm
+                lines={lines}
+                pending={pending}
+                onSave={(d) => save(d, event === t("noEvent") ? "" : event)}
+                onCancel={() => setAddingIn(null)}
+              />
+            </div>
+          )}
+          {isTeam && addingIn !== event && (
+            <button className="addnote team-only" style={{ marginTop: 8 }} onClick={() => { setAddingIn(event); setEditingId(null); setNewEvent(null); }}>
+              + {t("itemsAdd")}
+            </button>
+          )}
+        </div>
+      ))}
+
+      {isTeam && (
+        <div className="card team-only">
+          {newEvent === null ? (
+            <button className="addnote" onClick={() => { setNewEvent(""); setAddingIn(null); setEditingId(null); }}>
+              + {t("itemsAddEvent")}
+            </button>
+          ) : (
+            <>
+              <input
+                value={newEvent}
+                onChange={(e) => setNewEvent(e.target.value)}
+                placeholder={t("itemsEventPh")}
+                autoFocus
+                style={{ marginBottom: 8, maxWidth: 340, display: "block" }}
+                aria-label={t("itemsEventPh")}
+              />
+              <ItemForm
+                lines={lines}
+                pending={pending}
+                onSave={(d) => save(d, newEvent)}
+                onCancel={() => setNewEvent(null)}
+              />
+            </>
+          )}
+          <p style={{ fontSize: 12.5, color: "var(--ink2)", margin: "8px 0 0" }}>{t("itemsAuto")}</p>
+        </div>
+      )}
+    </>
+  );
+}
+
+function ItemForm({
+  lines,
+  initial,
+  pending,
+  onSave,
+  onCancel
+}: {
+  lines: { id: string; label: string }[];
+  initial?: ItemDraft;
+  pending: boolean;
+  onSave: (d: ItemDraft) => void;
+  onCancel: () => void;
+}) {
+  const t = useTranslations("budget.fiche");
+  const tc = useTranslations("common");
+  const [d, setD] = useState<ItemDraft>(
+    initial ?? { label: "", qty: "", unit: "", ht: "", vat: "20", ttc: "", lineId: lines[0]?.id ?? "" }
+  );
+  const patch = (p: Partial<ItemDraft>) => setD((v) => ({ ...v, ...p }));
+
+  // The sheet thinks with her: qty × unit → HT, HT × VAT → TTC —
+  // shown as placeholders, never forced over a typed figure.
+  const qty = numOrNull(d.qty);
+  const unit = numOrNull(d.unit);
+  const htAuto = qty != null && unit != null ? Math.round(qty * unit * 100) / 100 : null;
+  const htShown = numOrNull(d.ht) ?? htAuto;
+  const vat = numOrNull(d.vat) ?? 0;
+  const ttcAuto = htShown != null ? Math.round(htShown * (1 + vat / 100) * 100) / 100 : null;
+
+  return (
+    <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center", padding: "6px 0" }}>
+      {lines.length > 1 && (
+        <select value={d.lineId} onChange={(e) => patch({ lineId: e.target.value })} style={{ padding: "8px", border: "1px solid var(--line)", background: "#fff", maxWidth: 170 }} aria-label={t("itemsLine")}>
+          {lines.map((l) => <option key={l.id} value={l.id}>{l.label}</option>)}
+        </select>
+      )}
+      <input value={d.label} onChange={(e) => patch({ label: e.target.value })} placeholder={t("item")} autoFocus={!initial} style={{ flex: "1 1 180px" }} aria-label={t("item")} />
+      <input value={d.qty} onChange={(e) => patch({ qty: e.target.value })} placeholder={t("qty")} style={{ flex: "0 0 60px", textAlign: "right" }} aria-label={t("qty")} />
+      <input value={d.unit} onChange={(e) => patch({ unit: e.target.value })} placeholder={t("unit")} style={{ flex: "0 0 84px", textAlign: "right" }} aria-label={t("unit")} />
+      <input value={d.ht} onChange={(e) => patch({ ht: e.target.value })} placeholder={htAuto != null ? String(htAuto) : "HT"} style={{ flex: "0 0 90px", textAlign: "right" }} aria-label="HT" />
+      <input value={d.vat} onChange={(e) => patch({ vat: e.target.value })} placeholder={t("vat")} style={{ flex: "0 0 56px", textAlign: "right" }} aria-label={t("vat")} />
+      <input value={d.ttc} onChange={(e) => patch({ ttc: e.target.value })} placeholder={ttcAuto != null ? String(ttcAuto) : "TTC"} style={{ flex: "0 0 90px", textAlign: "right" }} aria-label="TTC" />
+      <button className="btn ghost sm" disabled={pending || !d.label.trim() || !d.lineId} onClick={() => onSave(d)}>
+        {pending ? "…" : tc("save")}
+      </button>
+      <button className="btn ghost sm" onClick={onCancel}>{tc("cancel")}</button>
     </div>
   );
 }

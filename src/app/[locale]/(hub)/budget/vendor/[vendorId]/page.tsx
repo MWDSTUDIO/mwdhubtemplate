@@ -8,7 +8,7 @@ import { decryptProfile, type BankingProfile } from "@/lib/banking";
 import { ibanGroups } from "@/lib/banking-checks";
 import { logActivity } from "@/lib/activity";
 import type { BudgetLine, BudgetLineItem, Payment } from "@/lib/types";
-import { VendorNoteEditor, BankingDesk, CopyLine } from "./vendor-client";
+import { VendorNoteEditor, BankingDesk, CopyLine, QuoteItems } from "./vendor-client";
 
 /**
  * The vendor sheet — what the couple pays this house, in full clarity:
@@ -131,12 +131,6 @@ export default async function VendorSheetPage({
   const committed = vendorLines.reduce((s, l) => s + (l.committed ?? 0), 0);
   const paidTotal = vendorLines.reduce((s, l) => s + (l.paid ?? 0), 0);
 
-  const groups = new Map<string, BudgetLineItem[]>();
-  for (const it of items) {
-    const k = it.event_label ?? t("noEvent");
-    groups.set(k, [...(groups.get(k) ?? []), it]);
-  }
-
   return (
     <section className="sheet">
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 16, flexWrap: "wrap" }}>
@@ -197,50 +191,15 @@ export default async function VendorSheetPage({
         </div>
       )}
 
-      {groups.size > 0 ? (
-        [...groups.entries()].map(([event, rows]) => (
-          <div className="card" key={event}>
-            <div className="eyebrow" style={{ color: "var(--bronze)", marginBottom: 10 }}>{event}</div>
-            <div style={{ overflowX: "auto" }}>
-              <table className="sheet-table">
-                <thead>
-                  <tr>
-                    <th>{t("item")}</th>
-                    <th className="num">{t("qty")}</th>
-                    <th className="num">{t("unit")}</th>
-                    <th className="num">HT</th>
-                    <th className="num">{t("vat")}</th>
-                    <th className="num">TTC</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {rows.map((it) => (
-                    <tr key={it.id}>
-                      <td>{it.label}</td>
-                      <td className="num">{it.qty ?? ""}</td>
-                      <td className="num">{it.unit_price != null ? money(it.unit_price) : ""}</td>
-                      <td className="num">{it.total_ht != null ? money(it.total_ht) : ""}</td>
-                      <td className="num">{it.vat_pct != null ? `${it.vat_pct} %` : ""}</td>
-                      <td className="num">{money(it.total_ttc ?? it.total_ht)}</td>
-                    </tr>
-                  ))}
-                  <tr style={{ background: "var(--parchment)" }}>
-                    <td>{t("subtotal")}</td>
-                    <td colSpan={2}></td>
-                    <td className="num">{money(rows.reduce((s, r) => s + Number(r.total_ht ?? 0), 0))}</td>
-                    <td></td>
-                    <td className="num"><b>{money(rows.reduce((s, r) => s + Number(r.total_ttc ?? r.total_ht ?? 0), 0))}</b></td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-        ))
-      ) : (
-        <div className="card">
-          <p className="serif" style={{ fontStyle: "italic", color: "var(--ink2)" }}>{t("noItems")}</p>
-        </div>
-      )}
+      {/* The quote's lines — read by the couple, held by the team:
+          a reading fills them, a hand corrects them (bloc 4's rule). */}
+      <QuoteItems
+        weddingId={wedding.id}
+        lines={vendorLines.map((l) => ({ id: l.id, label: l.label }))}
+        items={items}
+        isTeam={session.isTeam}
+      />
+
 
       {vendorPayments.length > 0 && (
         <div className="card">

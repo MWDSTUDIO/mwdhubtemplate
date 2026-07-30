@@ -519,7 +519,13 @@
         "acceptFailed": "Rien n'a été retenu — cochez au moins un champ de compte.",
         "heldTag": "En attente de vérification",
         "hint": "Saisies à la main ou retenues d'une lecture — dans les deux cas elles restent « lues » jusqu'à vérification de vive voix."
-      }
+      },
+      "itemsAdd": "Ajouter un poste",
+      "itemsAddEvent": "Un autre événement",
+      "itemsEventPh": "L'événement — répétition, cérémonie, dîner…",
+      "itemsRemove": "Retirer",
+      "itemsLine": "Sur la ligne",
+      "itemsAuto": "HT et TTC se composent seuls quand on les laisse vides — qty × unitaire, puis TVA — et l'engagé de la ligne se recompose. Une lecture remplit ces lignes ; votre main les corrige tout aussi librement."
     },
     "risks": {
       "title": "Réserve & risques",

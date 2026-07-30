@@ -519,7 +519,13 @@
         "acceptFailed": "Nada quedó retenido — marque al menos un campo de cuenta.",
         "heldTag": "A la espera de verificación",
         "hint": "Escritas a mano o retenidas de una lectura — en ambos casos quedan «leídas» hasta verificarlas de viva voz."
-      }
+      },
+      "itemsAdd": "Añadir una partida",
+      "itemsAddEvent": "Otro evento",
+      "itemsEventPh": "El evento — ensayo, ceremonia, cena…",
+      "itemsRemove": "Retirar",
+      "itemsLine": "En la línea",
+      "itemsAuto": "HT y TTC se componen solos cuando se dejan vacíos — cantidad × unitario, luego IVA — y el comprometido de la línea se recompone. Una lectura llena estas líneas; su mano las corrige con la misma libertad."
     },
     "risks": {
       "title": "Reserva y riesgos",

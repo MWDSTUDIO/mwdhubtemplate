@@ -519,7 +519,13 @@
         "acceptFailed": "Nothing was held — tick at least one account field.",
         "heldTag": "Awaiting verification",
         "hint": "Typed by your hand or held from a reading — either way it stays \"read\" until verified de vive voix."
-      }
+      },
+      "itemsAdd": "Add an item",
+      "itemsAddEvent": "Another event",
+      "itemsEventPh": "The event — rehearsal, ceremony, dinner…",
+      "itemsRemove": "Remove",
+      "itemsLine": "On the line",
+      "itemsAuto": "HT and TTC compose themselves when left blank — qty × unit, then VAT — and the line's committed figure recomposes. A reading fills these lines; your hand corrects them just as freely."
     },
     "risks": {
       "title": "Risk buffer & contingency",
