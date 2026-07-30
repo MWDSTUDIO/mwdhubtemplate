@@ -19,6 +19,7 @@ import {
 } from "./budget-client";
 import { ScopeStudio, ScopeAnalysisDrop } from "./scope-client";
 import { PaymentsCalendar, RiskBuffer } from "./mgmt-client";
+import { RemindersDesk } from "./reminders-client";
 import { BudgetViews } from "./ledger-client";
 import { ReadingsDesk, type ReadingPayload, type ReadingRow } from "./readings-client";
 import { barModel, pctOfBudget, coherence } from "@/lib/budget-math";
@@ -295,6 +296,14 @@ export default async function BudgetPage({
           weddingId={wedding.id}
           lines={allLines}
           isTeam={session.isTeam}
+        />
+      )}
+
+      {session.isTeam && (
+        <RemindersDesk
+          weddingId={wedding.id}
+          payments={allPayments}
+          lineLabels={lineLabels}
         />
       )}
 

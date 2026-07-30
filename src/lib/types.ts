@@ -235,6 +235,42 @@ export interface Payment {
   notified_at?: string | null;
 }
 
+/** A programmable reminder on an instalment (migration 0018). */
+export interface PaymentReminder {
+  id: string;
+  wedding_id: string;
+  payment_id: string;
+  /** Negative = before the due date, positive = after. */
+  offset_days: number | null;
+  /** A fixed date instead of an offset, when more convenient. */
+  fixed_date: string | null;
+  channel: "email" | "in_app" | "both";
+  label: string | null;
+  sent_at: string | null;
+  created_by: string;
+  created_at: string;
+}
+
+/** One recorded departure — or failure — from the send ledger (0018). */
+export interface ReminderSend {
+  id: string;
+  wedding_id: string;
+  reminder_id: string;
+  payment_id: string;
+  channel: "email" | "in_app";
+  recipient: string;
+  sent_on: string;
+  status: "sent" | "failed" | "abandoned";
+  attempt: number;
+  error: string | null;
+  subject: string | null;
+  group_key: string | null;
+  gmail_message_id: string | null;
+  gmail_thread_id: string | null;
+  rfc822_message_id: string | null;
+  created_at: string;
+}
+
 /** The risk buffer, as in the house's Excel (migration 0011). */
 export interface BudgetRisk {
   id: string;

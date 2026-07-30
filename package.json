@@ -11,8 +11,9 @@
     "typecheck": "tsc --noEmit",
     "test:banking": "node --test tests/banking-checks.test.mjs",
     "test:budget": "node --test tests/budget-math.test.mjs",
-    "test": "node --test tests/",
-    "test:money": "node --test tests/money.test.mjs"
+    "test": "node --test tests/*.test.mjs",
+    "test:money": "node --test tests/money.test.mjs",
+    "test:reminders": "node --test tests/reminders.test.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.115.0",

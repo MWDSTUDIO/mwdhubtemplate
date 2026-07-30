@@ -7,6 +7,7 @@ import { notifyCouple, sendHouseEmailToCouple } from "@/lib/notify";
 import { logActivity } from "@/lib/activity";
 import { revalidateRooms } from "@/lib/revalidate";
 import { roundMoney, sumMoney, convertMoney, isCurrencyCode } from "@/lib/money";
+import { applyReminderDefaults } from "@/lib/reminders";
 import { runAgent } from "@/lib/agents/run";
 
 async function teamSession() {
@@ -524,16 +525,29 @@ export async function addPayment(input: {
     payer: input.payer.trim() || null,
     refundable: input.refundable
   };
-  let { error } = await supabase.from("payments").insert(full);
+  let inserted: { id: string } | null = null;
+  let { data, error } = await supabase.from("payments").insert(full).select("id").single();
+  inserted = data;
   if (error) {
     // Before migration 0011 the v2 columns are absent.
-    ({ error } = await supabase.from("payments").insert({
-      wedding_id: input.weddingId,
-      budget_line_id: input.budgetLineId,
-      label: input.label.trim(),
-      amount: input.amount,
-      due_date: input.dueDate
-    }));
+    ({ data, error } = await supabase
+      .from("payments")
+      .insert({
+        wedding_id: input.weddingId,
+        budget_line_id: input.budgetLineId,
+        label: input.label.trim(),
+        amount: input.amount,
+        due_date: input.dueDate
+      })
+      .select("id")
+      .single());
+    inserted = data;
+  }
+  // The wedding's default reminder set follows every new instalment
+  // (notifications brief §1) — silent before migration 0018.
+  if (inserted?.id) {
+    const session = await requireHouseSession();
+    await applyReminderDefaults(supabase, input.weddingId, inserted.id, session.profile.full_name);
   }
   revalidateRooms("budget");
   return { ok: !error };
