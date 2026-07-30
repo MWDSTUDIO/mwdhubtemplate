@@ -88,6 +88,51 @@ Un **lien direct vers la page de l'échéance** dans le hub. Un clic depuis l'em
 
 ---
 
+## 2 bis. L'envoi : Gmail via `hello@madamewedding.design` — décision d'Estelle
+
+### Pourquoi c'est un bon choix
+
+Le domaine est déjà sur Google Workspace (enregistrements MX vers `aspmx.l.google.com`). Envoyer par l'**API Gmail** signifie donc que **c'est réellement Google qui expédie pour le domaine** : l'alignement SPF et DKIM est natif, sans configuration supplémentaire. C'est meilleur pour la délivrabilité qu'un service tiers qui enverrait « au nom de » `madamewedding.design`.
+
+Pas de sujet de volume : quelques mariages, quelques rappels chacun — on est très loin des plafonds Workspace.
+
+### Ce qu'il faut mettre en place
+
+**a) API Gmail avec OAuth**, pas de mot de passe d'application, pas de SMTP en clair. Un jeton de rafraîchissement stocké **hors du dépôt**, en variable d'environnement.
+
+**b) Gestion de l'échec, obligatoire.** Un jeton OAuth peut être révoqué, une autorisation Google peut expirer. **Un rappel de paiement qui ne part pas et que personne ne remarque est plus grave que pas de rappel du tout.** Donc :
+- L'échec d'envoi est enregistré et **remonté à Estelle** dans l'application, pas seulement dans un journal serveur.
+- L'échéance reste marquée « rappel non envoyé », visible dans les alertes.
+- Une nouvelle tentative automatique, puis abandon avec signalement explicite.
+
+**c) L'identité de l'expéditeur — un arbitrage à trancher.** `hello@` est l'adresse de la maison, pas celle d'une personne. Pour un rappel de paiement adressé à un couple très fortuné, cela peut sonner institutionnel là où l'on voudrait une main.
+
+**Recommandation :** expédier depuis `hello@madamewedding.design`, avec le **nom d'affichage de la personne qui suit le mariage** — *« Estelle Bogaert · Madame Wedding Design »* — et un **`Reply-To` vers sa boîte personnelle**. Le client voit la maison, il répond à quelqu'un.
+
+**d) La réponse doit atterrir chez un humain.** Si un couple répond à un rappel de paiement avec une question, ce message ne doit pas disparaître dans une boîte que personne ne relève. À vérifier avant le premier envoi.
+
+**e) Le fil de discussion.** Les rappels successifs d'une même échéance se **rattachent au même fil** (`References` / `In-Reply-To`). Trois emails séparés sur la même échéance encombrent ; un fil se relit.
+
+**f) Le planificateur.** Les rappels ont besoin d'un déclencheur périodique — fonction planifiée Netlify ou `pg_cron` côté Supabase. **À proposer à Estelle avec ses implications**, et à traiter comme une autorisation de lancement.
+
+### Et un préalable qui compte plus que tout le reste : DMARC
+
+Cloudflare le signale déjà dans les recommandations du domaine : **`madamewedding.design` n'a pas d'enregistrement DMARC.**
+
+Ce n'est pas un détail de configuration. **C'est la protection principale contre le scénario de fraude décrit dans le brief bancaire** — un email d'apparence authentique, semblant venir de la maison, annonçant de nouvelles coordonnées bancaires. Sans DMARC, usurper le domaine est nettement plus facile ; avec un DMARC en `reject`, la messagerie du destinataire rejette les faux.
+
+**À faire avant d'activer les notifications**, dans cet ordre :
+
+1. **Vérifier SPF** — un enregistrement TXT autorisant Google (`v=spf1 include:_spf.google.com ~all`).
+2. **Vérifier DKIM** — la signature Workspace activée dans la console d'administration Google, et la clé publiée en DNS.
+3. **Poser DMARC** — commencer en `p=none` avec une adresse de rapport pour observer pendant deux à trois semaines, puis passer à `p=quarantine`, puis `p=reject`.
+
+**Ne pas passer directement en `reject` :** si SPF ou DKIM est mal aligné, les emails légitimes de la maison seraient rejetés — y compris la correspondance client. L'observation d'abord.
+
+C'est un travail DNS, pas du code. **Claude Code prépare les valeurs exactes des trois enregistrements et les remet à Estelle ; c'est elle qui les pose dans Cloudflare.** Même discipline que les migrations.
+
+---
+
 # PARTIE II — Ordre de marche pour Claude Code
 
 ## 3. Les autorisations à demander DÈS LE LANCEMENT
@@ -107,7 +152,7 @@ Un **lien direct vers la page de l'échéance** dans le hub. Un clic depuis l'em
 
 7. **`ANALYSIS_MODEL`** : le modèle le plus capable, à renseigner en variable d'environnement. Confirmer laquelle et où.
 8. **Clé de chiffrement** de `vendor_banking` : où elle vit aujourd'hui, et confirmation qu'elle reste hors base.
-9. **Envoi d'email** : par quel service, depuis quelle boîte, et les identifiants nécessaires.
+9. **Envoi d'email** : ~~par quel service~~ — **tranché : API Gmail depuis `hello@madamewedding.design`** (voir §2 bis). Reste à confirmer : le nom d'affichage et le `Reply-To` par mariage, le choix du planificateur, et les identifiants OAuth.
 10. **Suppressions de code mort** : `MasterTable` et `LinesTable` — confirmer avant de supprimer.
 
 ### Ce qui ne se décide jamais seul
@@ -174,6 +219,8 @@ Les briefs à traiter, dans cet ordre. Un commit et une validation par bloc.
 | 14 | **Plein écran des planches** | `BRIEF-inner-house-lisibilite.md` §II.1 |
 | 15 | **Alertes** et **rapprochement des documents** | `BRIEF-inner-house-budget-application-financiere.md` §5–6 |
 | 16 | **Le reste** : scénarios, clôture, indicateurs de la maison | `BRIEF-inner-house-budget-application-financiere.md` §7–9 |
+
+> **Note de portée — The Wedding Days.** La production fait désormais l'objet d'une application distincte, The Production Book (`BRIEF-production-book-application.md`). Dans The Inner House, The Wedding Days se limite à **une page en lecture seule** de ce que la production publie, plus un état vide tenu. **Aucune action d'édition de run sheet côté hub.** Voir la note de portée en tête de `BRIEF-inner-house-wedding-days.md`.
 
 **Après chaque bloc :** `/impeccable audit`, puis une capture avant/après, puis attendre la validation d'Estelle.
 
