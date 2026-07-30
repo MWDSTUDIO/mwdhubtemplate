@@ -116,7 +116,18 @@ export async function acceptReading(input: {
       .map((i) => p.items![i])
       .filter(Boolean);
     if (chosen.length) {
-      await supabase.from("budget_line_items").delete().eq("budget_line_id", lineId);
+      // A re-reading replaces only what a document once wrote — the
+      // house's own hand is work, and work is never erased by an
+      // agent passing behind it (ajout-lignes brief §4.4).
+      const { error: filteredErr } = await supabase
+        .from("budget_line_items")
+        .delete()
+        .eq("budget_line_id", lineId)
+        .not("source_document_id", "is", null);
+      if (filteredErr) {
+        // Pre-0013 there is no provenance column — nothing manual to protect.
+        await supabase.from("budget_line_items").delete().eq("budget_line_id", lineId);
+      }
       const rows = chosen.map((it, i) => ({
         wedding_id: weddingId,
         budget_line_id: lineId,
@@ -139,7 +150,13 @@ export async function acceptReading(input: {
       // Before migration 0013 the source columns are absent.
       if (itemsErr) ({ error: itemsErr } = await supabase.from("budget_line_items").insert(rows));
       if (!itemsErr) {
-        const rollup = rows.reduce((s, r) => s + Number(r.total_ttc ?? r.total_ht ?? 0), 0);
+        // The roll-up counts everything the line now holds — the
+        // preserved manual sub-lines included.
+        const { data: allItems } = await supabase
+          .from("budget_line_items")
+          .select("total_ht, total_ttc")
+          .eq("budget_line_id", lineId);
+        const rollup = (allItems ?? []).reduce((s, r) => s + Number(r.total_ttc ?? r.total_ht ?? 0), 0);
         if (rollup > 0) {
           await supabase
             .from("budget_lines")

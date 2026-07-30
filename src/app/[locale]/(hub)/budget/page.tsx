@@ -201,6 +201,7 @@ export default async function BudgetPage({
       </div>
 
       <BudgetViews
+        weddingId={wedding.id}
         lines={allLines}
         items={items}
         payments={allPayments}

@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { requireHouseSession } from "@/lib/session";
 import { notifyCouple, sendHouseEmailToCouple } from "@/lib/notify";
 import { logActivity } from "@/lib/activity";
+import { revalidateRooms } from "@/lib/revalidate";
 import { runAgent } from "@/lib/agents/run";
 
 async function teamSession() {
@@ -22,7 +23,7 @@ export async function saveEnvelopeNote(envelopeId: string, weddingId: string, bo
     body,
     status: "draft"
   });
-  revalidatePath("/budget");
+  revalidateRooms("budget");
 }
 
 export async function publishEnvelopeNote(envelopeId: string) {
@@ -39,14 +40,14 @@ export async function publishEnvelopeNote(envelopeId: string) {
       envelopeId
     });
   }
-  revalidatePath("/budget");
+  revalidateRooms("budget");
 }
 
 export async function saveInternalBudgetNote(weddingId: string, body: string) {
   await teamSession();
   const supabase = await createClient();
   await supabase.from("internal_budget_notes").insert({ wedding_id: weddingId, body });
-  revalidatePath("/budget");
+  revalidateRooms("budget");
 }
 
 /**
@@ -97,7 +98,7 @@ export async function publishBudget(weddingId: string) {
     body: "The house has published your budget — the analysis awaits you.",
     url: "/budget"
   });
-  revalidatePath("/budget");
+  revalidateRooms("budget");
 }
 
 /**
@@ -168,7 +169,7 @@ export async function addLineViaMadame(weddingId: string, instruction: string) {
     sort: 99
   });
 
-  revalidatePath("/budget");
+  revalidateRooms("budget");
   return { ok: true as const, note: parsed.client_note };
 }
 
@@ -198,7 +199,7 @@ export async function updateBudgetLine(input: {
       status: "draft"
     })
     .eq("id", input.id);
-  revalidatePath("/budget");
+  revalidateRooms("budget");
   return { ok: !error };
 }
 
@@ -206,27 +207,116 @@ export async function deleteBudgetLine(id: string) {
   await teamSession();
   const supabase = await createClient();
   await supabase.from("budget_lines").delete().eq("id", id);
-  revalidatePath("/budget");
+  revalidateRooms("budget");
   return { ok: true as const };
 }
 
-/** Open a line by hand — label and budget, the rest follows in time. */
-export async function addBudgetLine(weddingId: string, label: string, budgeted: number | null) {
+/**
+ * Open a line by hand — the reference mode, that the automatic
+ * reading merely assists (ajout-lignes brief). Returns the id so the
+ * ledger can land the pen straight in the label cell.
+ */
+export async function addBudgetLine(
+  weddingId: string,
+  label: string,
+  budgeted: number | null,
+  opts?: { id?: string; envelopeId?: string | null; committed?: number | null; paid?: number | null }
+) {
   await teamSession();
   const supabase = await createClient();
   const { count } = await supabase
     .from("budget_lines")
     .select("id", { count: "exact", head: true })
     .eq("wedding_id", weddingId);
-  const { error } = await supabase.from("budget_lines").insert({
-    wedding_id: weddingId,
-    label: label.trim(),
-    budgeted,
-    status: "draft",
-    sort: (count ?? 0) + 1
-  });
-  revalidatePath("/budget");
+  const { data: created, error } = await supabase
+    .from("budget_lines")
+    .insert({
+      ...(opts?.id ? { id: opts.id } : {}),
+      wedding_id: weddingId,
+      label: label.trim(),
+      budgeted,
+      envelope_id: opts?.envelopeId ?? null,
+      committed: opts?.committed ?? null,
+      paid: opts?.paid ?? 0,
+      status: "draft",
+      sort: (count ?? 0) + 1
+    })
+    .select("id")
+    .single();
+  revalidateRooms("budget");
+  return { ok: !error, id: created?.id ?? null };
+}
+
+/** A line changes envelope in place — never delete-and-recreate. */
+export async function setLineEnvelope(lineId: string, envelopeId: string | null) {
+  await teamSession();
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("budget_lines")
+    .update({ envelope_id: envelopeId, status: "draft" })
+    .eq("id", lineId);
+  revalidateRooms("budget");
   return { ok: !error };
+}
+
+/** Duplicate the active line — a vendor with several similar posts. */
+export async function duplicateBudgetLine(lineId: string, newId?: string) {
+  await teamSession();
+  const supabase = await createClient();
+  const { data: src } = await supabase.from("budget_lines").select("*").eq("id", lineId).single();
+  if (!src) return { ok: false as const, id: null };
+  const { data: created, error } = await supabase
+    .from("budget_lines")
+    .insert({
+      ...(newId ? { id: newId } : {}),
+      wedding_id: src.wedding_id,
+      label: src.label,
+      budgeted: src.budgeted,
+      envelope_id: src.envelope_id,
+      committed: src.committed,
+      paid: 0,
+      vendor_id: src.vendor_id,
+      parent_line_id: src.parent_line_id,
+      line_kind: src.line_kind,
+      status: "draft",
+      sort: (src.sort ?? 0) + 1
+    })
+    .select("id")
+    .single();
+  revalidateRooms("budget");
+  return { ok: !error, id: created?.id ?? null };
+}
+
+/**
+ * Undo of a deletion: the row returns with its own id, its sub-lines
+ * with it. The ledger's Cmd+Z covers creations and deletions alike.
+ */
+export async function restoreBudgetLine(
+  row: Record<string, unknown>,
+  items: Record<string, unknown>[]
+) {
+  await teamSession();
+  const supabase = await createClient();
+  const { error } = await supabase.from("budget_lines").insert(row);
+  if (!error && items.length) {
+    await supabase.from("budget_line_items").insert(items);
+  }
+  revalidateRooms("budget");
+  return { ok: !error };
+}
+
+/** Delete, handing back what was deleted so the gesture can be undone. */
+export async function deleteBudgetLineWithUndo(id: string) {
+  await teamSession();
+  const supabase = await createClient();
+  const [{ data: row }, { data: items }] = await Promise.all([
+    supabase.from("budget_lines").select("*").eq("id", id).single(),
+    supabase.from("budget_line_items").select("*").eq("budget_line_id", id)
+  ]);
+  if (!row) return { ok: false as const, row: null, items: [] };
+  const { error } = await supabase.from("budget_lines").delete().eq("id", id);
+  revalidateRooms("budget");
+  return { ok: !error, row: row as Record<string, unknown>, items: (items ?? []) as Record<string, unknown>[] };
 }
 
 /* ══════════ Budget v2 — the quote's own lines, held by hand ══════════ */
@@ -264,6 +354,8 @@ export async function saveLineItem(input: {
   vatPct: number | null;
   totalHt: number | null;
   totalTtc: number | null;
+  /** Client-minted id for optimistic creation. */
+  createId?: string;
 }) {
   await teamSession();
   const supabase = await createClient();
@@ -285,6 +377,7 @@ export async function saveLineItem(input: {
     total_ttc: ttc
   };
   let error;
+  let id: string | null = input.id ?? null;
   if (input.id) {
     ({ error } = await supabase.from("budget_line_items").update(row).eq("id", input.id));
   } else {
@@ -292,16 +385,23 @@ export async function saveLineItem(input: {
       .from("budget_line_items")
       .select("id", { count: "exact", head: true })
       .eq("budget_line_id", input.budgetLineId);
-    ({ error } = await supabase.from("budget_line_items").insert({
-      wedding_id: input.weddingId,
-      budget_line_id: input.budgetLineId,
-      sort: (count ?? 0) + 1,
-      ...row
-    }));
+    const { data: created, error: insErr } = await supabase
+      .from("budget_line_items")
+      .insert({
+        ...(input.createId ? { id: input.createId } : {}),
+        wedding_id: input.weddingId,
+        budget_line_id: input.budgetLineId,
+        sort: (count ?? 0) + 1,
+        ...row
+      })
+      .select("id")
+      .single();
+    error = insErr;
+    id = created?.id ?? null;
   }
   if (!error) await rollupLine(input.budgetLineId);
-  revalidatePath("/budget");
-  return { ok: !error };
+  revalidateRooms("budget");
+  return { ok: !error, id };
 }
 
 export async function deleteLineItem(id: string, budgetLineId: string) {
@@ -309,7 +409,7 @@ export async function deleteLineItem(id: string, budgetLineId: string) {
   const supabase = await createClient();
   await supabase.from("budget_line_items").delete().eq("id", id);
   await rollupLine(budgetLineId);
-  revalidatePath("/budget");
+  revalidateRooms("budget");
   return { ok: true as const };
 }
 
@@ -352,7 +452,7 @@ export async function addPayment(input: {
       due_date: input.dueDate
     }));
   }
-  revalidatePath("/budget");
+  revalidateRooms("budget");
   return { ok: !error };
 }
 
@@ -393,7 +493,7 @@ export async function updatePayment(
     .eq("id", paymentId);
   // Before migration 0011 the currency columns are absent.
   if (error) ({ error } = await supabase.from("payments").update(base).eq("id", paymentId));
-  revalidatePath("/budget");
+  revalidateRooms("budget");
   return { ok: !error };
 }
 
@@ -421,7 +521,7 @@ export async function markPaymentPaid(paymentId: string, paidAt: string | null) 
       .update({ paid })
       .eq("id", payment.budget_line_id);
   }
-  revalidatePath("/budget");
+  revalidateRooms("budget");
   return { ok: true as const };
 }
 
@@ -432,7 +532,7 @@ export async function updatePaymentFlags(
   await teamSession();
   const supabase = await createClient();
   const { error } = await supabase.from("payments").update(flags).eq("id", paymentId);
-  revalidatePath("/budget");
+  revalidateRooms("budget");
   // The Postgres lock (migration 0016): nothing reveals unverified
   // coordinates to the couple — surface it as a sentence, not a crash.
   if (error && `${error.message}`.includes("banking_not_verified")) {
@@ -445,7 +545,7 @@ export async function deletePayment(paymentId: string) {
   await teamSession();
   const supabase = await createClient();
   await supabase.from("payments").delete().eq("id", paymentId);
-  revalidatePath("/budget");
+  revalidateRooms("budget");
   return { ok: true as const };
 }
 
@@ -490,6 +590,6 @@ export async function sendPaymentNotice(weddingId: string, paymentId: string, no
   });
   const emailed = await sendHouseEmailToCouple(weddingId, `A payment approaches — ${p?.label ?? ""}`, notice);
   await supabase.from("payments").update({ notified_at: new Date().toISOString() }).eq("id", paymentId);
-  revalidatePath("/budget");
+  revalidateRooms("budget");
   return { ok: true as const, emailed };
 }

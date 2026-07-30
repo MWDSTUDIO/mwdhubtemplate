@@ -1030,6 +1030,25 @@ ul.steps { list-style: none; }
 .ledger tbody tr > td.cell-editing,
 .ledger tbody tr.row-active > td.cell-editing,
 .ledger tbody tr:hover > td.cell-editing { background: var(--surface); }
+/* ── adding in place, like a sheet (ajout-lignes brief §2) ── */
+.ledger-fold {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--ink2);
+  font-size: 11px;
+  padding: 0 6px 0 0;
+}
+.ledger-remove {
+  margin-left: 8px;
+  font-size: 14px;
+  line-height: 1;
+  color: var(--ink2);
+}
+.ledger-remove:hover { color: var(--bronze); }
+.ledger-addrow td { border-bottom: 1px solid var(--line-soft); padding-top: 6px; padding-bottom: 6px; }
+.ledger-item td { color: var(--ink2); font-size: 0.94em; }
+.ledger-tools td { border-bottom: 1px solid var(--line-soft); }
 /* ── the draft marker: a bare dot, never a boxed character (§2) ── */
 .draft-dot {
   display: inline-block;
