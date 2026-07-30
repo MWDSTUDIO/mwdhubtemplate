@@ -22,6 +22,7 @@ import { PaymentsCalendar, RiskBuffer } from "./mgmt-client";
 import { BudgetViews } from "./ledger-client";
 import { ReadingsDesk, type ReadingPayload, type ReadingRow } from "./readings-client";
 import { barModel, pctOfBudget, coherence } from "@/lib/budget-math";
+import { lineEurValues, sumMoney } from "@/lib/money";
 
 export default async function BudgetPage({
   params
@@ -92,15 +93,20 @@ export default async function BudgetPage({
     n == null ? "—" : format.number(n, { style: "currency", currency: "EUR", maximumFractionDigits: 0 });
 
   // Credits fold into their parent, so totals never double-count.
-  const committed = allLines.reduce((s, l) => s + (l.committed ?? 0), 0);
-  const paid = allLines.reduce((s, l) => s + (l.paid ?? 0), 0);
+  // Totals are computed HERE, server-side, and never mix currencies
+  // without a traced conversion (application-financière §1.1, §1.5):
+  // a foreign line without a held rate stands apart, named to the team.
+  const eurLines = allLines.map((l) => ({ l, v: lineEurValues(l) }));
+  const committed = sumMoney(eurLines.map(({ v }) => (v.converted ? v.committedEur : 0)));
+  const paid = sumMoney(eurLines.map(({ v }) => (v.converted ? v.paidEur : 0)));
+  const unconverted = eurLines.filter(({ v }) => !v.converted).map(({ l }) => l.label);
   const remaining = committed - paid;
   const total = wedding.budget_total ?? 0;
 
   const committedByEnvelope: Record<string, number> = {};
-  for (const l of allLines) {
-    if (l.envelope_id) {
-      committedByEnvelope[l.envelope_id] = (committedByEnvelope[l.envelope_id] ?? 0) + (l.committed ?? 0);
+  for (const { l, v } of eurLines) {
+    if (l.envelope_id && v.converted) {
+      committedByEnvelope[l.envelope_id] = (committedByEnvelope[l.envelope_id] ?? 0) + v.committedEur;
     }
   }
 
@@ -217,7 +223,9 @@ export default async function BudgetPage({
         // committed exactly — anything else is a data anomaly (§6).
         const envelopeSum =
           Object.values(committedByEnvelope).reduce((s, v) => s + v, 0) +
-          allLines.filter((l) => !l.envelope_id).reduce((s, l) => s + (l.committed ?? 0), 0);
+          eurLines
+            .filter(({ l, v }) => !l.envelope_id && v.converted)
+            .reduce((s, { v }) => s + v.committedEur, 0);
         const c = coherence({ total, committed, paid }, envelopeSum);
         return (
           <div className="card" style={{ marginBottom: 18 }}>
@@ -253,6 +261,11 @@ export default async function BudgetPage({
                 {t("bar.committedIs", { amount: money(committed) })}
               </span>
             </div>
+            {session.isTeam && unconverted.length > 0 && (
+              <p className="team-only" role="alert" style={{ fontSize: 12.5, color: "var(--bronze)", marginTop: 8 }}>
+                {t("bar.unconverted", { labels: unconverted.join(" · ") })}
+              </p>
+            )}
             {/* A broken identity is a data anomaly — said to the team,
                 never to the couple (§6). */}
             {session.isTeam && !c.envelopeIdentity && (

@@ -130,6 +130,8 @@ export function PublishDesk({ weddingId }: { weddingId: string }) {
       case "publish_document": return t("journalDocument");
       case "withdraw_document": return t("journalWithdraw");
       case "board_status": return t("journalBoard");
+      case "fx_rate_held": return t("journalFxRate");
+      case "fx_realized_gap": return t("journalFxGap");
       default: return action;
     }
   };

@@ -636,7 +636,15 @@
         "share": "{amount} · {pct} % of committed",
         "aria": "{label}: {paid} paid of {committed} committed",
         "notYet": "Not yet placed: {labels}"
-      }
+      },
+      "fxMissing": "No rate held for {currency} — this line stands apart from every total until one is.",
+      "fxHeld": "≈ {eur}, at the held rate",
+      "fxSet": "Hold the rate",
+      "fxRevise": "Revise the rate",
+      "fxRatePlaceholder": "1 {currency} in EUR",
+      "fxSourcePlaceholder": "Source — ECB, the bank…",
+      "fxNeedsMigration": "Run migration 0017 before rates can be held.",
+      "fxBadRate": "A rate is a positive number and a named source."
     },
     "bar": {
       "aria": "Where the budget stands",
@@ -646,7 +654,8 @@
       "stillToEngage": "Still to engage {amount} · {pct} % of budget",
       "beyond": "{amount} beyond the allotted budget",
       "committedIs": "Committed to date: {amount}",
-      "anomaly": "The envelopes sum to {sum} while the lines hold {committed} — a data anomaly to look into."
+      "anomaly": "The envelopes sum to {sum} while the lines hold {committed} — a data anomaly to look into.",
+      "unconverted": "In foreign currency without a held rate, standing apart from the totals: {labels}."
     }
   },
   "vendors": {
@@ -1207,7 +1216,9 @@
     "journalWithdraw": "withdrew a document",
     "journalBoard": "moved a board forward",
     "unpublish": "Take back",
-    "reverted": "taken back"
+    "reverted": "taken back",
+    "journalFxRate": "held an exchange rate",
+    "journalFxGap": "recorded a realized exchange difference"
   },
   "help": {
     "title": "The keys",

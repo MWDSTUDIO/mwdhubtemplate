@@ -636,7 +636,15 @@
         "share": "{amount} · {pct} % de lo comprometido",
         "aria": "{label}: {paid} pagados de {committed} comprometidos",
         "notYet": "Aún sin colocar: {labels}"
-      }
+      },
+      "fxMissing": "Ningún tipo retenido para {currency} — esta línea queda aparte de todo total mientras no lo haya.",
+      "fxHeld": "≈ {eur}, al tipo retenido",
+      "fxSet": "Retener el tipo",
+      "fxRevise": "Revisar el tipo",
+      "fxRatePlaceholder": "1 {currency} en EUR",
+      "fxSourcePlaceholder": "Fuente — BCE, el banco…",
+      "fxNeedsMigration": "Ejecute la migración 0017 antes de retener un tipo.",
+      "fxBadRate": "Un tipo es un número positivo y una fuente nombrada."
     },
     "bar": {
       "aria": "Dónde está el presupuesto",
@@ -646,7 +654,8 @@
       "stillToEngage": "Queda por comprometer {amount} · {pct} % del presupuesto",
       "beyond": "{amount} más allá del presupuesto asignado",
       "committedIs": "Comprometido a la fecha: {amount}",
-      "anomaly": "Las partidas suman {sum} mientras las líneas llevan {committed} — una anomalía de datos que revisar."
+      "anomaly": "Las partidas suman {sum} mientras las líneas llevan {committed} — una anomalía de datos que revisar.",
+      "unconverted": "En divisa sin tipo retenido, aparte de los totales: {labels}."
     }
   },
   "vendors": {
@@ -1207,7 +1216,9 @@
     "journalWithdraw": "retiró un documento",
     "journalBoard": "hizo avanzar una lámina",
     "unpublish": "Retomar",
-    "reverted": "retomada"
+    "reverted": "retomada",
+    "journalFxRate": "retuvo un tipo de cambio",
+    "journalFxGap": "consignó una diferencia de cambio realizada"
   },
   "help": {
     "title": "Las teclas",

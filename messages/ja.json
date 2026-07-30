@@ -636,7 +636,15 @@
         "share": "{amount} · ご契約額の {pct} %",
         "aria": "{label}：{committed} のご契約のうち {paid} お支払い済み",
         "notYet": "まだこれから：{labels}"
-      }
+      },
+      "fxMissing": "{currency} のレートが未保持です — 保持されるまで、この行はどの合計にも加わりません。",
+      "fxHeld": "≈ {eur}（保持レートにて）",
+      "fxSet": "レートを保持する",
+      "fxRevise": "レートを見直す",
+      "fxRatePlaceholder": "1 {currency} = ? EUR",
+      "fxSourcePlaceholder": "出所 — ECB、銀行…",
+      "fxNeedsMigration": "レートの保持にはマイグレーション 0017 をお願いいたします。",
+      "fxBadRate": "レートは正の数と、名前のある出所でございます。"
     },
     "bar": {
       "aria": "ご予算の現在地",
@@ -646,7 +654,8 @@
       "stillToEngage": "ご契約前 {amount} · ご予算の {pct} %",
       "beyond": "定められたご予算を {amount} 超えています",
       "committedIs": "現在のご契約額：{amount}",
-      "anomaly": "封筒の合計は {sum}、行の合計は {committed} — 確認が要るデータの不整合です。"
+      "anomaly": "封筒の合計は {sum}、行の合計は {committed} — 確認が要るデータの不整合です。",
+      "unconverted": "レート未保持の外貨建てにつき、合計から外れています：{labels}。"
     }
   },
   "vendors": {
@@ -1207,7 +1216,9 @@
     "journalWithdraw": "書類を取り下げました",
     "journalBoard": "ボードを進めました",
     "unpublish": "取り下げる",
-    "reverted": "取り下げ済み"
+    "reverted": "取り下げ済み",
+    "journalFxRate": "為替レートを保持しました",
+    "journalFxGap": "実現為替差額を記帳しました"
   },
   "help": {
     "title": "キーのご案内",

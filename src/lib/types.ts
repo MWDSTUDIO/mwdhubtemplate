@@ -193,6 +193,11 @@ export interface BudgetLine {
   /** Budget v2 (migration 0011): nested credits under a parent line. */
   parent_line_id?: string | null;
   line_kind?: "line" | "credit" | "included";
+  /** Financial foundations (migration 0017): the engagement's own
+      denomination and its TRACED euro equivalent (§1.1, §1.2). */
+  currency?: string;
+  committed_eur?: number | null;
+  fx_rate_id?: string | null;
 }
 
 /** One line of a vendor's quote, grouped by event (migration 0011). */

@@ -636,7 +636,15 @@
         "share": "{amount} · 占已承诺 {pct} %",
         "aria": "{label}：已付 {paid}，承诺 {committed}",
         "notYet": "尚未安排：{labels}"
-      }
+      },
+      "fxMissing": "{currency} 尚未持有汇率 — 在持有之前，此行不计入任何合计。",
+      "fxHeld": "≈ {eur}（按所持汇率）",
+      "fxSet": "持有汇率",
+      "fxRevise": "修订汇率",
+      "fxRatePlaceholder": "1 {currency} 兑 EUR",
+      "fxSourcePlaceholder": "来源 — 欧洲央行、银行…",
+      "fxNeedsMigration": "请先运行迁移 0017，才能持有汇率。",
+      "fxBadRate": "汇率须为正数，并注明来源。"
     },
     "bar": {
       "aria": "预算现况",
@@ -646,7 +654,8 @@
       "stillToEngage": "待承诺 {amount} · 占预算 {pct} %",
       "beyond": "超出既定预算 {amount}",
       "committedIs": "迄今已承诺：{amount}",
-      "anomaly": "预算袋合计 {sum}，而各行合计 {committed} — 数据异常，请查看。"
+      "anomaly": "预算袋合计 {sum}，而各行合计 {committed} — 数据异常，请查看。",
+      "unconverted": "外币且未持有汇率，暂不计入合计：{labels}。"
     }
   },
   "vendors": {
@@ -1207,7 +1216,9 @@
     "journalWithdraw": "撤回了文件",
     "journalBoard": "推进了一块画板",
     "unpublish": "撤回",
-    "reverted": "已撤回"
+    "reverted": "已撤回",
+    "journalFxRate": "持有了一笔汇率",
+    "journalFxGap": "记录了一笔已实现汇兑差额"
   },
   "help": {
     "title": "快捷键",

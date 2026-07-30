@@ -636,7 +636,15 @@
         "share": "{amount} · {pct} % de l'engagé",
         "aria": "{label} : {paid} réglés sur {committed} engagés",
         "notYet": "Pas encore placé : {labels}"
-      }
+      },
+      "fxMissing": "Aucun taux tenu pour {currency} — cette ligne reste à part de tout total tant qu'il n'y en a pas.",
+      "fxHeld": "≈ {eur}, au taux tenu",
+      "fxSet": "Tenir le taux",
+      "fxRevise": "Réviser le taux",
+      "fxRatePlaceholder": "1 {currency} en EUR",
+      "fxSourcePlaceholder": "Source — BCE, la banque…",
+      "fxNeedsMigration": "Lancez la migration 0017 avant de tenir un taux.",
+      "fxBadRate": "Un taux est un nombre positif et une source nommée."
     },
     "bar": {
       "aria": "Où en est le budget",
@@ -646,7 +654,8 @@
       "stillToEngage": "Reste à engager {amount} · {pct} % du budget",
       "beyond": "{amount} au-delà du budget alloué",
       "committedIs": "Engagé à ce jour : {amount}",
-      "anomaly": "Les enveloppes totalisent {sum} alors que les lignes portent {committed} — une anomalie de données à regarder."
+      "anomaly": "Les enveloppes totalisent {sum} alors que les lignes portent {committed} — une anomalie de données à regarder.",
+      "unconverted": "En devise sans taux tenu, à part des totaux : {labels}."
     }
   },
   "vendors": {
@@ -1207,7 +1216,9 @@
     "journalWithdraw": "a retiré un document",
     "journalBoard": "a fait avancer une planche",
     "unpublish": "Reprendre",
-    "reverted": "reprise"
+    "reverted": "reprise",
+    "journalFxRate": "a tenu un taux de change",
+    "journalFxGap": "a consigné un écart de change réalisé"
   },
   "help": {
     "title": "Les touches",

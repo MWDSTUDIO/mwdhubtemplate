@@ -6,6 +6,7 @@ import { requireHouseSession } from "@/lib/session";
 import { notifyCouple, sendHouseEmailToCouple } from "@/lib/notify";
 import { logActivity } from "@/lib/activity";
 import { revalidateRooms } from "@/lib/revalidate";
+import { roundMoney, sumMoney, convertMoney, isCurrencyCode } from "@/lib/money";
 import { runAgent } from "@/lib/agents/run";
 
 async function teamSession() {
@@ -185,20 +186,102 @@ export async function updateBudgetLine(input: {
   committed: number | null;
   paid: number;
   nextPaymentLabel: string;
+  /** Three letters or nothing — the engagement's own denomination (§1.1). */
+  currency?: string;
 }) {
   await teamSession();
   const supabase = await createClient();
+  const patch: Record<string, unknown> = {
+    label: input.label.trim(),
+    budgeted: input.budgeted,
+    committed: input.committed != null ? roundMoney(input.committed) : null,
+    paid: roundMoney(input.paid),
+    next_payment_label: input.nextPaymentLabel.trim() || null,
+    status: "draft"
+  };
+  if (input.currency && isCurrencyCode(input.currency.toUpperCase())) {
+    patch.currency = input.currency.toUpperCase();
+  }
+  // The EUR equivalent follows the committed through its held rate —
+  // an engagement conversion may refresh; a settled payment never
+  // recomputes (§1.2, enforced by never touching payments here).
+  const { data: existing } = await supabase
+    .from("budget_lines")
+    .select("*")
+    .eq("id", input.id)
+    .maybeSingle<Record<string, unknown>>();
+  if (existing && "currency" in existing) {
+    const cur = (patch.currency as string) ?? (existing.currency as string) ?? "EUR";
+    if (cur === "EUR") {
+      patch.committed_eur = patch.committed;
+      patch.fx_rate_id = null;
+    } else if (existing.fx_rate_id && patch.committed != null) {
+      const { data: fx } = await supabase.from("fx_rates").select("rate").eq("id", existing.fx_rate_id).maybeSingle();
+      patch.committed_eur = fx ? convertMoney(Number(patch.committed), Number(fx.rate)) : null;
+    } else if (patch.currency && patch.currency !== existing.currency) {
+      patch.committed_eur = null;
+      patch.fx_rate_id = null;
+    }
+  }
+  let { error } = await supabase.from("budget_lines").update(patch).eq("id", input.id);
+  if (error) {
+    // Pre-0017: the currency columns are absent — the figures still land.
+    delete patch.currency;
+    delete patch.committed_eur;
+    delete patch.fx_rate_id;
+    ({ error } = await supabase.from("budget_lines").update(patch).eq("id", input.id));
+  }
+  revalidateRooms("budget");
+  return { ok: !error };
+}
+
+/**
+ * Hold a rate (§1.2): pair, value, date, source — inserted in
+ * fx_rates and referenced by the line, whose EUR equivalent is
+ * computed once, traced, and shown beside the foreign amount.
+ */
+export async function setLineFxRate(
+  lineId: string,
+  weddingId: string,
+  input: { rate: number; source: string; date?: string }
+) {
+  const session = await teamSession();
+  const supabase = await createClient();
+  if (!(input.rate > 0)) return { ok: false as const };
+  const { data: line } = await supabase
+    .from("budget_lines")
+    .select("*")
+    .eq("id", lineId)
+    .maybeSingle<Record<string, unknown>>();
+  if (!line || !("currency" in line)) return { ok: false as const, needsMigration: true };
+  const currency = (line.currency as string) ?? "EUR";
+  if (currency === "EUR") return { ok: false as const };
+  const { data: fx, error: fxErr } = await supabase
+    .from("fx_rates")
+    .insert({
+      wedding_id: weddingId,
+      pair: `${currency}/EUR`,
+      rate: input.rate,
+      rate_date: input.date ?? new Date().toISOString().slice(0, 10),
+      source: input.source.trim()
+    })
+    .select("id, rate")
+    .single();
+  if (fxErr || !fx) return { ok: false as const, needsMigration: true };
+  const committed = line.committed != null ? Number(line.committed) : null;
   const { error } = await supabase
     .from("budget_lines")
     .update({
-      label: input.label.trim(),
-      budgeted: input.budgeted,
-      committed: input.committed,
-      paid: input.paid,
-      next_payment_label: input.nextPaymentLabel.trim() || null,
-      status: "draft"
+      fx_rate_id: fx.id,
+      committed_eur: committed != null ? convertMoney(committed, Number(fx.rate)) : null
     })
-    .eq("id", input.id);
+    .eq("id", lineId);
+  await logActivity(supabase, weddingId, session.profile.full_name, "fx_rate_held", {
+    lineId,
+    pair: `${currency}/EUR`,
+    rate: input.rate,
+    source: input.source.trim()
+  });
   revalidateRooms("budget");
   return { ok: !error };
 }
@@ -329,11 +412,11 @@ async function rollupLine(lineId: string) {
     .select("total_ht, total_ttc")
     .eq("budget_line_id", lineId);
   if (!rows?.length) return;
-  const sum = rows.reduce((s, r) => s + Number(r.total_ttc ?? r.total_ht ?? 0), 0);
+  const sum = sumMoney(rows.map((r) => Number(r.total_ttc ?? r.total_ht ?? 0)));
   if (sum > 0) {
     await supabase
       .from("budget_lines")
-      .update({ committed: Math.round(sum), committed_note: null, status: "draft" })
+      .update({ committed: sum, committed_note: null, status: "draft" })
       .eq("id", lineId);
   }
 }
@@ -498,14 +581,43 @@ export async function updatePayment(
 }
 
 export async function markPaymentPaid(paymentId: string, paidAt: string | null) {
-  await teamSession();
+  const session = await teamSession();
   const supabase = await createClient();
   const { data: payment } = await supabase
     .from("payments")
-    .select("id, wedding_id, budget_line_id, amount, amount_eur")
+    .select("*")
     .eq("id", paymentId)
     .single();
   await supabase.from("payments").update({ paid_at: paidAt }).eq("id", paymentId);
+
+  // §1.3 — the realized exchange difference exists: when a foreign
+  // instalment settles at an equivalent different from the line's
+  // held rate, the difference is written to the journal as itself —
+  // a line, never a rounding that disappears. Settled amounts are
+  // never recomputed (§1.2); this only records what was realized.
+  if (paidAt && payment && payment.currency && payment.currency !== "EUR" && payment.amount_eur != null) {
+    try {
+      const { data: line } = await supabase
+        .from("budget_lines")
+        .select("committed, committed_eur, currency, label")
+        .eq("id", payment.budget_line_id)
+        .maybeSingle<{ committed: number | null; committed_eur: number | null; currency?: string; label: string }>();
+      if (line?.committed && line.committed_eur != null && line.currency === payment.currency) {
+        const engagementRate = Number(line.committed_eur) / Number(line.committed);
+        const gap = roundMoney(Number(payment.amount_eur) - Number(payment.amount) * engagementRate);
+        if (Math.abs(gap) >= 1) {
+          await logActivity(supabase, payment.wedding_id, session.profile.full_name, "fx_realized_gap", {
+            paymentId,
+            label: payment.label,
+            currency: payment.currency,
+            gapEur: gap
+          });
+        }
+      }
+    } catch {
+      // The trace is a bonus; the settlement stands without it.
+    }
+  }
 
   // The line's "paid" follows its settled instalments (EUR equivalent).
   if (payment?.budget_line_id) {

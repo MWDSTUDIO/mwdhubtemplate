@@ -6,6 +6,7 @@ import { Link, useRouter } from "@/i18n/navigation";
 import type { BudgetEnvelope, BudgetLine, BudgetLineItem, EnvelopeNote, Payment } from "@/lib/types";
 import {
   updateBudgetLine,
+  setLineFxRate,
   addBudgetLine,
   duplicateBudgetLine,
   deleteBudgetLineWithUndo,
@@ -27,7 +28,7 @@ import {
  * actions, nothing to synchronise.
  */
 
-type LineField = "label" | "committed" | "paid";
+type LineField = "label" | "committed" | "paid" | "currency";
 type ItemField = "label" | "ht" | "vat" | "ttc";
 
 type UndoEntry =
@@ -41,8 +42,8 @@ type UndoEntry =
 type ViewKind = "ledger" | "housebook";
 type SortKey = "label" | "committed" | "paid" | "remaining" | null;
 
-const money = (format: ReturnType<typeof useFormatter>, n: number | null | undefined) =>
-  n == null ? "—" : format.number(n, { style: "currency", currency: "EUR", maximumFractionDigits: 0 });
+const money = (format: ReturnType<typeof useFormatter>, n: number | null | undefined, currency = "EUR") =>
+  n == null ? "—" : format.number(n, { style: "currency", currency, maximumFractionDigits: 0 });
 
 export function BudgetViews({
   weddingId,
@@ -194,11 +195,14 @@ interface Row {
   next: string;
   status: string;
   draft: boolean;
+  /** The traced EUR equivalent of a foreign engagement (§1.1). */
+  committedEur: number | null;
+  hasFxRate: boolean;
   /** Items: read from a document, or entered by the house (§4.3). */
   sourceRead?: boolean;
 }
 
-const LINE_EDITABLE: Record<string, LineField> = { "1": "label", "5": "committed", "6": "paid" };
+const LINE_EDITABLE: Record<string, LineField> = { "1": "label", "2": "currency", "5": "committed", "6": "paid" };
 const ITEM_EDITABLE: Record<string, ItemField> = { "1": "label", "3": "ht", "4": "vat", "5": "ttc" };
 
 interface Ghosts {
@@ -294,7 +298,7 @@ function Ledger({
           vendorId: l.vendor_id ?? null,
           label: (o.label !== undefined ? o.label : l.label) as string,
           budgeted: l.budgeted ?? null,
-          currency: "EUR",
+          currency: ((o.currency !== undefined ? o.currency : (l as { currency?: string }).currency) ?? "EUR") as string,
           ht,
           vatPct: vat,
           committed,
@@ -302,7 +306,9 @@ function Ledger({
           paid,
           next: l.next_payment_label ?? nextByLine[l.id] ?? "",
           status,
-          draft: l.status === "draft"
+          draft: l.status === "draft",
+          committedEur: (l as { committed_eur?: number | null }).committed_eur ?? null,
+          hasFxRate: Boolean((l as { fx_rate_id?: string | null }).fx_rate_id)
         };
       }),
     [lines, itemsByLine, nextByLine, local]
@@ -326,6 +332,8 @@ function Ledger({
     next: "",
     status: "item",
     draft: false,
+    committedEur: null,
+    hasFxRate: false,
     sourceRead: Boolean((it as { source_document_id?: string | null }).source_document_id)
   });
 
@@ -428,7 +436,8 @@ function Ledger({
         budgeted: fresh.budgeted ?? null,
         committed: fresh.committed != null ? Number(fresh.committed) : null,
         paid: Number(fresh.paid ?? 0),
-        nextPaymentLabel: fresh.next ?? ""
+        nextPaymentLabel: fresh.next ?? "",
+        currency: String(fresh.currency ?? "EUR")
       });
       setSaved("saved");
       router.refresh();
@@ -480,12 +489,17 @@ function Ledger({
     const row = flat.find((f) => f.id === editing.id);
     const field = row ? editableFor(row, Number(editing.col)) : null;
     if (row && field) {
-      const isText = field === "label";
-      const value = isText ? editVal : editVal.trim() === "" ? null : Number(editVal.replace(/[^\d.-]/g, "")) || 0;
-      if (row.kind === "item") {
-        persistItem(row.id, row.lineId, field as ItemField, value);
+      if (field === "currency") {
+        const code = editVal.trim().toUpperCase();
+        if (/^[A-Z]{3}$/.test(code)) persistLine(row.id, "currency", code);
       } else {
-        persistLine(row.id, field as LineField, field === "paid" && value == null ? 0 : value);
+        const isText = field === "label";
+        const value = isText ? editVal : editVal.trim() === "" ? null : Number(editVal.replace(/[^\d.-]/g, "")) || 0;
+        if (row.kind === "item") {
+          persistItem(row.id, row.lineId, field as ItemField, value);
+        } else {
+          persistLine(row.id, field as LineField, field === "paid" && value == null ? 0 : value);
+        }
       }
     }
     setEditing(null);
@@ -506,7 +520,7 @@ function Ledger({
           : field === "ht" ? row.ht
           : field === "vat" ? row.vatPct
           : row.committed
-        : row[field as LineField];
+        : field === "currency" ? row.currency : row[field as LineField];
     setEditVal(current != null ? String(current) : "");
   }
 
@@ -897,11 +911,24 @@ function Ledger({
           </>
         )}
         {cell(r, ri, 2, r.currency)}
-        {cell(r, ri, 3, r.ht != null ? money(format, r.ht) : "—", true)}
+        {cell(r, ri, 3, r.ht != null ? money(format, r.ht, r.currency) : "—", true)}
         {cell(r, ri, 4, r.vatPct != null ? `${r.vatPct} %` : "—", true)}
-        {cell(r, ri, 5, r.committed != null ? money(format, r.committed) : r.committedNote ?? "—", true)}
-        {cell(r, ri, 6, r.paid ? money(format, r.paid) : "—", true)}
-        {cell(r, ri, 7, r.committed != null ? money(format, r.committed - r.paid) : "—", true)}
+        {cell(
+          r, ri, 5,
+          r.committed != null ? (
+            <>
+              {money(format, r.committed, r.currency)}
+              {r.currency !== "EUR" && r.committedEur != null && (
+                <span style={{ display: "block", fontSize: 11.5, color: "var(--ink2)" }}>≈ {money(format, r.committedEur)}</span>
+              )}
+            </>
+          ) : (
+            r.committedNote ?? "—"
+          ),
+          true
+        )}
+        {cell(r, ri, 6, r.paid ? money(format, r.paid, r.currency) : "—", true)}
+        {cell(r, ri, 7, r.committed != null ? money(format, r.committed - r.paid, r.currency) : "—", true)}
         {cell(r, ri, 8, r.next || "—")}
       </tr>
     );
@@ -967,6 +994,15 @@ function Ledger({
             )}
             {own.length === 0 && !r.vendorId && (
               <span style={{ fontSize: 12, color: "var(--ink2)" }}>{t("freeRegime")}</span>
+            )}
+            {isTeam && r.currency !== "EUR" && (
+              <FxHolder
+                lineId={r.id}
+                weddingId={weddingId}
+                currency={r.currency}
+                committedEur={r.committedEur}
+                hasRate={r.hasFxRate}
+              />
             )}
             {isTeam && (
               <label style={{ fontSize: 12, color: "var(--ink2)", display: "inline-flex", gap: 6, alignItems: "baseline" }}>
@@ -1107,6 +1143,85 @@ function Ledger({
         </p>
       )}
     </div>
+  );
+}
+
+/**
+ * A foreign engagement holds its rate here (§1.2): value, source —
+ * dated today, written to fx_rates, referenced by the line. Without
+ * it the line stands apart from every total, and says so.
+ */
+function FxHolder({
+  lineId,
+  weddingId,
+  currency,
+  committedEur,
+  hasRate
+}: {
+  lineId: string;
+  weddingId: string;
+  currency: string;
+  committedEur: number | null;
+  hasRate: boolean;
+}) {
+  const t = useTranslations("budget.views");
+  const format = useFormatter();
+  const router = useRouter();
+  const [openForm, setOpenForm] = useState(false);
+  const [rate, setRate] = useState("");
+  const [source, setSource] = useState("");
+  const [note, setNote] = useState<string | null>(null);
+  const [pending, startTransition] = useTransition();
+
+  const go = () =>
+    startTransition(async () => {
+      const r = await setLineFxRate(lineId, weddingId, {
+        rate: Number(rate.replace(",", ".")),
+        source: source.trim()
+      });
+      if (!r.ok) setNote("needsMigration" in r && r.needsMigration ? t("fxNeedsMigration") : t("fxBadRate"));
+      else {
+        setNote(null);
+        setOpenForm(false);
+        router.refresh();
+      }
+    });
+
+  return (
+    <span style={{ display: "inline-flex", gap: 8, alignItems: "baseline", flexWrap: "wrap", fontSize: 12 }}>
+      {!hasRate && (
+        <span style={{ color: "var(--bronze)", fontWeight: 500 }}>{t("fxMissing", { currency })}</span>
+      )}
+      {hasRate && committedEur != null && (
+        <span style={{ color: "var(--ink2)" }}>{t("fxHeld", { eur: money(format, committedEur) })}</span>
+      )}
+      {!openForm ? (
+        <button className="addnote" onClick={() => setOpenForm(true)}>
+          {hasRate ? t("fxRevise") : t("fxSet")}
+        </button>
+      ) : (
+        <>
+          <input
+            value={rate}
+            onChange={(e) => setRate(e.target.value)}
+            placeholder={t("fxRatePlaceholder", { currency })}
+            inputMode="decimal"
+            style={{ width: 110, padding: "3px 6px", border: "1px solid var(--line)", fontSize: 12 }}
+          />
+          <input
+            value={source}
+            onChange={(e) => setSource(e.target.value)}
+            placeholder={t("fxSourcePlaceholder")}
+            style={{ width: 140, padding: "3px 6px", border: "1px solid var(--line)", fontSize: 12 }}
+          />
+          <button className="addnote" disabled={pending || !(Number(rate.replace(",", ".")) > 0) || !source.trim()} onClick={go}>
+            {pending ? "…" : t("hold")}
+          </button>
+          <button className="addnote" onClick={() => setOpenForm(false)}>{t("leave")}</button>
+        </>
+      )}
+      {note && <span style={{ color: "var(--bronze)" }}>{note}</span>}
+    </span>
   );
 }
 
