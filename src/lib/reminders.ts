@@ -187,7 +187,12 @@ export async function composeReminderLetter(opts: {
 
   const blocks = opts.payments.map((p) => {
     const lines: string[] = [];
-    lines.push(`• ${p.label}${p.vendor ? ` — ${p.vendor}` : ""}`);
+    // The vendor's name joins the line only when the label does not
+    // already speak it — "30 % deposit — Maison L." says enough.
+    const vendorFirst = p.vendor?.split("—")[0]?.trim().toLowerCase() ?? "";
+    const vendor =
+      p.vendor && vendorFirst && !p.label.toLowerCase().includes(vendorFirst) ? p.vendor : null;
+    lines.push(`• ${p.label}${vendor ? ` — ${vendor}` : ""}`);
     lines.push(
       `  ${
         p.dueDate
