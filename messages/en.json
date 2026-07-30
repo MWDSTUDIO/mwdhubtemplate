@@ -265,7 +265,8 @@
       "remainingCol": "Remaining",
       "nextPayment": "Next payment",
       "leftToAllot": "{amount} still to allot",
-      "setInDesk": "The couple's budget is set in The Desk — client sheet"
+      "setInDesk": "The couple's budget is set in The Desk — client sheet",
+      "beyondBudget": "{amount} beyond the allotted budget"
     },
     "ask": {
       "title": "The house's analysis",
@@ -629,7 +630,23 @@
       "removeSubline": "Remove this sub-line",
       "confirmRemovePublished": "\"{label}\" is published — removing it will change what the couple sees. Remove it?",
       "insertHint": "⌘/Ctrl+Enter inserts a line below · ⌘/Ctrl+Shift+Enter a sub-line · ⌘/Ctrl+D duplicates.",
-      "envelope": "Envelope"
+      "envelope": "Envelope",
+      "distribution": {
+        "title": "Where the money goes",
+        "share": "{amount} · {pct} % of committed",
+        "aria": "{label}: {paid} paid of {committed} committed",
+        "notYet": "Not yet placed: {labels}"
+      }
+    },
+    "bar": {
+      "aria": "Where the budget stands",
+      "mark": "The allotted budget",
+      "paid": "Paid {amount} · {pct} % of budget",
+      "stillToPay": "Still to pay {amount} · {pct} % of budget",
+      "stillToEngage": "Still to engage {amount} · {pct} % of budget",
+      "beyond": "{amount} beyond the allotted budget",
+      "committedIs": "Committed to date: {amount}",
+      "anomaly": "The envelopes sum to {sum} while the lines hold {committed} — a data anomaly to look into."
     }
   },
   "vendors": {

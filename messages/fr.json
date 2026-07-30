@@ -265,7 +265,8 @@
       "remainingCol": "Restant",
       "nextPayment": "Prochaine échéance",
       "leftToAllot": "{amount} encore à répartir",
-      "setInDesk": "Le budget des mariés se renseigne dans le Desk — fiche client"
+      "setInDesk": "Le budget des mariés se renseigne dans le Desk — fiche client",
+      "beyondBudget": "{amount} au-delà du budget alloué"
     },
     "ask": {
       "title": "L'analyse de la maison",
@@ -629,7 +630,23 @@
       "removeSubline": "Retirer cette sous-ligne",
       "confirmRemovePublished": "« {label} » est publiée — la retirer changera ce que voit le couple. La retirer ?",
       "insertHint": "⌘/Ctrl+Entrée insère une ligne dessous · ⌘/Ctrl+Maj+Entrée une sous-ligne · ⌘/Ctrl+D duplique.",
-      "envelope": "Enveloppe"
+      "envelope": "Enveloppe",
+      "distribution": {
+        "title": "Où va l'argent",
+        "share": "{amount} · {pct} % de l'engagé",
+        "aria": "{label} : {paid} réglés sur {committed} engagés",
+        "notYet": "Pas encore placé : {labels}"
+      }
+    },
+    "bar": {
+      "aria": "Où en est le budget",
+      "mark": "Le budget alloué",
+      "paid": "Réglé {amount} · {pct} % du budget",
+      "stillToPay": "Reste à régler {amount} · {pct} % du budget",
+      "stillToEngage": "Reste à engager {amount} · {pct} % du budget",
+      "beyond": "{amount} au-delà du budget alloué",
+      "committedIs": "Engagé à ce jour : {amount}",
+      "anomaly": "Les enveloppes totalisent {sum} alors que les lignes portent {committed} — une anomalie de données à regarder."
     }
   },
   "vendors": {

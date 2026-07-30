@@ -1030,6 +1030,70 @@ ul.steps { list-style: none; }
 .ledger tbody tr > td.cell-editing,
 .ledger tbody tr.row-active > td.cell-editing,
 .ledger tbody tr:hover > td.cell-editing { background: var(--surface); }
+/* ── the bar that answers "where do we stand?" (chiffres-visuels §3)
+   Rules, not gauges: 8px, sharp corners, the house's inks only. ── */
+.bbar {
+  position: relative;
+  height: 8px;
+  background: var(--parchment);
+  display: flex;
+  overflow: visible;
+}
+.bbar-paid { background: var(--hunter); height: 100%; }
+.bbar-due { background: oklch(0.3178 0.0365 157.6 / 0.35); height: 100%; }
+.bbar-beyond { position: absolute; top: 0; height: 100%; background: var(--bronze); }
+.bbar-mark {
+  position: absolute;
+  top: -4px;
+  bottom: -4px;
+  width: 2px;
+  background: var(--hunter);
+}
+.bbar-legend {
+  display: flex;
+  gap: 18px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+.bbar-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  margin-right: 6px;
+}
+.dot-paid { background: var(--hunter); }
+.dot-due { background: oklch(0.3178 0.0365 157.6 / 0.35); }
+.dot-free { background: var(--parchment); border: 1px solid var(--line); }
+.dot-beyond { background: var(--bronze); }
+@media (max-width: 480px) {
+  .bbar-legend { flex-direction: column; gap: 6px; }
+  .bbar-legend > span[style] { margin-left: 0 !important; }
+}
+
+/* ── where the money goes — one rule per envelope (§4) ── */
+.dist-row { margin-bottom: 12px; }
+.dist-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 14px;
+  margin-bottom: 4px;
+}
+.dist-bar { height: 7px; background: none; }
+.dist-committed {
+  display: block;
+  height: 100%;
+  background: oklch(0.3178 0.0365 157.6 / 0.35);
+  position: relative;
+}
+.dist-paid {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: var(--hunter);
+}
+
 /* ── adding in place, like a sheet (ajout-lignes brief §2) ── */
 .ledger-fold {
   background: none;

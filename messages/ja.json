@@ -265,7 +265,8 @@
       "remainingCol": "残",
       "nextPayment": "次のお支払い",
       "leftToAllot": "残り {amount} を割り当てられます",
-      "setInDesk": "おふたりのご予算は The Desk のお客さま台帳にてご記入ください"
+      "setInDesk": "おふたりのご予算は The Desk のお客さま台帳にてご記入ください",
+      "beyondBudget": "定められたご予算を {amount} 超えています"
     },
     "ask": {
       "title": "当館の見立て",
@@ -629,7 +630,23 @@
       "removeSubline": "この明細行を外す",
       "confirmRemovePublished": "「{label}」は公開済みです — 外すとお二人の見えるものが変わります。外しますか？",
       "insertHint": "⌘/Ctrl+Enter で下に行を挿入 · ⌘/Ctrl+Shift+Enter で明細行 · ⌘/Ctrl+D で複製。",
-      "envelope": "封筒"
+      "envelope": "封筒",
+      "distribution": {
+        "title": "お金のゆくえ",
+        "share": "{amount} · ご契約額の {pct} %",
+        "aria": "{label}：{committed} のご契約のうち {paid} お支払い済み",
+        "notYet": "まだこれから：{labels}"
+      }
+    },
+    "bar": {
+      "aria": "ご予算の現在地",
+      "mark": "定められたご予算",
+      "paid": "お支払い済み {amount} · ご予算の {pct} %",
+      "stillToPay": "お支払い残り {amount} · ご予算の {pct} %",
+      "stillToEngage": "ご契約前 {amount} · ご予算の {pct} %",
+      "beyond": "定められたご予算を {amount} 超えています",
+      "committedIs": "現在のご契約額：{amount}",
+      "anomaly": "封筒の合計は {sum}、行の合計は {committed} — 確認が要るデータの不整合です。"
     }
   },
   "vendors": {

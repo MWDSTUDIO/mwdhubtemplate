@@ -1153,8 +1153,47 @@ function HouseBook({
       });
   }, [lines, envelopes, envelopeNotes]);
 
+  const totalCommitted = groups.reduce((s, g) => s + g.committed, 0);
+  const placed = [...groups].filter((g) => g.committed > 0).sort((a, b) => b.committed - a.committed);
+  const notPlaced = groups.filter((g) => g.committed === 0);
+  const maxCommitted = placed[0]?.committed ?? 0;
+
   return (
-    <div className="housebook">
+    <>
+      {/* Where the money goes (chiffres-visuels §4): one horizontal
+          rule per envelope, sorted, the paid visible inside each —
+          never a pie, and never a colour without its words. */}
+      {placed.length > 0 && (
+        <div className="card">
+          <div className="eyebrow" style={{ marginBottom: 12 }}>{t("distribution.title")}</div>
+          {placed.map((g, gi) => {
+            const share = totalCommitted > 0 ? Math.round((g.committed / totalCommitted) * 100) : 0;
+            const widthPct = maxCommitted > 0 ? (g.committed / maxCommitted) * 100 : 0;
+            const paidPct = g.committed > 0 ? (g.paid / g.committed) * 100 : 0;
+            return (
+              <div className="dist-row" key={g.env?.id ?? `p-${gi}`}>
+                <div className="dist-head">
+                  <span>{g.env?.label ?? t("noEnvelope")}</span>
+                  <span className="num" style={{ color: "var(--ink2)" }}>
+                    {t("distribution.share", { amount: money(format, g.committed), pct: share })}
+                  </span>
+                </div>
+                <div className="dist-bar" role="img" aria-label={t("distribution.aria", { label: g.env?.label ?? t("noEnvelope"), paid: money(format, g.paid), committed: money(format, g.committed) })}>
+                  <span className="dist-committed" style={{ width: `${widthPct}%` }}>
+                    <span className="dist-paid" style={{ width: `${paidPct}%` }} />
+                  </span>
+                </div>
+              </div>
+            );
+          })}
+          {notPlaced.length > 0 && (
+            <p style={{ fontSize: 13, color: "var(--ink2)", margin: "10px 0 0" }}>
+              {t("distribution.notYet", { labels: notPlaced.map((g) => g.env?.label ?? t("noEnvelope")).join(" · ") })}
+            </p>
+          )}
+        </div>
+      )}
+      <div className="housebook">
       {groups.map((g, gi) => {
         const pct = g.committed > 0 ? Math.min(100, Math.round((g.paid / g.committed) * 100)) : 0;
         return (
@@ -1266,7 +1305,8 @@ function HouseBook({
           </div>
         );
       })}
-    </div>
+      </div>
+    </>
   );
 }
 

@@ -265,7 +265,8 @@
       "remainingCol": "余款",
       "nextPayment": "下期付款",
       "leftToAllot": "尚待分配 {amount}",
-      "setInDesk": "新人预算请在 The Desk 客户档案中填写"
+      "setInDesk": "新人预算请在 The Desk 客户档案中填写",
+      "beyondBudget": "超出既定预算 {amount}"
     },
     "ask": {
       "title": "本馆的分析",
@@ -629,7 +630,23 @@
       "removeSubline": "移除此子行",
       "confirmRemovePublished": "「{label}」已发布 — 移除将改变新人所见。确定移除？",
       "insertHint": "⌘/Ctrl+回车在下方插入一行 · ⌘/Ctrl+Shift+回车插入子行 · ⌘/Ctrl+D 复制。",
-      "envelope": "预算袋"
+      "envelope": "预算袋",
+      "distribution": {
+        "title": "资金去向",
+        "share": "{amount} · 占已承诺 {pct} %",
+        "aria": "{label}：已付 {paid}，承诺 {committed}",
+        "notYet": "尚未安排：{labels}"
+      }
+    },
+    "bar": {
+      "aria": "预算现况",
+      "mark": "既定预算",
+      "paid": "已支付 {amount} · 占预算 {pct} %",
+      "stillToPay": "待支付 {amount} · 占预算 {pct} %",
+      "stillToEngage": "待承诺 {amount} · 占预算 {pct} %",
+      "beyond": "超出既定预算 {amount}",
+      "committedIs": "迄今已承诺：{amount}",
+      "anomaly": "预算袋合计 {sum}，而各行合计 {committed} — 数据异常，请查看。"
     }
   },
   "vendors": {

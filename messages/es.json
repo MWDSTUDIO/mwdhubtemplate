@@ -265,7 +265,8 @@
       "remainingCol": "Pendiente",
       "nextPayment": "Próximo pago",
       "leftToAllot": "{amount} aún por repartir",
-      "setInDesk": "El presupuesto de la pareja se define en The Desk — ficha del cliente"
+      "setInDesk": "El presupuesto de la pareja se define en The Desk — ficha del cliente",
+      "beyondBudget": "{amount} más allá del presupuesto asignado"
     },
     "ask": {
       "title": "El análisis de la casa",
@@ -629,7 +630,23 @@
       "removeSubline": "Retirar esta sublínea",
       "confirmRemovePublished": "«{label}» está publicada — retirarla cambiará lo que ve la pareja. ¿Retirarla?",
       "insertHint": "⌘/Ctrl+Intro inserta una línea debajo · ⌘/Ctrl+Mayús+Intro una sublínea · ⌘/Ctrl+D duplica.",
-      "envelope": "Partida"
+      "envelope": "Partida",
+      "distribution": {
+        "title": "A dónde va el dinero",
+        "share": "{amount} · {pct} % de lo comprometido",
+        "aria": "{label}: {paid} pagados de {committed} comprometidos",
+        "notYet": "Aún sin colocar: {labels}"
+      }
+    },
+    "bar": {
+      "aria": "Dónde está el presupuesto",
+      "mark": "El presupuesto asignado",
+      "paid": "Pagado {amount} · {pct} % del presupuesto",
+      "stillToPay": "Queda por pagar {amount} · {pct} % del presupuesto",
+      "stillToEngage": "Queda por comprometer {amount} · {pct} % del presupuesto",
+      "beyond": "{amount} más allá del presupuesto asignado",
+      "committedIs": "Comprometido a la fecha: {amount}",
+      "anomaly": "Las partidas suman {sum} mientras las líneas llevan {committed} — una anomalía de datos que revisar."
     }
   },
   "vendors": {

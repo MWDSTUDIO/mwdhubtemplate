@@ -21,6 +21,7 @@ import { ScopeStudio, ScopeAnalysisDrop } from "./scope-client";
 import { PaymentsCalendar, RiskBuffer } from "./mgmt-client";
 import { BudgetViews } from "./ledger-client";
 import { ReadingsDesk, type ReadingPayload, type ReadingRow } from "./readings-client";
+import { barModel, pctOfBudget, coherence } from "@/lib/budget-math";
 
 export default async function BudgetPage({
   params
@@ -173,7 +174,13 @@ export default async function BudgetPage({
         <div className="card" style={{ marginBottom: 0 }}>
           <div className="eyebrow">{t("mgmt.total")}</div>
           <div className="serif num" style={{ fontSize: 30 }}>{money(total)}</div>
-          {total > 0 && (
+          {/* An overrun is said in words, never left to a minus sign (§2). */}
+          {total > 0 && committed > total && (
+            <span style={{ fontSize: 13.5, color: "var(--bronze)", fontWeight: 500 }}>
+              {t("mgmt.beyondBudget", { amount: money(committed - total) })}
+            </span>
+          )}
+          {total > 0 && committed <= total && (
             <span style={{ fontSize: 12, color: "var(--ink2)" }}>
               {t("mgmt.leftToAllot", { amount: money(total - committed) })}
             </span>
@@ -185,9 +192,10 @@ export default async function BudgetPage({
         <div className="card" style={{ marginBottom: 0 }}>
           <div className="eyebrow">{t("mgmt.paid")}</div>
           <div className="serif num" style={{ fontSize: 30 }}>{money(paid)}</div>
-          {committed > 0 && (
+          {/* The label says "of budget" — so the calculation does too (§1). */}
+          {pctOfBudget(paid, total) != null && (
             <span style={{ fontSize: 12, color: "var(--ink2)" }}>
-              {t("mgmt.ofBudget", { pct: Math.round((paid / committed) * 100) })}
+              {t("mgmt.ofBudget", { pct: pctOfBudget(paid, total)! })}
             </span>
           )}
         </div>
@@ -199,6 +207,62 @@ export default async function BudgetPage({
           </span>
         </div>
       </div>
+
+      {/* One bar answers "where do we stand?" — same scale for the
+          within-budget and the overrun regimes, the allotted budget
+          always marked (§3). Named amounts beside every percentage. */}
+      {(total > 0 || committed > 0) && (() => {
+        const m = barModel({ total, committed, paid });
+        // The envelopes (plus the unassigned bucket) must retile the
+        // committed exactly — anything else is a data anomaly (§6).
+        const envelopeSum =
+          Object.values(committedByEnvelope).reduce((s, v) => s + v, 0) +
+          allLines.filter((l) => !l.envelope_id).reduce((s, l) => s + (l.committed ?? 0), 0);
+        const c = coherence({ total, committed, paid }, envelopeSum);
+        return (
+          <div className="card" style={{ marginBottom: 18 }}>
+            <div className="bbar" role="img" aria-label={t("bar.aria")}>
+              {m.paidPct > 0 && <span className="bbar-paid" style={{ width: `${m.paidPct}%` }} />}
+              {m.stillToPayPct > 0 && <span className="bbar-due" style={{ width: `${m.stillToPayPct}%` }} />}
+              {m.beyondPct > 0 && (
+                <span className="bbar-beyond" style={{ left: `${m.markerPct}%`, width: `${m.beyondPct}%` }} />
+              )}
+              {total > 0 && <span className="bbar-mark" style={{ left: `${m.markerPct}%` }} title={t("bar.mark")} />}
+            </div>
+            <div className="bbar-legend">
+              {/* A percentage exists only when its denominator does:
+                  with no allotted budget, amounts stand alone. */}
+              <span>
+                <i className="bbar-dot dot-paid" aria-hidden="true" />
+                {total > 0 ? t("bar.paid", { amount: money(m.paid), pct: pctOfBudget(m.paid, total)! }) : t("mgmt.paid") + " " + money(m.paid)}
+              </span>
+              <span>
+                <i className="bbar-dot dot-due" aria-hidden="true" />
+                {total > 0 ? t("bar.stillToPay", { amount: money(m.stillToPay), pct: pctOfBudget(m.stillToPay, total)! }) : t("mgmt.remaining") + " " + money(m.stillToPay)}
+              </span>
+              {m.stillToEngage > 0 && total > 0 && (
+                <span><i className="bbar-dot dot-free" aria-hidden="true" />{t("bar.stillToEngage", { amount: money(m.stillToEngage), pct: pctOfBudget(m.stillToEngage, total)! })}</span>
+              )}
+              {m.beyond > 0 && (
+                <span style={{ color: "var(--bronze)", fontWeight: 500 }}>
+                  <i className="bbar-dot dot-beyond" aria-hidden="true" />
+                  {t("bar.beyond", { amount: money(m.beyond) })}
+                </span>
+              )}
+              <span style={{ marginLeft: "auto", color: "var(--ink2)" }}>
+                {t("bar.committedIs", { amount: money(committed) })}
+              </span>
+            </div>
+            {/* A broken identity is a data anomaly — said to the team,
+                never to the couple (§6). */}
+            {session.isTeam && !c.envelopeIdentity && (
+              <p className="team-only" role="alert" style={{ fontSize: 12.5, color: "var(--bronze)", marginTop: 8 }}>
+                {t("bar.anomaly", { sum: money(envelopeSum), committed: money(committed) })}
+              </p>
+            )}
+          </div>
+        );
+      })()}
 
       <BudgetViews
         weddingId={wedding.id}

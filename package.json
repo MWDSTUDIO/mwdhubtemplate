@@ -9,7 +9,9 @@
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
-    "test:banking": "node --test tests/banking-checks.test.mjs"
+    "test:banking": "node --test tests/banking-checks.test.mjs",
+    "test:budget": "node --test tests/budget-math.test.mjs",
+    "test": "node --test tests/"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.115.0",
