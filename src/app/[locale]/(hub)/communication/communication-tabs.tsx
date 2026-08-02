@@ -8,6 +8,8 @@ import { saveHousehold, type HouseholdDrawerFields } from "@/app/actions/guests"
 import { GuestSheet } from "./guest-sheet";
 import { GuestGrid } from "./guest-grid";
 import { StationerReview } from "./guests-client";
+import { ExportsTab } from "./exports-tab";
+import { ImportWizard } from "./import-wizard";
 
 /**
  * Wedding Communication, the module (final prompt §A1) — one working
@@ -16,7 +18,7 @@ import { StationerReview } from "./guests-client";
  * unsaved word. Team view only; the couple keeps their own page.
  */
 
-type TabId = "overview" | "list" | "grid" | "acc";
+type TabId = "overview" | "list" | "grid" | "acc" | "exp";
 type ListChips = { noaddr?: boolean; noemail?: boolean; pending?: boolean };
 
 const US_TITLES = [
@@ -58,6 +60,7 @@ export function CommunicationTabs({
   const [savedAt, setSavedAt] = useState<Date | null>(null);
   const [toastMsg, setToastMsg] = useState("");
   const [drawer, setDrawer] = useState<null | { id: string | null }>(null);
+  const [importing, setImporting] = useState(false);
 
   const live = useMemo(() => households.filter((g) => !g.archived), [households]);
 
@@ -152,7 +155,8 @@ export function CommunicationTabs({
     { id: "overview", label: t("tabOverview") },
     { id: "list", label: t("tabList") },
     { id: "grid", label: t("tabGrid") },
-    { id: "acc", label: t("tabAcc") }
+    { id: "acc", label: t("tabAcc") },
+    { id: "exp", label: t("tabExp") }
   ];
 
   return (
@@ -167,6 +171,7 @@ export function CommunicationTabs({
           {savedAt ? t("savedAt", { time: fmtTime(savedAt) }) : t("savedAll")}
         </span>
         <button className="btn ghost sm" onClick={() => setDrawer({ id: null })}>{t("addHousehold")}</button>
+        <button className="btn sm" onClick={() => setImporting(true)}>{t("importList")}</button>
       </div>
 
       {/* ── tabs ── */}
@@ -280,7 +285,31 @@ export function CommunicationTabs({
       {/* ── ACCOMMODATION ── */}
       <section hidden={tab !== "acc"}>{accommodation}</section>
 
+      {/* ── EXPORTS ── */}
+      <section hidden={tab !== "exp"}>
+        <ExportsTab
+          events={events}
+          households={households}
+          persons={persons}
+          statuses={statuses}
+          toast={toast}
+        />
+      </section>
+
       {/* ── drawer + scrim + toast ── */}
+      {importing && (
+        <ImportWizard
+          weddingId={weddingId}
+          events={events}
+          households={households}
+          onClose={() => setImporting(false)}
+          onDone={(s) => {
+            setImporting(false);
+            onSaved();
+            toast(t("toastImported", { created: s.created, merged: s.merged, skipped: s.skipped }));
+          }}
+        />
+      )}
       {drawer && (
         <HouseholdDrawer
           weddingId={weddingId}

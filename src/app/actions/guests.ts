@@ -754,3 +754,131 @@ export async function deleteWeddingEvent(weddingId: string, eventId: string) {
   revalidatePath("/communication");
   return { ok: !error };
 }
+
+/* ══════════ The import lands (final prompt §B1) ════════════════════ */
+
+export interface ImportRowDecision {
+  /** Estelle's word on this row — nothing enters without it. */
+  action: "create" | "merge" | "skip";
+  mergeInto?: string | null;
+  /** Household fields, already normalised and reviewed. */
+  fields: Record<string, string>;
+  adults?: number;
+  children?: number;
+  /** Events this household is invited to (pending their word). */
+  eventInvites: string[];
+}
+
+const IMPORT_FIELDS = new Set([
+  "title", "first_names", "surname", "suffix", "invitation_line",
+  "email", "phone", "address", "address_line2", "city", "postal_code",
+  "region", "country", "locale", "side", "relationship", "category",
+  "dietary", "travel", "notes_internal"
+]);
+
+/**
+ * The reviewed batch enters the list — creations, careful merges,
+ * skips — exactly as decided on the review screen. A merge only fills
+ * EMPTY fields: a hand-corrected row is never overwritten, by anything.
+ * The batch itself is kept (guest_import_batches) and journaled.
+ */
+export async function importGuests(
+  weddingId: string,
+  label: string,
+  mapping: Record<string, string>,
+  rows: ImportRowDecision[]
+) {
+  const session = await houseSession();
+  const supabase = await createClient();
+  let created = 0, merged = 0, skipped = 0, invited = 0;
+
+  for (const row of rows) {
+    if (row.action === "skip") { skipped++; continue; }
+    const fields: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(row.fields)) {
+      if (IMPORT_FIELDS.has(k) && v !== "") fields[k] = v;
+    }
+
+    if (row.action === "create") {
+      const { data, error } = await supabase
+        .from("guests")
+        .insert({
+          wedding_id: weddingId,
+          ...fields,
+          locale: (fields.locale as string) || "en",
+          party_adults: Math.max(1, row.adults ?? 1),
+          party_children: Math.max(0, row.children ?? 0),
+          accommodation_wished: row.fields.accommodation_wished === "yes",
+          provenance: "import"
+        })
+        .select("id")
+        .single();
+      if (error || !data) continue;
+      created++;
+      const name = [row.fields.first_names, row.fields.surname].filter(Boolean).join(" ") || null;
+      const { data: person } = await supabase
+        .from("guest_persons")
+        .insert({ wedding_id: weddingId, household_id: data.id, full_name: name, sort: 0 })
+        .select("id")
+        .single();
+      if (person && row.eventInvites.length) {
+        await supabase.from("person_event_status").upsert(
+          row.eventInvites.map((event_id) => ({
+            person_id: person.id, event_id, wedding_id: weddingId, status: "pending"
+          })),
+          { ignoreDuplicates: true }
+        );
+        invited += row.eventInvites.length;
+      }
+    } else if (row.action === "merge" && row.mergeInto) {
+      const { data: existing } = await supabase
+        .from("guests")
+        .select("*")
+        .eq("id", row.mergeInto)
+        .eq("wedding_id", weddingId)
+        .single();
+      if (!existing) continue;
+      // Only the empty pockets take something — the house's hand stands.
+      const patch: Record<string, unknown> = {};
+      for (const [k, v] of Object.entries(fields)) {
+        if (existing[k] == null || existing[k] === "") patch[k] = v;
+      }
+      if (Object.keys(patch).length) {
+        await supabase.from("guests").update(patch).eq("id", row.mergeInto);
+      }
+      merged++;
+      if (row.eventInvites.length) {
+        const { data: persons } = await supabase
+          .from("guest_persons")
+          .select("id")
+          .eq("household_id", row.mergeInto);
+        if (persons?.length) {
+          await supabase.from("person_event_status").upsert(
+            persons.flatMap((p) =>
+              row.eventInvites.map((event_id) => ({
+                person_id: p.id, event_id, wedding_id: weddingId, status: "pending"
+              }))
+            ),
+            { ignoreDuplicates: true }
+          );
+          invited += row.eventInvites.length;
+        }
+      }
+    }
+  }
+
+  await supabase.from("guest_import_batches").insert({
+    wedding_id: weddingId,
+    label,
+    mapping,
+    rows: rows.map((r) => ({ action: r.action, line: r.fields.invitation_line ?? null })),
+    status: "accepted",
+    created_by: session.profile.full_name
+  });
+  const { logActivity } = await import("@/lib/activity");
+  await logActivity(supabase, weddingId, session.profile.full_name, "guest_import", {
+    label, created, merged, skipped, invitations: invited
+  });
+  revalidatePath("/communication");
+  return { ok: true as const, created, merged, skipped };
+}
