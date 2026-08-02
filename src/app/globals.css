@@ -334,12 +334,58 @@ body.client-view .team-only { display: none !important; }
 .client-preview { display: none; }
 body.client-view .client-preview { display: block; }
 
-/* The Grid bows out on a small screen for the one-event view —
-   never a crushed crosstab at 430 px (communication brief §2.5). */
-.gg-event { display: none; }
-@media (max-width: 520px) {
-  .gg-matrix { display: none; }
-  .gg-event { display: block; }
+/* ── Wedding Communication, the module (final prompt) ─────────────── */
+.tcard { background: var(--white, #fffdf9); border: 1px solid var(--line); margin-bottom: 26px; }
+.tscroll { overflow: auto; max-height: 64vh; }
+.toolrow {
+  display: flex; flex-wrap: wrap; gap: 10px; align-items: center;
+  padding: 13px 16px; border-bottom: 1px solid var(--line);
+}
+.chip {
+  border: 1px solid var(--line); background: var(--white, #fffdf9);
+  padding: 6px 13px; font-size: 12px; letter-spacing: 0.12em;
+  text-transform: uppercase; font-weight: 500; color: var(--ink);
+  cursor: pointer;
+}
+.chip[aria-pressed="true"] { background: var(--hunter); color: var(--cream); border-color: var(--hunter); }
+.alertrow {
+  display: flex; justify-content: space-between; gap: 14px; align-items: center;
+  padding: 13px 18px; border-bottom: 1px solid rgba(201, 178, 145, 0.28);
+  font-size: 14.5px;
+}
+.alertrow:last-child { border-bottom: 0; }
+.grid-table th, .grid-table td {
+  padding: 9px 12px; border-bottom: 1px solid rgba(201, 178, 145, 0.28);
+  text-align: left; font-size: 14px;
+}
+.grid-table thead th {
+  position: sticky; top: 0; background: var(--white, #fffdf9); z-index: 3;
+}
+.grid-table td.evc, .grid-table th.evc { text-align: center; min-width: 96px; }
+.grid-table .namecol {
+  position: sticky; left: 0; background: var(--white, #fffdf9); z-index: 2;
+  min-width: 250px; white-space: nowrap;
+}
+.grid-table thead .namecol { z-index: 4; }
+.grid-table tfoot td {
+  position: sticky; bottom: 0; background: var(--parchment);
+  border-top: 1px solid var(--line); font-size: 13px; text-align: center;
+  padding: 10px 12px; z-index: 3;
+}
+.grid-table tfoot .namecol { background: var(--parchment); text-align: left; }
+.cellbtn { border: 0; background: none; font: inherit; font-size: 14px; cursor: pointer; padding: 4px 6px; }
+.cellbtn:hover { background: rgba(34, 56, 43, 0.08); }
+/* Under 700 px the matrix bows out for the one-event view — never a
+   crushed crosstab at 430 px (final prompt §A3). */
+.mobilebar { display: none; }
+@media (max-width: 700px) {
+  .evc { display: none; }
+  .evc.active { display: table-cell; }
+  .mobilebar {
+    display: flex; gap: 10px; align-items: center;
+    padding: 12px 14px; border-bottom: 1px solid var(--line);
+  }
+  .grid-table .namecol { min-width: 0; white-space: normal; }
 }
 
 .hero-count { display: flex; align-items: baseline; gap: 14px; margin: 8px 0 4px; }

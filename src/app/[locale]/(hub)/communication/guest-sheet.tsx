@@ -47,12 +47,15 @@ export function GuestSheet({
   weddingId,
   guests,
   events,
-  links
+  links,
+  onEdit
 }: {
   weddingId: string;
   guests: Guest[];
   events: WeddingEvent[];
   links: GuestEvent[];
+  /** Opens the household drawer — the whole file in one hand. */
+  onEdit?: (householdId: string) => void;
 }) {
   const t = useTranslations("guests.sheet");
   const tg = useTranslations("guests");
@@ -273,6 +276,7 @@ export function GuestSheet({
               <th>{t("col_status")}</th>
               <th>{t("col_events")}</th>
               <th aria-label={t("provenance")} />
+              {onEdit && <th aria-label={t("editHousehold")} />}
             </tr>
           </thead>
           <tbody>
@@ -370,6 +374,13 @@ export function GuestSheet({
                       />
                     )}
                   </td>
+                  {onEdit && (
+                    <td>
+                      <button className="addnote" onClick={() => onEdit(g.id)} title={t("editHousehold")} aria-label={t("editHousehold")}>
+                        ✎
+                      </button>
+                    </td>
+                  )}
                 </tr>
               );
             })}

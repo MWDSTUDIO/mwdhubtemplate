@@ -355,13 +355,13 @@ export async function toggleGuestEvent(
   return { ok: true as const };
 }
 
-/* ══════════ The grid — per person, per event (0024, §2.5) ══════════ */
+/* ══════════ The grid — per person, per event (0024, §A3) ══════════ */
 
-export type GridStatus = "invited" | "confirmed" | "declined" | "no_reply";
+export type GridStatus = "attending" | "declined" | "pending";
 
 /**
  * One cell of the matrix: the person's word for one event. `null`
- * withdraws the invitation — the cell closes its cycle empty.
+ * withdraws the invitation — "not invited" is the absence of a row.
  */
 export async function setPersonEventStatus(
   weddingId: string,
@@ -393,8 +393,39 @@ export async function setPersonEventStatus(
 }
 
 /**
+ * The household cell: one word for everyone invited — or, on an empty
+ * cell, the whole household enters the column as pending.
+ */
+export async function setHouseholdEventStatus(
+  weddingId: string,
+  householdId: string,
+  eventId: string,
+  status: GridStatus
+) {
+  await houseSession();
+  const supabase = await createClient();
+  const { data: persons } = await supabase
+    .from("guest_persons")
+    .select("id")
+    .eq("household_id", householdId)
+    .eq("wedding_id", weddingId);
+  if (!persons?.length) return { ok: false as const };
+  const { error } = await supabase.from("person_event_status").upsert(
+    persons.map((p) => ({
+      person_id: p.id,
+      event_id: eventId,
+      wedding_id: weddingId,
+      status,
+      updated_at: new Date().toISOString()
+    }))
+  );
+  revalidatePath("/communication");
+  return { ok: !error };
+}
+
+/**
  * A person joins the household — and inherits the events their
- * household is already invited to, awaiting their own word.
+ * household is already invited to, pending their own word.
  */
 export async function addPerson(
   weddingId: string,
@@ -426,7 +457,7 @@ export async function addPerson(
           person_id: data.id,
           event_id,
           wedding_id: weddingId,
-          status: "invited"
+          status: "pending"
         }))
       );
     }
@@ -435,14 +466,14 @@ export async function addPerson(
   return { ok: true as const, id: data.id as string };
 }
 
-const PERSON_FIELDS = new Set(["full_name", "dietary", "kind"]);
+const PERSON_FIELDS = new Set(["full_name", "dietary", "kind", "age", "accessibility"]);
 
 /** The person's own line: a name arriving, a regime, adult or child. */
 export async function patchPerson(
   personId: string,
   weddingId: string,
   field: string,
-  value: string | null
+  value: string | number | null
 ) {
   await houseSession();
   if (!PERSON_FIELDS.has(field)) return { ok: false as const };
@@ -497,11 +528,229 @@ export async function bulkGrid(
         person_id,
         event_id: action.eventId,
         wedding_id: weddingId,
-        status: action.kind === "status" ? action.status : "invited",
+        status: action.kind === "status" ? action.status : "pending",
         updated_at: new Date().toISOString()
       }))
     );
   }
   revalidatePath("/communication");
   return { ok: true as const };
+}
+
+/* ══════════ The household drawer (final prompt §A2/A4) ═════════════ */
+
+export interface HouseholdDrawerFields {
+  title: string;
+  firstNames: string;
+  surname: string;
+  suffix: string;
+  invitationLine: string;
+  email: string;
+  phone: string;
+  address: string;
+  addressLine2: string;
+  city: string;
+  postalCode: string;
+  region: string;
+  country: string;
+  locale: string;
+  side: string;
+  relationship: string;
+  category: string;
+  vip: boolean;
+  accommodationWished: boolean;
+  partyChildren: number;
+  notesInternal: string;
+}
+
+/**
+ * The drawer saves the whole household file in one gesture — created
+ * with its first person, or corrected in place. The house's hand
+ * marks the row; nothing overwrites it.
+ */
+export async function saveHousehold(
+  weddingId: string,
+  householdId: string | null,
+  f: HouseholdDrawerFields
+) {
+  await houseSession();
+  const supabase = await createClient();
+  const full: Record<string, unknown> = {
+    title: f.title || null,
+    first_names: f.firstNames || null,
+    surname: f.surname || null,
+    suffix: f.suffix || null,
+    invitation_line: f.invitationLine || null,
+    email: f.email || null,
+    phone: f.phone || null,
+    address: f.address || null,
+    address_line2: f.addressLine2 || null,
+    city: f.city || null,
+    postal_code: f.postalCode || null,
+    region: f.region || null,
+    country: f.country || null,
+    locale: f.locale || "en",
+    side: f.side || null,
+    relationship: f.relationship || null,
+    category: f.category || null,
+    vip: !!f.vip,
+    accommodation_wished: !!f.accommodationWished,
+    party_children: Math.max(0, Math.round(f.partyChildren || 0)),
+    notes_internal: f.notesInternal || null,
+    provenance: "house",
+    house_touched_at: new Date().toISOString()
+  };
+  // Pre-migration columns may be absent — shed the newest first, so
+  // the correction still lands on an older schema.
+  const shed = [
+    ["address_line2", "region", "side", "relationship", "category", "vip",
+     "accommodation_wished", "notes_internal"],
+    ["city", "postal_code", "country", "phone", "email"],
+    ["suffix", "provenance", "house_touched_at"]
+  ];
+  const patch = { ...full };
+  let newId: string | null = null;
+  let error: unknown = null;
+  for (let round = 0; round <= shed.length; round++) {
+    if (round > 0) for (const c of shed[round - 1]) delete patch[c];
+    if (householdId) {
+      ({ error } = await supabase
+        .from("guests").update(patch).eq("id", householdId).eq("wedding_id", weddingId));
+    } else {
+      const res = await supabase
+        .from("guests").insert({ ...patch, wedding_id: weddingId }).select("id").single();
+      error = res.error;
+      newId = res.data?.id ?? null;
+    }
+    if (!error) break;
+  }
+  if (error) return { ok: false as const };
+  if (!householdId && newId) {
+    // The household's first person carries the invitation.
+    const name = [f.firstNames, f.surname].filter(Boolean).join(" ") || null;
+    await supabase.from("guest_persons").insert({
+      wedding_id: weddingId,
+      household_id: newId,
+      full_name: name,
+      sort: 0
+    });
+  }
+  revalidatePath("/communication");
+  return { ok: true as const, id: (householdId ?? newId) as string };
+}
+
+/** A household bows out of the working list without leaving history. */
+export async function setHouseholdArchived(weddingId: string, householdId: string, archived: boolean) {
+  await houseSession();
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("guests")
+    .update({ archived })
+    .eq("id", householdId)
+    .eq("wedding_id", weddingId);
+  revalidatePath("/communication");
+  return { ok: !error };
+}
+
+/* ══════════ Events managed from the module (final prompt §A3) ══════ */
+
+export interface EventFields {
+  name: string;
+  eventDate: string | null;
+  startTime: string | null;
+  endTime: string | null;
+  venue: string | null;
+  dressCode: string | null;
+  capacity: number | null;
+  rsvpDeadline: string | null;
+  notes: string | null;
+}
+
+function eventRow(f: EventFields) {
+  return {
+    name: f.name,
+    event_date: f.eventDate || null,
+    start_time: f.startTime || null,
+    end_time: f.endTime || null,
+    venue: f.venue || null,
+    dress_code: f.dressCode || null,
+    capacity: f.capacity ?? null,
+    rsvp_deadline: f.rsvpDeadline || null,
+    notes: f.notes || null
+  };
+}
+
+/** A new event — its Grid column appears at once. */
+export async function addWeddingEvent(weddingId: string, f: EventFields) {
+  await houseSession();
+  const supabase = await createClient();
+  const { data: last } = await supabase
+    .from("wedding_events")
+    .select("sort")
+    .eq("wedding_id", weddingId)
+    .order("sort", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  const base = { wedding_id: weddingId, sort: (last?.sort ?? 0) + 1 };
+  let { data, error } = await supabase
+    .from("wedding_events")
+    .insert({ ...base, ...eventRow(f) })
+    .select("id")
+    .single();
+  if (error) {
+    // Pre-0024: only name, date and sort exist.
+    ({ data, error } = await supabase
+      .from("wedding_events")
+      .insert({ ...base, name: f.name, event_date: f.eventDate || null })
+      .select("id")
+      .single());
+  }
+  revalidatePath("/communication");
+  return { ok: !error, id: data?.id as string | undefined };
+}
+
+/** The event file, corrected in place. */
+export async function updateWeddingEvent(weddingId: string, eventId: string, f: EventFields) {
+  await houseSession();
+  const supabase = await createClient();
+  let { error } = await supabase
+    .from("wedding_events")
+    .update(eventRow(f))
+    .eq("id", eventId)
+    .eq("wedding_id", weddingId);
+  if (error) {
+    ({ error } = await supabase
+      .from("wedding_events")
+      .update({ name: f.name, event_date: f.eventDate || null })
+      .eq("id", eventId)
+      .eq("wedding_id", weddingId));
+  }
+  revalidatePath("/communication");
+  return { ok: !error };
+}
+
+/** The column bows out; every reply in it is kept (archived, not deleted). */
+export async function archiveWeddingEvent(weddingId: string, eventId: string, archived: boolean) {
+  await houseSession();
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("wedding_events")
+    .update({ archived })
+    .eq("id", eventId)
+    .eq("wedding_id", weddingId);
+  revalidatePath("/communication");
+  return { ok: !error };
+}
+
+/** Deleting a column erases its attendance — the warning is the UI's duty. */
+export async function deleteWeddingEvent(weddingId: string, eventId: string) {
+  await houseSession();
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("wedding_events")
+    .delete()
+    .eq("id", eventId)
+    .eq("wedding_id", weddingId);
+  revalidatePath("/communication");
+  return { ok: !error };
 }

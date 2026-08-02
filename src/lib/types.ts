@@ -55,6 +55,19 @@ export interface WeddingEvent {
   name: string;
   event_date: string | null;
   sort: number;
+  /** The event file (migration 0024) — the module manages its columns. */
+  internal_name?: string | null;
+  event_type?: string | null;
+  start_time?: string | null;
+  end_time?: string | null;
+  venue?: string | null;
+  venue_address?: string | null;
+  dress_code?: string | null;
+  capacity?: number | null;
+  rsvp_deadline?: string | null;
+  visibility?: "client" | "team";
+  notes?: string | null;
+  archived?: boolean;
 }
 
 export interface Milestone {
@@ -317,28 +330,43 @@ export interface Guest {
   /** couple · import · house — whose hand wrote the row last (0021). */
   provenance?: string;
   house_touched_at?: string | null;
+  /** The household file, American standard (migration 0024). */
+  address_line2?: string | null;
+  region?: string | null;
+  side?: "hers" | "his" | "mutual" | null;
+  relationship?: string | null;
+  category?: string | null;
+  vip?: boolean;
+  accommodation_wished?: boolean;
+  tags?: string[];
+  notes_internal?: string | null;
+  archived?: boolean;
 }
 
 export type Rsvp = "pending" | "confirmed" | "declined";
 
-/** A person inside a household — who attends and eats (migration 0024). */
+/** A person inside a household — who attends, eats and needs looking
+    after (migration 0024). */
 export interface GuestPerson {
   id: string;
   wedding_id: string;
   household_id: string;
   full_name: string | null;
   kind: "adult" | "child";
+  age: number | null;
   dietary: string | null;
+  accessibility: string | null;
   sort: number;
   created_at?: string;
 }
 
-/** The person's word for one event — never a stored global (0024). */
+/** The person's word for one event — never a stored global (0024).
+    'invited' is legacy, read as pending. */
 export interface PersonEventStatus {
   person_id: string;
   event_id: string;
   wedding_id: string;
-  status: "invited" | "confirmed" | "declined" | "no_reply";
+  status: "attending" | "declined" | "pending" | "invited";
   updated_at?: string;
 }
 

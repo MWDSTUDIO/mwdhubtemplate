@@ -1,61 +1,70 @@
 "use client";
 
-import React, { useMemo, useState, useTransition } from "react";
+import React, { useMemo, useRef, useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import type { Guest, GuestPerson, PersonEventStatus, WeddingEvent } from "@/lib/types";
 import {
   addPerson,
+  addWeddingEvent,
+  archiveWeddingEvent,
   bulkGrid,
   patchPerson,
   removePerson,
+  setHouseholdEventStatus,
   setPersonEventStatus,
-  type GridStatus
+  updateWeddingEvent,
+  type GridStatus,
+  type EventFields
 } from "@/app/actions/guests";
 
 /**
- * The Grid (communication brief §2.5) — the crossed view an organiser
- * actually works with: households in rows, events in columns, and in
- * each cell one person's word — invited · confirmed · declined · no
- * reply — edited with a click that cycles, exactly the Ledger's
- * mechanic. Column feet keep the running answer to "how many at this
- * event, and what do they eat". On a small screen the matrix bows out
- * for a one-event view; never a crushed crosstab at 430 px.
+ * The Grid (final prompt §A3, matched to the reference mock) — the
+ * crossed view an organiser works with: households in rows (expandable
+ * into persons), events in columns, and in each cell one person's word:
+ * attending · pending · declined — "not invited" is an absence. A click
+ * cycles a person; a household cell sets everyone; the feet keep the
+ * running answer to "how many, and what do they eat". Under 700 px the
+ * matrix bows out for one event at a time.
  */
 
-const CYCLE: (GridStatus | null)[] = ["invited", "confirmed", "declined", "no_reply", null];
+const CYCLE: Record<GridStatus, GridStatus> = { pending: "attending", attending: "declined", declined: "pending" };
 
-const GLYPH: Record<GridStatus, { ch: string; color: string }> = {
-  invited: { ch: "·", color: "var(--bronze)" },
-  confirmed: { ch: "✓", color: "var(--hunter)" },
-  declined: { ch: "✕", color: "var(--bronze)" },
-  no_reply: { ch: "?", color: "var(--ink2)" }
-};
+const norm = (s: PersonEventStatus["status"] | null | undefined): GridStatus | null =>
+  s == null ? null : s === "invited" ? "pending" : s;
 
 export function GuestGrid({
   weddingId,
   events,
   households,
   persons,
-  statuses
+  statuses,
+  onSaved,
+  toast
 }: {
   weddingId: string;
   events: WeddingEvent[];
   households: Guest[];
   persons: GuestPerson[];
   statuses: PersonEventStatus[];
+  onSaved?: () => void;
+  toast?: (m: string) => void;
 }) {
   const t = useTranslations("guests.grid");
+  const format = useMemo(() => new Intl.DateTimeFormat(undefined, { weekday: "short", month: "short", day: "numeric" }), []);
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [search, setSearch] = useState("");
-  const [filter, setFilter] = useState<"" | GridStatus | "no_reply_yet" | "changed">("");
-  const [filterEvent, setFilterEvent] = useState("");
-  const [mobileEvent, setMobileEvent] = useState(events[0]?.id ?? "");
+  const [pendOnly, setPendOnly] = useState(false);
+  const [activeEv, setActiveEv] = useState(events[0]?.id ?? "");
   const [editing, setEditing] = useState<{ id: string; field: "full_name" | "dietary" } | null>(null);
   const [draft, setDraft] = useState("");
+  const [eventForm, setEventForm] = useState<null | { id: string | null; f: EventFields }>(null);
+  const tableRef = useRef<HTMLTableElement>(null);
+
+  const live = useMemo(() => households.filter((g) => !g.archived), [households]);
 
   const byHousehold = useMemo(() => {
     const m = new Map<string, GuestPerson[]>();
@@ -69,73 +78,102 @@ export function GuestGrid({
   }, [persons]);
 
   const statusMap = useMemo(() => {
-    const m = new Map<string, PersonEventStatus>();
-    for (const s of statuses) m.set(`${s.person_id}:${s.event_id}`, s);
+    const m = new Map<string, GridStatus>();
+    for (const s of statuses) {
+      const v = norm(s.status);
+      if (v) m.set(`${s.person_id}:${s.event_id}`, v);
+    }
     return m;
   }, [statuses]);
 
-  const st = (personId: string, eventId: string): GridStatus | null =>
-    statusMap.get(`${personId}:${eventId}`)?.status ?? null;
+  const st = (personId: string, eventId: string) => statusMap.get(`${personId}:${eventId}`) ?? null;
+
+  const act = (fn: () => Promise<unknown>, note?: string) =>
+    startTransition(async () => {
+      await fn();
+      router.refresh();
+      onSaved?.();
+      if (note) toast?.(note);
+    });
+
+  const householdLabel = (g: Guest) =>
+    g.invitation_line || [g.title, g.first_names, g.surname].filter(Boolean).join(" ") || t("unnamedHousehold");
 
   const personName = (p: GuestPerson, g: Guest | undefined, idx: number) =>
     p.full_name ||
     (idx === 0 && g ? [g.first_names, g.surname].filter(Boolean).join(" ") : "") ||
     t(p.kind === "child" ? "unnamedChild" : "unnamedAdult");
 
-  const householdLabel = (g: Guest) =>
-    g.invitation_line || [g.title, g.first_names, g.surname].filter(Boolean).join(" ") || t("unnamedHousehold");
+  const dayLabel = (ev: WeddingEvent) =>
+    ev.event_date ? format.format(new Date(ev.event_date + "T12:00:00")) : "—";
 
-  const recently = (iso: string | undefined) =>
-    !!iso && Date.now() - new Date(iso).getTime() < 7 * 24 * 3600 * 1000;
-
-  const matchesFilter = (p: GuestPerson): boolean => {
-    if (!filter && !filterEvent) return true;
-    const evs = filterEvent ? [filterEvent] : events.map((e) => e.id);
-    return evs.some((ev) => {
-      const s = statusMap.get(`${p.id}:${ev}`);
-      if (!s) return false;
-      if (!filter) return true;
-      if (filter === "no_reply_yet") return s.status === "invited" || s.status === "no_reply";
-      if (filter === "changed") return recently(s.updated_at);
-      return s.status === filter;
-    });
+  /* The feet: the standing count of one column (mock's feet()). */
+  const feet = (eventId: string) => {
+    let a = 0, p = 0, d = 0, kids = 0;
+    const diets = new Map<string, number>();
+    for (const g of live) {
+      const ps = byHousehold.get(g.id) ?? [];
+      let anyAttending = false;
+      let childPersons = 0;
+      for (const person of ps) {
+        const s = st(person.id, eventId);
+        if (!s) continue;
+        if (s === "attending") {
+          if (person.kind === "child") { childPersons++; kids++; } else a++;
+          anyAttending = true;
+          const diet = (person.dietary ?? "").trim();
+          if (diet) diets.set(diet, (diets.get(diet) ?? 0) + 1);
+        } else if (s === "pending") p++;
+        else d++;
+      }
+      // Households that only carry a children COUNT (no child rows yet)
+      // still bring their children to the table.
+      if (anyAttending && childPersons === 0) kids += g.party_children ?? 0;
+    }
+    return { a, p, d, kids, covers: a + kids, diets, inv: a + p + d };
   };
 
   const visible = useMemo(() => {
     const q = search.trim().toLowerCase();
-    return households.filter((g) => {
+    return live.filter((g) => {
       const ps = byHousehold.get(g.id) ?? [];
-      const nameHit =
-        !q ||
-        householdLabel(g).toLowerCase().includes(q) ||
-        ps.some((p) => (p.full_name ?? "").toLowerCase().includes(q));
-      return nameHit && (!(filter || filterEvent) || ps.some(matchesFilter));
+      if (q && !householdLabel(g).toLowerCase().includes(q) && !ps.some((p) => (p.full_name ?? "").toLowerCase().includes(q))) return false;
+      if (pendOnly && !ps.some((p) => events.some((e) => st(p.id, e.id) === "pending"))) return false;
+      return true;
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [households, byHousehold, search, filter, filterEvent, statusMap]);
+  }, [live, byHousehold, search, pendOnly, statusMap, events]);
 
-  const cycle = (personId: string, eventId: string) => {
+  /* ── cell gestures ── */
+  const cycleP = (personId: string, eventId: string) => {
     const cur = st(personId, eventId);
-    const next = CYCLE[(CYCLE.indexOf(cur) + 1) % CYCLE.length];
-    startTransition(async () => {
-      await setPersonEventStatus(weddingId, personId, eventId, next);
-      router.refresh();
-    });
+    if (!cur) return act(() => setPersonEventStatus(weddingId, personId, eventId, "pending"), t("toastInvitedOne"));
+    act(() => setPersonEventStatus(weddingId, personId, eventId, CYCLE[cur]));
+  };
+  const cycleHH = (g: Guest, eventId: string) => {
+    const ps = byHousehold.get(g.id) ?? [];
+    const cur = ps.map((p) => st(p.id, eventId)).filter(Boolean) as GridStatus[];
+    if (!cur.length) return act(() => setHouseholdEventStatus(weddingId, g.id, eventId, "pending"), t("toastInvited"));
+    const next = cur.every((s) => s === cur[0]) ? CYCLE[cur[0]] : "attending";
+    act(() => setHouseholdEventStatus(weddingId, g.id, eventId, next));
   };
 
-  const foot = (eventId: string) => {
-    const invited = persons.filter((p) => st(p.id, eventId) !== null);
-    const n = (s: GridStatus) => invited.filter((p) => st(p.id, eventId) === s).length;
-    const confirmed = invited.filter((p) => st(p.id, eventId) === "confirmed");
-    const adults = confirmed.filter((p) => p.kind !== "child").length;
-    const children = confirmed.filter((p) => p.kind === "child").length;
-    const diets = new Map<string, number>();
-    for (const p of confirmed) {
-      const d = (p.dietary ?? "").trim();
-      if (d) diets.set(d, (diets.get(d) ?? 0) + 1);
-    }
-    return { confirmed: n("confirmed"), awaiting: n("invited") + n("no_reply"), declined: n("declined"), adults, children, covers: adults + children, diets };
+  /* Arrow keys walk the matrix, Enter presses — the Ledger's keyboard. */
+  const onGridKey = (e: React.KeyboardEvent) => {
+    if (!["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(e.key)) return;
+    const el = e.target as HTMLElement;
+    if (!el.dataset.r) return;
+    e.preventDefault();
+    const r = +el.dataset.r + (e.key === "ArrowDown" ? 1 : e.key === "ArrowUp" ? -1 : 0);
+    const c = +(el.dataset.c ?? 0) + (e.key === "ArrowRight" ? 1 : e.key === "ArrowLeft" ? -1 : 0);
+    tableRef.current?.querySelector<HTMLElement>(`[data-r="${r}"][data-c="${c}"]`)?.focus();
   };
+
+  const bulkAct = (action: Parameters<typeof bulkGrid>[2], note: string) =>
+    act(async () => {
+      await bulkGrid(weddingId, [...selected], action);
+      setSelected(new Set());
+    }, note);
 
   const toggleSelect = (ids: string[], on: boolean) =>
     setSelected((prev) => {
@@ -151,13 +189,10 @@ export function GuestGrid({
     const prev = p ? ((p as unknown as Record<string, unknown>)[field] as string | null) ?? "" : "";
     setEditing(null);
     if (draft === prev) return;
-    startTransition(async () => {
-      await patchPerson(id, weddingId, field, draft);
-      router.refresh();
-    });
+    act(() => patchPerson(id, weddingId, field, draft));
   };
 
-  const editable = (p: GuestPerson, field: "full_name" | "dietary", display: string, italicWhenEmpty = false) => {
+  const editable = (p: GuestPerson, field: "full_name" | "dietary", display: string) => {
     if (editing?.id === p.id && editing.field === field) {
       return (
         <input
@@ -169,103 +204,83 @@ export function GuestGrid({
             else if (e.key === "Escape") setEditing(null);
           }}
           onBlur={commitEdit}
-          style={{ width: "100%", minWidth: 70, fontSize: 12.5, padding: "3px 5px", border: "1px solid var(--champagne)" }}
+          style={{ minWidth: 90, fontSize: 12.5, padding: "3px 5px", border: "1px solid var(--champagne)" }}
           aria-label={t(field === "full_name" ? "personName" : "personDietary")}
         />
       );
     }
     const empty = !((p as unknown as Record<string, unknown>)[field] as string | null);
     return (
-      <span
-        role="button"
-        tabIndex={0}
+      <button
+        className="addnote"
         title={t("cellHint")}
         onClick={() => { setEditing({ id: p.id, field }); setDraft(((p as unknown as Record<string, unknown>)[field] as string | null) ?? ""); }}
-        onKeyDown={(e) => { if (e.key === "Enter") { setEditing({ id: p.id, field }); setDraft(((p as unknown as Record<string, unknown>)[field] as string | null) ?? ""); } }}
-        style={{ cursor: "text", fontStyle: italicWhenEmpty && empty ? "italic" : undefined, color: empty ? "var(--ink2)" : undefined }}
+        style={{ fontStyle: empty ? "italic" : undefined, color: empty ? "var(--ink2)" : undefined, padding: 0 }}
       >
         {display}
-      </span>
+      </button>
     );
   };
 
-  const statusCell = (p: GuestPerson, eventId: string) => {
-    const s = st(p.id, eventId);
-    const label = s ? t(`status_${s}`) : t("status_none");
+  /* ── the event file, opened flat above the matrix ── */
+  const blankEvent: EventFields = { name: "", eventDate: null, startTime: null, endTime: null, venue: null, dressCode: null, capacity: null, rsvpDeadline: null, notes: null };
+  const openEventForm = (ev?: WeddingEvent) =>
+    setEventForm(ev
+      ? { id: ev.id, f: { name: ev.name, eventDate: ev.event_date, startTime: ev.start_time ?? null, endTime: ev.end_time ?? null, venue: ev.venue ?? null, dressCode: ev.dress_code ?? null, capacity: ev.capacity ?? null, rsvpDeadline: ev.rsvp_deadline ?? null, notes: ev.notes ?? null } }
+      : { id: null, f: blankEvent });
+
+  const cellStyle = (s: GridStatus | null): React.CSSProperties =>
+    s === "attending" ? { color: "var(--hunter)", fontWeight: 500 }
+      : s === "declined" ? { color: "var(--dec, #9c9483)", textDecoration: "line-through" }
+      : s === "pending" ? { color: "var(--bronze)" }
+      : { color: "var(--line)" };
+
+  if (!events.length) {
     return (
-      <td key={eventId} style={{ textAlign: "center" }}>
-        <button
-          className="addnote"
-          disabled={pending}
-          onClick={() => cycle(p.id, eventId)}
-          title={`${label} — ${t("cycleHint")}`}
-          aria-label={`${label} — ${t("cycleHint")}`}
-          style={{ minWidth: 30, fontSize: 14, color: s ? GLYPH[s].color : "var(--line)", fontWeight: s === "confirmed" ? 600 : 400 }}
-        >
-          {s ? GLYPH[s].ch : "—"}
-        </button>
-      </td>
+      <div className="tcard" style={{ padding: "18px 20px" }}>
+        <p style={{ fontSize: 13.5, color: "var(--ink2)", margin: "0 0 10px", fontStyle: "italic" }}>{t("noEvents")}</p>
+        <button className="btn ghost sm" onClick={() => openEventForm()}>{t("addEvent")}</button>
+        {eventForm && eventEditor()}
+      </div>
     );
-  };
-
-  const bulkAct = (action: Parameters<typeof bulkGrid>[2]) =>
-    startTransition(async () => {
-      await bulkGrid(weddingId, [...selected], action);
-      setSelected(new Set());
-      router.refresh();
-    });
-
-  if (!events.length) return null;
+  }
 
   return (
-    <div className="card team-only">
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 12, flexWrap: "wrap", marginBottom: 8 }}>
-        <div className="eyebrow">{t("title")}</div>
-        <span style={{ fontSize: 12, color: "var(--ink2)" }}>{t("hint")}</span>
-      </div>
-
-      {/* ── filters: the two real questions of the last weeks ── */}
-      <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center", marginBottom: 10 }}>
+    <div className="tcard">
+      {/* ── toolrow ── */}
+      <div className="toolrow">
         <input
+          type="search"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder={t("search")}
           aria-label={t("search")}
-          style={{ padding: "5px 8px", border: "1px solid var(--line)", fontSize: 12.5, minWidth: 160 }}
+          style={{ minWidth: 200 }}
         />
-        <select value={filterEvent} onChange={(e) => setFilterEvent(e.target.value)} aria-label={t("filterEvent")} style={{ padding: "5px 6px", border: "1px solid var(--line)", background: "#fff", fontSize: 12 }}>
-          <option value="">{t("filterEvent")}</option>
-          {events.map((ev) => <option key={ev.id} value={ev.id}>{ev.name}</option>)}
-        </select>
-        <select value={filter} onChange={(e) => setFilter(e.target.value as typeof filter)} aria-label={t("filterStatus")} style={{ padding: "5px 6px", border: "1px solid var(--line)", background: "#fff", fontSize: 12 }}>
-          <option value="">{t("filterStatus")}</option>
-          <option value="confirmed">{t("status_confirmed")}</option>
-          <option value="declined">{t("status_declined")}</option>
-          <option value="no_reply_yet">{t("noReplyYet")}</option>
-          <option value="changed">{t("changedLately")}</option>
-        </select>
-        {(filter || filterEvent || search) && (
-          <button className="addnote" onClick={() => { setFilter(""); setFilterEvent(""); setSearch(""); }}>{t("clearFilters")}</button>
-        )}
+        <button className="chip" aria-pressed={pendOnly} onClick={() => setPendOnly(!pendOnly)}>{t("noReplyYet")}</button>
+        <span style={{ flex: 1 }} />
+        <button className="btn ghost sm" onClick={() => openEventForm()}>{t("addEvent")}</button>
       </div>
+
+      {eventForm && eventEditor()}
 
       {/* ── the serial hand ── */}
       {selected.size > 0 && (
-        <div role="toolbar" aria-label={t("bulkTitle")} style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap", padding: "8px 10px", background: "var(--parchment)", border: "1px solid var(--line)", marginBottom: 10 }}>
+        <div role="toolbar" aria-label={t("bulkTitle")} className="toolrow" style={{ background: "var(--parchment)" }}>
           <span style={{ fontSize: 12.5 }}>{t("bulkCount", { n: selected.size })}</span>
-          <select defaultValue="" onChange={(e) => { if (e.target.value) bulkAct({ kind: "invite", eventId: e.target.value }); e.target.value = ""; }} aria-label={t("bulkInvite")} style={{ padding: "4px 6px", border: "1px solid var(--line)", background: "#fff", fontSize: 12 }}>
+          <select defaultValue="" onChange={(e) => { if (e.target.value) bulkAct({ kind: "invite", eventId: e.target.value }, t("toastInvited")); e.target.value = ""; }} aria-label={t("bulkInvite")} style={{ fontSize: 12, padding: "4px 6px" }}>
             <option value="">{t("bulkInvite")}</option>
             {events.map((ev) => <option key={ev.id} value={ev.id}>{ev.name}</option>)}
           </select>
-          <select defaultValue="" onChange={(e) => { if (e.target.value) bulkAct({ kind: "withdraw", eventId: e.target.value }); e.target.value = ""; }} aria-label={t("bulkWithdraw")} style={{ padding: "4px 6px", border: "1px solid var(--line)", background: "#fff", fontSize: 12 }}>
+          <select defaultValue="" onChange={(e) => { if (e.target.value) bulkAct({ kind: "withdraw", eventId: e.target.value }, t("toastWithdrawn")); e.target.value = ""; }} aria-label={t("bulkWithdraw")} style={{ fontSize: 12, padding: "4px 6px" }}>
             <option value="">{t("bulkWithdraw")}</option>
             {events.map((ev) => <option key={ev.id} value={ev.id}>{ev.name}</option>)}
           </select>
-          <select defaultValue="" onChange={(e) => { const [eventId, status] = e.target.value.split("|"); if (status) bulkAct({ kind: "status", eventId, status: status as GridStatus }); e.target.value = ""; }} aria-label={t("bulkStatus")} style={{ padding: "4px 6px", border: "1px solid var(--line)", background: "#fff", fontSize: 12 }}>
+          <select defaultValue="" onChange={(e) => { const [eventId, status] = e.target.value.split("|"); if (status) bulkAct({ kind: "status", eventId, status: status as GridStatus }, t("toastStatusSet")); e.target.value = ""; }} aria-label={t("bulkStatus")} style={{ fontSize: 12, padding: "4px 6px" }}>
             <option value="">{t("bulkStatus")}</option>
             {events.map((ev) => (
               <optgroup key={ev.id} label={ev.name}>
-                {(["confirmed", "declined", "no_reply", "invited"] as GridStatus[]).map((s) => (
+                {(["attending", "declined", "pending"] as GridStatus[]).map((s) => (
                   <option key={s} value={`${ev.id}|${s}`}>{t(`status_${s}`)}</option>
                 ))}
               </optgroup>
@@ -275,80 +290,98 @@ export function GuestGrid({
         </div>
       )}
 
-      {/* ── the matrix (hidden on a small screen) ── */}
-      <div className="gg-matrix" style={{ overflowX: "auto", maxHeight: 520, overflowY: "auto", border: "1px solid var(--line)" }}>
-        <table className="sheet-table" style={{ fontSize: 12.5, borderCollapse: "separate", borderSpacing: 0 }}>
+      {/* ── one event at a time, under 700 px ── */}
+      <div className="mobilebar">
+        <span className="smallcaps" style={{ color: "var(--ink2)", fontSize: 12, letterSpacing: ".14em", textTransform: "uppercase" }}>{t("eventWord")}</span>
+        <select value={activeEv} onChange={(e) => setActiveEv(e.target.value)} aria-label={t("eventWord")} style={{ flex: 1 }}>
+          {events.map((ev) => <option key={ev.id} value={ev.id}>{ev.name} · {dayLabel(ev)}</option>)}
+        </select>
+      </div>
+
+      {/* ── the matrix ── */}
+      <div className="tscroll" onKeyDown={onGridKey}>
+        <table ref={tableRef} className="grid-table" style={{ borderCollapse: "separate", borderSpacing: 0, width: "100%" }}>
           <thead>
             <tr>
-              <th style={{ position: "sticky", top: 0, left: 0, zIndex: 3, background: "var(--parchment)", minWidth: 210 }}>{t("colHousehold")}</th>
+              <th className="namecol" style={{ minWidth: 250 }}>{t("colHousehold")}</th>
               {events.map((ev) => (
-                <th key={ev.id} style={{ position: "sticky", top: 0, zIndex: 2, background: "var(--parchment)", textAlign: "center", minWidth: 72 }}>{ev.name}</th>
+                <th key={ev.id} className={`evc ${ev.id === activeEv ? "active" : ""}`}>
+                  <button className="addnote" onClick={() => openEventForm(ev)} title={t("editEvent")} style={{ display: "block", width: "100%", textAlign: "center" }}>
+                    <span style={{ display: "block", fontFamily: "var(--font-display)", fontSize: 18, fontWeight: 500, textTransform: "none", letterSpacing: 0, color: "var(--hunter)" }}>{ev.name}</span>
+                    <span style={{ fontSize: 11.5, color: "var(--ink2)", letterSpacing: ".08em" }}>{dayLabel(ev)}</span>
+                  </button>
+                </th>
               ))}
             </tr>
           </thead>
           <tbody>
-            {visible.map((g) => {
+            {visible.map((g, gi) => {
               const ps = byHousehold.get(g.id) ?? [];
               const open = expanded.has(g.id);
               const allSel = ps.length > 0 && ps.every((p) => selected.has(p.id));
               return (
                 <React.Fragment key={g.id}>
                   <tr>
-                    <td style={{ position: "sticky", left: 0, zIndex: 1, background: "var(--paper, #fff)", whiteSpace: "nowrap" }}>
+                    <td className="namecol">
                       <input
                         type="checkbox"
                         checked={allSel}
                         onChange={(e) => toggleSelect(ps.map((p) => p.id), e.target.checked)}
                         aria-label={t("selectHousehold")}
-                        style={{ marginRight: 6 }}
+                        style={{ marginRight: 8 }}
                       />
                       <button
-                        className="addnote"
+                        className="addnote caret"
                         onClick={() => setExpanded((prev) => { const n = new Set(prev); if (n.has(g.id)) n.delete(g.id); else n.add(g.id); return n; })}
                         aria-expanded={open}
-                        style={{ fontWeight: 500 }}
+                        aria-label={t("expand")}
+                        style={{ color: "var(--bronze)", marginRight: 6 }}
                       >
-                        {open ? "▾" : "▸"} {householdLabel(g)}
+                        {open ? "▾" : "▸"}
                       </button>
-                      <span style={{ marginLeft: 6, fontSize: 11, color: "var(--ink2)" }}>{t("personsCount", { n: ps.length })}</span>
+                      <span style={{ fontWeight: 500, color: "var(--hunter)" }}>{householdLabel(g)}</span>
                     </td>
-                    {events.map((ev) => {
-                      const invited = ps.filter((p) => st(p.id, ev.id) !== null);
-                      const conf = invited.filter((p) => st(p.id, ev.id) === "confirmed").length;
+                    {events.map((ev, ei) => {
+                      const cur = ps.map((p) => st(p.id, ev.id)).filter(Boolean) as GridStatus[];
+                      const a = cur.filter((s) => s === "attending").length;
+                      const label = !cur.length ? "—"
+                        : cur.every((s) => s === "declined") ? t("status_declined").toLowerCase()
+                        : a === cur.length ? `${cur.length} ✓`
+                        : a ? t("someOf", { a, n: cur.length })
+                        : t("status_pending").toLowerCase();
+                      const s: GridStatus | null = !cur.length ? null
+                        : cur.every((x) => x === "declined") ? "declined" : a ? "attending" : "pending";
                       return (
-                        <td key={ev.id} style={{ textAlign: "center", color: invited.length === 0 ? "var(--line)" : conf === invited.length ? "var(--hunter)" : "var(--ink2)" }}>
-                          {invited.length === 0 ? "—" : (
-                            <button className="addnote" onClick={() => setExpanded((prev) => new Set(prev).add(g.id))} title={t("aggregateHint")} style={{ color: "inherit", fontVariantNumeric: "tabular-nums" }}>
-                              {conf}/{invited.length}
-                            </button>
-                          )}
+                        <td key={ev.id} className={`evc ${ev.id === activeEv ? "active" : ""}`} style={{ textAlign: "center" }}>
+                          <button
+                            className="cellbtn"
+                            data-r={gi * 100} data-c={ei}
+                            disabled={pending}
+                            onClick={() => cycleHH(g, ev.id)}
+                            title={cur.length ? t("aggregateHint") : t("inviteHint")}
+                            aria-label={`${householdLabel(g)} — ${ev.name} — ${cur.length ? label : t("status_none")}`}
+                            style={{ ...cellStyle(s), width: "100%", minHeight: 32, fontVariantNumeric: "tabular-nums" }}
+                          >
+                            {label}
+                          </button>
                         </td>
                       );
                     })}
                   </tr>
-                  {open && ps.map((p, idx) => (
-                    <tr key={p.id} style={{ background: "var(--parchment)" }}>
-                      <td style={{ position: "sticky", left: 0, zIndex: 1, background: "var(--parchment)", paddingLeft: 34, whiteSpace: "nowrap" }}>
+                  {open && ps.map((p, pi) => (
+                    <tr key={p.id} className="pr" style={{ background: "var(--parchment)" }}>
+                      <td className="namecol" style={{ background: "var(--parchment)", paddingLeft: 34 }}>
                         <input
                           type="checkbox"
                           checked={selected.has(p.id)}
                           onChange={(e) => toggleSelect([p.id], e.target.checked)}
                           aria-label={t("selectPerson")}
-                          style={{ marginRight: 6 }}
+                          style={{ marginRight: 8 }}
                         />
-                        {editable(p, "full_name", personName(p, g, idx), true)}
-                        <select
-                          value={p.kind}
-                          disabled={pending}
-                          onChange={(e) => startTransition(async () => { await patchPerson(p.id, weddingId, "kind", e.target.value); router.refresh(); })}
-                          aria-label={t("personKind")}
-                          style={{ marginLeft: 8, padding: "2px 4px", border: "1px solid var(--line)", background: "#fff", fontSize: 11 }}
-                        >
-                          <option value="adult">{t("adult")}</option>
-                          <option value="child">{t("child")}</option>
-                        </select>
-                        <span style={{ marginLeft: 8, fontSize: 11.5 }}>
-                          {editable(p, "dietary", p.dietary || t("addDietary"), true)}
+                        {editable(p, "full_name", personName(p, g, pi))}
+                        {p.kind === "child" && <span style={{ marginLeft: 6, fontSize: 11, color: "var(--ink2)" }}>{t("child")}{p.age != null ? ` · ${p.age}` : ""}</span>}
+                        <span className="diet" style={{ fontSize: 12, color: "var(--bronze)", marginLeft: 8 }}>
+                          {editable(p, "dietary", p.dietary ? `· ${p.dietary}` : t("addDietary"))}
                         </span>
                         <button
                           className="addnote"
@@ -356,49 +389,65 @@ export function GuestGrid({
                           style={{ marginLeft: 8, color: "var(--bronze)" }}
                           title={t("removePerson")}
                           aria-label={t("removePerson")}
-                          onClick={() => { if (window.confirm(t("removePersonConfirm"))) startTransition(async () => { await removePerson(p.id, weddingId); router.refresh(); }); }}
+                          onClick={() => { if (window.confirm(t("removePersonConfirm"))) act(() => removePerson(p.id, weddingId), t("toastPersonRemoved")); }}
                         >
                           ✕
                         </button>
                       </td>
-                      {events.map((ev) => statusCell(p, ev.id))}
+                      {events.map((ev, ei) => {
+                        const s = st(p.id, ev.id);
+                        return (
+                          <td key={ev.id} className={`evc ${ev.id === activeEv ? "active" : ""}`} style={{ textAlign: "center" }}>
+                            <button
+                              className="cellbtn"
+                              data-r={gi * 100 + pi + 1} data-c={ei}
+                              disabled={pending}
+                              onClick={() => cycleP(p.id, ev.id)}
+                              title={s ? t("cycleHint") : t("inviteOneHint")}
+                              aria-label={`${personName(p, g, pi)} — ${ev.name} — ${s ? t(`status_${s}`) : t("status_none")}`}
+                              style={{ ...cellStyle(s), width: "100%", minHeight: 30 }}
+                            >
+                              {s ? t(`status_${s}`) : "—"}
+                            </button>
+                          </td>
+                        );
+                      })}
                     </tr>
                   ))}
                   {open && (
-                    <tr style={{ background: "var(--parchment)" }}>
-                      <td colSpan={events.length + 1} style={{ position: "sticky", left: 0, paddingLeft: 34 }}>
-                        <button
-                          className="addnote"
-                          disabled={pending}
-                          onClick={() => startTransition(async () => { await addPerson(weddingId, g.id); router.refresh(); })}
-                        >
+                    <tr className="pr" style={{ background: "var(--parchment)" }}>
+                      <td className="namecol" style={{ background: "var(--parchment)", paddingLeft: 34 }} colSpan={1}>
+                        <button className="addnote" disabled={pending} onClick={() => act(() => addPerson(weddingId, g.id), t("toastPersonAdded"))}>
                           + {t("addPerson")}
                         </button>
+                        <button className="addnote" disabled={pending} style={{ marginLeft: 10 }} onClick={() => act(() => addPerson(weddingId, g.id, "child"), t("toastPersonAdded"))}>
+                          + {t("addChild")}
+                        </button>
                       </td>
+                      {events.map((ev) => <td key={ev.id} className={`evc ${ev.id === activeEv ? "active" : ""}`} />)}
                     </tr>
                   )}
                 </React.Fragment>
               );
             })}
+            {!visible.length && (
+              <tr><td colSpan={events.length + 1} style={{ color: "var(--ink2)", fontStyle: "italic", padding: "14px 16px" }}>{t("emptyFilter")}</td></tr>
+            )}
           </tbody>
           <tfoot>
             <tr>
-              <td style={{ position: "sticky", left: 0, bottom: 0, zIndex: 3, background: "var(--parchment)", fontSize: 11.5 }}>{t("footCounts")}</td>
+              <td className="namecol" style={{ background: "var(--parchment)" }}>
+                <span className="smallcaps" style={{ fontSize: 12, letterSpacing: ".14em", textTransform: "uppercase", color: "var(--ink2)" }}>{t("theCount")}</span>
+              </td>
               {events.map((ev) => {
-                const f = foot(ev.id);
+                const f = feet(ev.id);
+                const roll = [...f.diets].map(([k, v]) => `${k} ${v}`).join(" · ");
                 return (
-                  <td key={ev.id} style={{ position: "sticky", bottom: 0, zIndex: 2, background: "var(--parchment)", textAlign: "center", fontSize: 11.5, whiteSpace: "nowrap" }}>
-                    <span style={{ color: "var(--hunter)", fontWeight: 600 }}>{f.confirmed}</span>
-                    {" · "}
-                    <span title={t("awaiting")}>{f.awaiting}</span>
-                    {" · "}
-                    <span style={{ color: "var(--bronze)" }}>{f.declined}</span>
-                    <div style={{ color: "var(--ink2)" }}>{t("covers", { adults: f.adults, children: f.children })}</div>
-                    {f.diets.size > 0 && (
-                      <div style={{ color: "var(--ink2)", maxWidth: 130, whiteSpace: "normal" }}>
-                        {[...f.diets].map(([d, n]) => `${d} ${n}`).join(" · ")}
-                      </div>
-                    )}
+                  <td key={ev.id} className={`evc ${ev.id === activeEv ? "active" : ""}`}>
+                    <b style={{ color: "var(--hunter)", fontWeight: 500 }}>{f.a}</b> {t("status_attending").toLowerCase()} · {f.p} {t("status_pending").toLowerCase()} · {f.d} {t("status_declined").toLowerCase()}
+                    <br />
+                    <b style={{ color: "var(--hunter)", fontWeight: 500 }}>{f.covers}</b> {t("coversWord")}
+                    {roll && <span className="roll" style={{ display: "block", color: "var(--bronze)", fontSize: 12, marginTop: 3 }}>{roll}</span>}
                   </td>
                 );
               })}
@@ -407,52 +456,75 @@ export function GuestGrid({
         </table>
       </div>
 
-      {/* ── one event at a time — the small-screen view ── */}
-      <div className="gg-event">
-        <select value={mobileEvent} onChange={(e) => setMobileEvent(e.target.value)} aria-label={t("filterEvent")} style={{ padding: "6px 8px", border: "1px solid var(--line)", background: "#fff", fontSize: 13, marginBottom: 10, width: "100%" }}>
-          {events.map((ev) => <option key={ev.id} value={ev.id}>{ev.name}</option>)}
-        </select>
-        {(() => {
-          const f = foot(mobileEvent);
-          return (
-            <p style={{ fontSize: 12.5, color: "var(--ink2)", margin: "0 0 10px" }}>
-              <span style={{ color: "var(--hunter)", fontWeight: 600 }}>{f.confirmed}</span> {t("status_confirmed").toLowerCase()} · {f.awaiting} {t("awaiting").toLowerCase()} · {f.declined} {t("status_declined").toLowerCase()} — {t("covers", { adults: f.adults, children: f.children })}
-              {f.diets.size > 0 && <> — {[...f.diets].map(([d, n]) => `${d} ${n}`).join(" · ")}</>}
-            </p>
-          );
-        })()}
-        {visible.map((g) => {
-          const ps = (byHousehold.get(g.id) ?? []).filter((p) => st(p.id, mobileEvent) !== null);
-          if (!ps.length) return null;
-          return (
-            <div key={g.id} style={{ borderTop: "1px solid var(--line)", padding: "8px 0" }}>
-              <div style={{ fontSize: 13, fontWeight: 500 }}>{householdLabel(g)}</div>
-              {ps.map((p, idx) => (
-                <div key={p.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, padding: "3px 0 3px 12px" }}>
-                  <span style={{ fontSize: 12.5 }}>{personName(p, g, idx)}</span>
-                  {statusCellInline(p, mobileEvent)}
-                </div>
-              ))}
-            </div>
-          );
-        })}
+      {/* ── the legend ── */}
+      <div className="toolrow" style={{ borderTop: "1px solid var(--line)", borderBottom: 0, fontSize: 13, color: "var(--ink2)" }}>
+        <span>
+          <span style={{ color: "var(--hunter)", fontWeight: 500 }}>{t("status_attending")}</span>
+          {" · "}
+          <span style={{ color: "var(--bronze)" }}>{t("status_pending")}</span>
+          {" · "}
+          <span style={{ color: "var(--dec, #9c9483)", textDecoration: "line-through" }}>{t("status_declined")}</span>
+          {" · — "}{t("status_none").toLowerCase()}. {t("legend")}
+        </span>
       </div>
     </div>
   );
 
-  function statusCellInline(p: GuestPerson, eventId: string) {
-    const s = st(p.id, eventId);
-    const label = s ? t(`status_${s}`) : t("status_none");
+  function eventEditor() {
+    if (!eventForm) return null;
+    const set = (k: keyof EventFields, v: string | number | null) =>
+      setEventForm({ ...eventForm, f: { ...eventForm.f, [k]: v } });
+    const F = eventForm.f;
+    const input = (k: keyof EventFields, label: string, type = "text", width = 150) => (
+      <label style={{ fontSize: 12, color: "var(--ink2)", display: "flex", flexDirection: "column", gap: 3 }}>
+        {label}
+        <input
+          type={type}
+          value={(F[k] as string | number | null) ?? ""}
+          onChange={(e) => set(k, type === "number" ? (e.target.value === "" ? null : +e.target.value) : e.target.value)}
+          style={{ width, fontSize: 13, padding: "5px 8px" }}
+        />
+      </label>
+    );
     return (
-      <button
-        className="addnote"
-        disabled={pending}
-        onClick={() => cycle(p.id, eventId)}
-        aria-label={`${label} — ${t("cycleHint")}`}
-        style={{ fontSize: 13, color: s ? GLYPH[s].color : "var(--line)" }}
-      >
-        {s ? `${GLYPH[s].ch} ${label}` : "—"}
-      </button>
+      <div className="toolrow" style={{ alignItems: "flex-end", background: "var(--parchment)" }}>
+        {input("name", t("evName"), "text", 170)}
+        {input("eventDate", t("evDate"), "date", 150)}
+        {input("startTime", t("evStart"), "time", 100)}
+        {input("venue", t("evVenue"), "text", 170)}
+        {input("dressCode", t("evDress"), "text", 130)}
+        {input("capacity", t("evCapacity"), "number", 90)}
+        {input("rsvpDeadline", t("evDeadline"), "date", 150)}
+        <button
+          className="btn sm"
+          disabled={pending || !F.name.trim()}
+          onClick={() =>
+            act(async () => {
+              if (eventForm.id) await updateWeddingEvent(weddingId, eventForm.id, F);
+              else await addWeddingEvent(weddingId, F);
+              setEventForm(null);
+            }, eventForm.id ? t("toastEventSaved") : t("toastEventAdded"))
+          }
+        >
+          {eventForm.id ? t("evSave") : t("evAdd")}
+        </button>
+        {eventForm.id && (
+          <button
+            className="btn ghost sm"
+            disabled={pending}
+            onClick={() => {
+              if (!window.confirm(t("evArchiveConfirm"))) return;
+              act(async () => {
+                await archiveWeddingEvent(weddingId, eventForm.id as string, true);
+                setEventForm(null);
+              }, t("toastEventArchived"));
+            }}
+          >
+            {t("evArchive")}
+          </button>
+        )}
+        <button className="btn ghost sm" onClick={() => setEventForm(null)}>{t("evCancel")}</button>
+      </div>
     );
   }
 }
