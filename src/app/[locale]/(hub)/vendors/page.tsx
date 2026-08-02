@@ -1,4 +1,5 @@
 import { getTranslations, setRequestLocale } from "next-intl/server";
+import { Link } from "@/i18n/navigation";
 import { requireHouseSession } from "@/lib/session";
 import { createClient } from "@/lib/supabase/server";
 import type { Vendor, VendorDocument } from "@/lib/types";
@@ -56,7 +57,16 @@ export default async function VendorsPage({
             <tbody>
               {allVendors.map((vendor) => (
                 <tr key={vendor.id}>
-                  <td>{vendor.name}</td>
+                  <td>
+                    {/* The name opens the vendor's own sheet — the card,
+                        the quote's lines, the papers, the departure. */}
+                    <Link
+                      href={`/budget/vendor/${vendor.id}`}
+                      style={{ textDecoration: "underline", textUnderlineOffset: 3, textDecorationColor: "var(--champagne)" }}
+                    >
+                      {vendor.name}
+                    </Link>
+                  </td>
                   <td>{vendor.category}</td>
                   <td>{stageTag(vendor.stage)}</td>
                   <td>
