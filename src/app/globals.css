@@ -334,6 +334,14 @@ body.client-view .team-only { display: none !important; }
 .client-preview { display: none; }
 body.client-view .client-preview { display: block; }
 
+/* The Grid bows out on a small screen for the one-event view —
+   never a crushed crosstab at 430 px (communication brief §2.5). */
+.gg-event { display: none; }
+@media (max-width: 520px) {
+  .gg-matrix { display: none; }
+  .gg-event { display: block; }
+}
+
 .hero-count { display: flex; align-items: baseline; gap: 14px; margin: 8px 0 4px; }
 .hero-count .serif { font-size: 88px; font-weight: 300; line-height: 1; }
 

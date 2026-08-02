@@ -354,3 +354,154 @@ export async function toggleGuestEvent(
   revalidatePath("/communication");
   return { ok: true as const };
 }
+
+/* ══════════ The grid — per person, per event (0024, §2.5) ══════════ */
+
+export type GridStatus = "invited" | "confirmed" | "declined" | "no_reply";
+
+/**
+ * One cell of the matrix: the person's word for one event. `null`
+ * withdraws the invitation — the cell closes its cycle empty.
+ */
+export async function setPersonEventStatus(
+  weddingId: string,
+  personId: string,
+  eventId: string,
+  status: GridStatus | null
+) {
+  await houseSession();
+  const supabase = await createClient();
+  let error = null;
+  if (status === null) {
+    ({ error } = await supabase
+      .from("person_event_status")
+      .delete()
+      .eq("person_id", personId)
+      .eq("event_id", eventId)
+      .eq("wedding_id", weddingId));
+  } else {
+    ({ error } = await supabase.from("person_event_status").upsert({
+      person_id: personId,
+      event_id: eventId,
+      wedding_id: weddingId,
+      status,
+      updated_at: new Date().toISOString()
+    }));
+  }
+  revalidatePath("/communication");
+  return { ok: !error };
+}
+
+/**
+ * A person joins the household — and inherits the events their
+ * household is already invited to, awaiting their own word.
+ */
+export async function addPerson(
+  weddingId: string,
+  householdId: string,
+  kind: "adult" | "child" = "adult"
+) {
+  await houseSession();
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("guest_persons")
+    .insert({ wedding_id: weddingId, household_id: householdId, kind })
+    .select("id")
+    .single();
+  if (error || !data) return { ok: false as const };
+  const { data: siblings } = await supabase
+    .from("guest_persons")
+    .select("id")
+    .eq("household_id", householdId)
+    .neq("id", data.id);
+  if (siblings?.length) {
+    const { data: sibEvents } = await supabase
+      .from("person_event_status")
+      .select("event_id")
+      .in("person_id", siblings.map((s) => s.id));
+    const eventIds = [...new Set((sibEvents ?? []).map((e) => e.event_id))];
+    if (eventIds.length) {
+      await supabase.from("person_event_status").upsert(
+        eventIds.map((event_id) => ({
+          person_id: data.id,
+          event_id,
+          wedding_id: weddingId,
+          status: "invited"
+        }))
+      );
+    }
+  }
+  revalidatePath("/communication");
+  return { ok: true as const, id: data.id as string };
+}
+
+const PERSON_FIELDS = new Set(["full_name", "dietary", "kind"]);
+
+/** The person's own line: a name arriving, a regime, adult or child. */
+export async function patchPerson(
+  personId: string,
+  weddingId: string,
+  field: string,
+  value: string | null
+) {
+  await houseSession();
+  if (!PERSON_FIELDS.has(field)) return { ok: false as const };
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("guest_persons")
+    .update({ [field]: value === "" ? null : value })
+    .eq("id", personId)
+    .eq("wedding_id", weddingId);
+  revalidatePath("/communication");
+  return { ok: !error };
+}
+
+/** A person leaves the household; their replies leave with them. */
+export async function removePerson(personId: string, weddingId: string) {
+  await houseSession();
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("guest_persons")
+    .delete()
+    .eq("id", personId)
+    .eq("wedding_id", weddingId);
+  revalidatePath("/communication");
+  return { ok: !error };
+}
+
+/**
+ * The serial hand on the grid: many persons, one gesture — invite to
+ * an event, withdraw from it, or set one status across the selection.
+ */
+export async function bulkGrid(
+  weddingId: string,
+  personIds: string[],
+  action:
+    | { kind: "invite"; eventId: string }
+    | { kind: "withdraw"; eventId: string }
+    | { kind: "status"; eventId: string; status: GridStatus }
+) {
+  await houseSession();
+  if (!personIds.length) return { ok: true as const };
+  const supabase = await createClient();
+  if (action.kind === "withdraw") {
+    await supabase
+      .from("person_event_status")
+      .delete()
+      .eq("event_id", action.eventId)
+      .eq("wedding_id", weddingId)
+      .in("person_id", personIds);
+  } else {
+    await supabase.from("person_event_status").upsert(
+      personIds.map((person_id) => ({
+        person_id,
+        event_id: action.eventId,
+        wedding_id: weddingId,
+        status: action.kind === "status" ? action.status : "invited",
+        updated_at: new Date().toISOString()
+      }))
+    );
+  }
+  revalidatePath("/communication");
+  return { ok: true as const };
+}

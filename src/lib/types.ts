@@ -321,6 +321,27 @@ export interface Guest {
 
 export type Rsvp = "pending" | "confirmed" | "declined";
 
+/** A person inside a household — who attends and eats (migration 0024). */
+export interface GuestPerson {
+  id: string;
+  wedding_id: string;
+  household_id: string;
+  full_name: string | null;
+  kind: "adult" | "child";
+  dietary: string | null;
+  sort: number;
+  created_at?: string;
+}
+
+/** The person's word for one event — never a stored global (0024). */
+export interface PersonEventStatus {
+  person_id: string;
+  event_id: string;
+  wedding_id: string;
+  status: "invited" | "confirmed" | "declined" | "no_reply";
+  updated_at?: string;
+}
+
 export interface GuestEvent {
   guest_id: string;
   event_id: string;

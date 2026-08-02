@@ -1,10 +1,14 @@
 import { getTranslations, setRequestLocale, getFormatter } from "next-intl/server";
 import { requireHouseSession } from "@/lib/session";
 import { createClient } from "@/lib/supabase/server";
-import type { Correspondence, Guest, GuestEvent, HotelBlock, WeddingEvent } from "@/lib/types";
+import type {
+  Correspondence, Guest, GuestEvent, GuestPerson, HotelBlock,
+  PersonEventStatus, WeddingEvent
+} from "@/lib/types";
 import { HotelDesk, OpenRoomingButton } from "./communication-client";
 import { AddGuestForm, GuestList, StationerReview } from "./guests-client";
 import { GuestSheet } from "./guest-sheet";
+import { GuestGrid } from "./guest-grid";
 
 /**
  * Wedding Communication — one page for the whole conversation with
@@ -34,7 +38,9 @@ export default async function WeddingCommunicationPage({
     { data: roomingState },
     { data: events },
     { data: guests },
-    { data: guestEvents }
+    { data: guestEvents },
+    { data: gridPersons, error: personsError },
+    { data: gridStatuses }
   ] = await Promise.all([
     supabase
       .from("correspondence")
@@ -45,12 +51,19 @@ export default async function WeddingCommunicationPage({
     supabase.from("rooming_list_state").select("*").eq("wedding_id", wedding.id).maybeSingle(),
     supabase.from("wedding_events").select("*").eq("wedding_id", wedding.id).order("sort"),
     supabase.from("guests").select("*").eq("wedding_id", wedding.id).order("created_at"),
-    supabase.from("guest_events").select("*").eq("wedding_id", wedding.id)
+    supabase.from("guest_events").select("*").eq("wedding_id", wedding.id),
+    // Pre-0024 these tables are absent — the sheet keeps working, the
+    // grid simply does not show.
+    supabase.from("guest_persons").select("*").eq("wedding_id", wedding.id),
+    supabase.from("person_event_status").select("*").eq("wedding_id", wedding.id)
   ]);
 
   const allEvents = (events ?? []) as WeddingEvent[];
   const allGuests = (guests ?? []) as Guest[];
   const links = (guestEvents ?? []) as GuestEvent[];
+  const gridReady = !personsError;
+  const personsAll = (gridPersons ?? []) as GuestPerson[];
+  const statusesAll = (gridStatuses ?? []) as PersonEventStatus[];
   const letters = (correspondence ?? []) as Correspondence[];
   const opened = roomingState?.opened ?? false;
 
@@ -140,6 +153,15 @@ export default async function WeddingCommunicationPage({
       {session.isTeam ? (
         <>
           <GuestSheet weddingId={wedding.id} guests={allGuests} events={allEvents} links={links} />
+          {gridReady && (
+            <GuestGrid
+              weddingId={wedding.id}
+              events={allEvents}
+              households={allGuests}
+              persons={personsAll}
+              statuses={statusesAll}
+            />
+          )}
           <div className="client-preview">
             <GuestList
               weddingId={wedding.id}
