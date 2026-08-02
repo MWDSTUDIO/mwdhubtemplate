@@ -194,7 +194,7 @@ where hb.active
 
 -- ── C5 · the correspondence register, linked to the Timeline ────────
 alter table correspondence
-  add column if not exists milestone_id uuid references milestones on delete set null;
+  add column if not exists milestone_id uuid references timeline_milestones on delete set null;
 alter table weddings
   add column if not exists comm_note text,
   add column if not exists comm_note_status text not null default 'draft'

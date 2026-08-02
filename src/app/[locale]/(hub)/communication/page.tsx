@@ -62,7 +62,7 @@ export default async function WeddingCommunicationPage({
     // grid simply shows its patience.
     supabase.from("guest_persons").select("*").eq("wedding_id", wedding.id),
     supabase.from("person_event_status").select("*").eq("wedding_id", wedding.id),
-    supabase.from("milestones").select("*").eq("wedding_id", wedding.id).order("sort"),
+    supabase.from("timeline_milestones").select("*").eq("wedding_id", wedding.id).order("sort"),
     // Pre-0025 these are absent — the lot-C instruments wait quietly.
     supabase.from("event_counts_given").select("*").eq("wedding_id", wedding.id).order("created_at", { ascending: false }),
     supabase.from("guest_change_proposals").select("*").eq("wedding_id", wedding.id).eq("status", "proposed").order("created_at"),
