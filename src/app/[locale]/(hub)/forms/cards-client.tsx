@@ -290,14 +290,17 @@ export function FormsDesk({
           {visible.map((f) => (
             <div
               key={f.id}
-              style={{ position: "relative", opacity: f.archived ? 0.55 : 1 }}
+              style={{ position: "relative" }}
               draggable={!asClient}
               onDragStart={() => { dragId.current = f.id; }}
               onDragOver={(e) => e.preventDefault()}
               onDrop={() => void onDrop(f.id)}
             >
               <div className="planche" style={{ cursor: "default" }}>
-                <div className="visu">
+                {/* Archived cards dim their face, never their menu — an
+                    opacity on the wrapper would trap the dropdown below
+                    the neighbouring cards' stacking order. */}
+                <div className="visu" style={f.archived ? { opacity: 0.55 } : undefined}>
                   {covers[f.id] ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img src={covers[f.id]} alt="" style={f.cover_focal ? { objectPosition: f.cover_focal } : undefined} />
@@ -306,7 +309,7 @@ export function FormsDesk({
                   )}
                 </div>
                 <div className="body">
-                  <h3>{f.title}</h3>
+                  <h3 style={f.archived ? { color: "var(--ink2)" } : undefined}>{f.title}</h3>
                   {(f.description || f.category_id) && (
                     <div className="sub">
                       {[f.category_id ? catName.get(f.category_id) : null, f.description].filter(Boolean).join(" · ")}
