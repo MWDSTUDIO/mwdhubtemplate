@@ -75,6 +75,21 @@ export async function setPaymentStatus(paymentId: string, status: string) {
     from: (payment as { status?: string }).status ?? (payment.paid_at ? "confirmed" : "expected"),
     to: status
   });
+  // The Timeline reflects the settlement (PRD Timeline §14) — one
+  // anchored milestone per movement; Budget stays the source of truth.
+  if (status === "confirmed" || status === "reversed") {
+    const { syncModuleMilestone } = await import("@/lib/timeline-sync");
+    await syncModuleMilestone(supabase, {
+      weddingId: payment.wedding_id,
+      source: "budget",
+      sourceId: paymentId,
+      label: `${payment.label} — ${status === "confirmed" ? "settled" : "reversed"}`,
+      date: (payment.paid_at as string | null) ?? new Date().toISOString().slice(0, 10),
+      done: status === "confirmed",
+      module: "budget",
+      budgetLineId: payment.budget_line_id ?? null
+    });
+  }
   revalidateRooms("budget");
   return { ok: true as const };
 }

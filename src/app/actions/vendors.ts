@@ -179,6 +179,22 @@ export async function setVendorStage(vendorId: string, stage: VendorStage) {
     await logActivity(supabase, vendor.wedding_id, session.profile.full_name, "vendor_stage", {
       vendor: vendor.name, from: vendor.stage, to: stage
     });
+    // The Timeline reflects the relationship's turning points (PRD
+    // Timeline §15) — one anchored milestone per vendor, updated in
+    // place; Vendors stays the source of truth.
+    if (["shortlisted", "contracted", "completed", "archived"].includes(stage)) {
+      const { syncModuleMilestone } = await import("@/lib/timeline-sync");
+      await syncModuleMilestone(supabase, {
+        weddingId: vendor.wedding_id,
+        source: "vendor",
+        sourceId: vendorId,
+        label: `${vendor.name} — ${stage}`,
+        date: new Date().toISOString().slice(0, 10),
+        done: stage === "contracted" || stage === "completed",
+        module: "vendors",
+        vendorId
+      });
+    }
   }
 
   // Booked is the act that opens the budget line — never by hand.

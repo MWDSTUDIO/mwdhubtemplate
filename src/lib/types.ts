@@ -203,6 +203,33 @@ export interface Attention {
   milestone_id: string | null;
   /** A document to sign, a page to visit (migration 0010). */
   link_url?: string | null;
+  /** Enhanced attentions (migration 0029). */
+  urgency?: "high" | "standard";
+  owner?: string | null;
+  module?: string | null;
+  snoozed_until?: string | null;
+  dismissed?: boolean;
+}
+
+/** The operational life of a milestone — a separate team-only table
+    (migration 0029), so the couple's API never carries it. */
+export interface MilestoneOps {
+  milestone_id: string;
+  wedding_id: string;
+  op_status: "draft" | "planned" | "waiting" | "in_progress" | "blocked" | "ready" | "completed" | "archived";
+  priority: "high" | "standard";
+  owner: string | null;
+  description: string | null;
+  due_date: string | null;
+  depends_on: string | null;
+  module: string | null;
+  vendor_id: string | null;
+  budget_line_id: string | null;
+  document_id: string | null;
+  ceremony_id: string | null;
+  note_internal: string | null;
+  source: string | null;
+  source_id: string | null;
 }
 
 export interface InternalTask {

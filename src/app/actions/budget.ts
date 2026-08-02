@@ -826,6 +826,22 @@ export async function markPaymentPaid(paymentId: string, paidAt: string | null) 
     }
   }
 
+  // The Timeline reflects the settlement (PRD Timeline §14) — one
+  // anchored milestone per movement, updated in place.
+  if (payment) {
+    const { syncModuleMilestone } = await import("@/lib/timeline-sync");
+    await syncModuleMilestone(supabase, {
+      weddingId: payment.wedding_id,
+      source: "budget",
+      sourceId: paymentId,
+      label: `${payment.label} — ${paidAt ? "settled" : "expected"}`,
+      date: paidAt ?? payment.due_date ?? new Date().toISOString().slice(0, 10),
+      done: Boolean(paidAt),
+      module: "budget",
+      budgetLineId: payment.budget_line_id ?? null
+    });
+  }
+
   // The line's "paid" follows its settled instalments (EUR
   // equivalent) — confirmed movements only, refunds subtracting (§12).
   if (payment?.budget_line_id) {

@@ -36,18 +36,35 @@ async function syncMilestone(
     const label = `Ceremony — ${c.title || c.kind}`;
     const status = c.status === "published" || c.status === "completed" ? "published" : "draft";
     const done = c.status === "completed";
-    if (c.milestone_id) {
+    let milestoneId = c.milestone_id as string | null;
+    if (milestoneId) {
       await supabase
         .from("timeline_milestones")
         .update({ month, label, status, done })
-        .eq("id", c.milestone_id);
+        .eq("id", milestoneId);
     } else {
       const { data: m } = await supabase
         .from("timeline_milestones")
         .insert({ wedding_id: c.wedding_id, month, label, status, done, sort: 0 })
         .select("id")
         .single();
-      if (m) await supabase.from("ceremonies").update({ milestone_id: m.id }).eq("id", ceremonyId);
+      milestoneId = m?.id ?? null;
+      if (milestoneId) await supabase.from("ceremonies").update({ milestone_id: milestoneId }).eq("id", ceremonyId);
+    }
+    // The Timeline's operational side keeps the anchor (0029) — the
+    // same ceremony always speaks to the same milestone.
+    if (milestoneId) {
+      await supabase.from("milestone_ops").upsert({
+        milestone_id: milestoneId,
+        wedding_id: c.wedding_id,
+        op_status: done ? "completed" : "planned",
+        due_date: c.ceremony_date,
+        module: "ceremony",
+        source: "ceremony",
+        source_id: ceremonyId,
+        ceremony_id: ceremonyId,
+        updated_at: new Date().toISOString()
+      });
     }
     revalidatePath("/timeline");
   } catch {

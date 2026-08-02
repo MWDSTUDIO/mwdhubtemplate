@@ -1,10 +1,10 @@
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { requireHouseSession } from "@/lib/session";
 import { createClient } from "@/lib/supabase/server";
-import { Frise } from "@/components/Frise";
+import { Frise, type FrisePickers } from "@/components/Frise";
 import { MonthlyNotes } from "@/components/MonthlyNotes";
 import { Attentions } from "@/components/Attentions";
-import type { Attention, InternalTask, Milestone, MonthlyNote } from "@/lib/types";
+import type { Attention, InternalTask, Milestone, MilestoneOps, MonthlyNote } from "@/lib/types";
 
 export default async function TimelinePage({
   params
@@ -52,6 +52,29 @@ export default async function TimelinePage({
         : Promise.resolve({ data: [] as InternalTask[] })
     ]);
 
+  // The operational side and the reference pickers — team material,
+  // absent before 0029: the page keeps its manners.
+  let ops: Record<string, MilestoneOps> = {};
+  let pickers: FrisePickers = { vendors: [], lines: [], documents: [], ceremonies: [] };
+  if (session.isTeam) {
+    const [opsRes, vendorsRes, linesRes, docsRes, cerRes] = await Promise.all([
+      supabase.from("milestone_ops").select("*").eq("wedding_id", wedding.id),
+      supabase.from("vendors").select("id, name").eq("wedding_id", wedding.id).order("name"),
+      supabase.from("budget_lines").select("id, label").eq("wedding_id", wedding.id).order("sort"),
+      supabase.from("documents").select("id, label").eq("wedding_id", wedding.id).order("created_at", { ascending: false }),
+      supabase.from("ceremonies").select("id, kind, title").eq("wedding_id", wedding.id).order("sort")
+    ]);
+    for (const o of ((opsRes as { data: unknown }).data ?? []) as MilestoneOps[]) ops[o.milestone_id] = o;
+    pickers = {
+      vendors: ((vendorsRes as { data: unknown }).data ?? []) as { id: string; name: string }[],
+      lines: ((linesRes as { data: unknown }).data ?? []) as { id: string; label: string }[],
+      documents: ((docsRes as { data: unknown }).data ?? []) as { id: string; label: string }[],
+      ceremonies: (((cerRes as { data: unknown }).data ?? []) as { id: string; kind: string; title: string | null }[]).map(
+        (c) => ({ id: c.id, label: c.title || c.kind })
+      )
+    };
+  }
+
   const allNotes = (notes ?? []) as MonthlyNote[];
   const current =
     allNotes.filter((n) => n.composed_text && n.month <= currentKey).at(-1) ?? null;
@@ -67,6 +90,8 @@ export default async function TimelinePage({
 
       <Frise
         milestones={(milestones ?? []) as Milestone[]}
+        ops={ops}
+        pickers={pickers}
         weddingId={wedding.id}
         isTeam={session.isTeam}
       />
