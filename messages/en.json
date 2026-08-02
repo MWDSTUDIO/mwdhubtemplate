@@ -375,7 +375,8 @@
       "headCommitted": "Committed",
       "headStillToPlace": "Still to place",
       "envNamePh": "The category's name",
-      "renameHint": "Every name here is yours — write straight into it, add one, remove one; the whole scope saves in one word."
+      "renameHint": "Every name here is yours — write straight into it, add one, remove one; the whole scope saves in one word.",
+      "beyondAlert": "{amount} committed outside every category — the Ledger and the House Book hold the gesture to place them."
     },
     "master": {
       "unfold": "Unfold ({count})",
@@ -602,7 +603,10 @@
       "acceptSelection": "Accept the selection as drafts",
       "dismiss": "Set aside",
       "dismissConfirm": "Set this reading aside? The paper stays filed; the budget stays untouched.",
-      "draftNote": "Everything lands as drafts — the couple sees nothing before you publish."
+      "draftNote": "Everything lands as drafts — the couple sees nothing before you publish.",
+      "landIn": "Lands in",
+      "landNone": "Beyond the envelopes",
+      "landHint": "Choose a category — or leave it beyond, knowingly."
     },
     "views": {
       "switch": "Choose your reading",
@@ -675,7 +679,16 @@
       "fxNeedsMigration": "Run migration 0017 before rates can be held.",
       "fxBadRate": "A rate is a positive number and a named source.",
       "vendor": "Vendor",
-      "noVendor": "No vendor attached"
+      "noVendor": "No vendor attached",
+      "beyondBand": "{amount} committed outside the envelopes — give each line its home below.",
+      "placeInto": "Place into",
+      "placePick": "Choose a category…",
+      "splitOpen": "Split into another category",
+      "splitInto": "Into",
+      "splitAmountPh": "Amount",
+      "splitGo": "Split",
+      "splitCancel": "Never mind",
+      "splitTooMuch": "At most {amount} — the line's committed."
     },
     "bar": {
       "aria": "Where the budget stands",
@@ -1325,7 +1338,8 @@
     "unpublish": "Take back",
     "reverted": "taken back",
     "journalFxRate": "held an exchange rate",
-    "journalFxGap": "recorded a realized exchange difference"
+    "journalFxGap": "recorded a realized exchange difference",
+    "homelessWarn": "{n, plural, one {# line has} other {# lines have}} no category — the couple would read them under “Beyond the envelopes”. Placing them first keeps the book clean; publishing anyway remains your word."
   },
   "help": {
     "title": "The keys",

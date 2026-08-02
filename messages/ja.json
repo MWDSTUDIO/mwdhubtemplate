@@ -375,7 +375,8 @@
       "headCommitted": "契約済み",
       "headStillToPlace": "残り",
       "envNamePh": "区分の名前",
-      "renameHint": "ここにある名はすべて御手の内に——直に書き換え、加え、外せます。区分全体はひと言で保存されます。"
+      "renameHint": "ここにある名はすべて御手の内に——直に書き換え、加え、外せます。区分全体はひと言で保存されます。",
+      "beyondAlert": "{amount} の約定がどの区分にも属しておりません——Ledger と House Book にて納める所作がございます。"
     },
     "master": {
       "unfold": "ひらく（{count}）",
@@ -602,7 +603,10 @@
       "acceptSelection": "選択分を下書きとして承認",
       "dismiss": "見送る",
       "dismissConfirm": "この読み取りを見送りますか?資料は保管されたまま、予算には触れません。",
-      "draftNote": "すべて下書きとして収まります——公開まで、お二人には何も見えません。"
+      "draftNote": "すべて下書きとして収まります——公開まで、お二人には何も見えません。",
+      "landIn": "納める先",
+      "landNone": "区分の外",
+      "landHint": "区分をお選びください——承知の上で外に置くこともできます。"
     },
     "views": {
       "switch": "読み方を選ぶ",
@@ -675,7 +679,16 @@
       "fxNeedsMigration": "レートの保持にはマイグレーション 0017 をお願いいたします。",
       "fxBadRate": "レートは正の数と、名前のある出所でございます。",
       "vendor": "お相手",
-      "noVendor": "お相手の紐づけなし"
+      "noVendor": "お相手の紐づけなし",
+      "beyondBand": "{amount} の約定が区分の外にございます——下で各行に住まいをお与えくださいませ。",
+      "placeInto": "納める先",
+      "placePick": "区分を選ぶ……",
+      "splitOpen": "別の区分へ振り分ける",
+      "splitInto": "先",
+      "splitAmountPh": "金額",
+      "splitGo": "振り分ける",
+      "splitCancel": "そのままに",
+      "splitTooMuch": "多くとも {amount}——この行の約定額まで。"
     },
     "bar": {
       "aria": "ご予算の現在地",
@@ -1325,7 +1338,8 @@
     "unpublish": "取り下げる",
     "reverted": "取り下げ済み",
     "journalFxRate": "為替レートを保持しました",
-    "journalFxGap": "実現為替差額を記帳しました"
+    "journalFxGap": "実現為替差額を記帳しました",
+    "homelessWarn": "{n, plural, other {# 行}}が区分を持ちません——御二人には「区分の外」として映ります。先に納めれば帳面は整い、そのまま公開するのも御言葉のままに。"
   },
   "help": {
     "title": "キーのご案内",

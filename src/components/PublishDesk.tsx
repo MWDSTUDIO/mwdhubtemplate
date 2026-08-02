@@ -218,6 +218,12 @@ export function PublishDesk({ weddingId }: { weddingId: string }) {
                 </>
               )}
 
+              {budget && s.homelessLines > 0 && (
+                <p role="alert" style={{ fontSize: 12.5, color: "var(--bronze)", margin: "10px 0 0" }}>
+                  {t("homelessWarn", { n: s.homelessLines })}
+                </p>
+              )}
+
               <hr className="hair" style={{ margin: "16px 0" }} />
 
               {!confirming && (

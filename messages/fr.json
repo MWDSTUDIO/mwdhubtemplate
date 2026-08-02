@@ -375,7 +375,8 @@
       "headCommitted": "Engagé",
       "headStillToPlace": "Encore à placer",
       "envNamePh": "Le nom de la catégorie",
-      "renameHint": "Chaque nom ici est à vous — écrivez directement dedans, ajoutez, retirez ; tout le scope se garde d'un seul geste."
+      "renameHint": "Chaque nom ici est à vous — écrivez directement dedans, ajoutez, retirez ; tout le scope se garde d'un seul geste.",
+      "beyondAlert": "{amount} engagés hors de toute catégorie — le Ledger et le House Book portent le geste pour les placer."
     },
     "master": {
       "unfold": "Déplier ({count})",
@@ -602,7 +603,10 @@
       "acceptSelection": "Accepter la sélection en brouillon",
       "dismiss": "Écarter",
       "dismissConfirm": "Écarter cette lecture ? Le document reste classé ; le budget reste intact.",
-      "draftNote": "Tout arrive en brouillon — le couple ne voit rien avant votre publication."
+      "draftNote": "Tout arrive en brouillon — le couple ne voit rien avant votre publication.",
+      "landIn": "Atterrit dans",
+      "landNone": "Hors catégories",
+      "landHint": "Choisissez une catégorie — ou laissez hors catégories, en connaissance."
     },
     "views": {
       "switch": "Choisir sa lecture",
@@ -675,7 +679,16 @@
       "fxNeedsMigration": "Lancez la migration 0017 avant de tenir un taux.",
       "fxBadRate": "Un taux est un nombre positif et une source nommée.",
       "vendor": "Prestataire",
-      "noVendor": "Aucun prestataire rattaché"
+      "noVendor": "Aucun prestataire rattaché",
+      "beyondBand": "{amount} engagés hors catégories — donnez un domicile à chaque ligne ci-dessous.",
+      "placeInto": "Placer dans",
+      "placePick": "Choisir une catégorie…",
+      "splitOpen": "Ventiler vers une autre catégorie",
+      "splitInto": "Vers",
+      "splitAmountPh": "Montant",
+      "splitGo": "Ventiler",
+      "splitCancel": "Laisser ainsi",
+      "splitTooMuch": "Au plus {amount} — l'engagé de la ligne."
     },
     "bar": {
       "aria": "Où en est le budget",
@@ -1325,7 +1338,8 @@
     "unpublish": "Reprendre",
     "reverted": "reprise",
     "journalFxRate": "a tenu un taux de change",
-    "journalFxGap": "a consigné un écart de change réalisé"
+    "journalFxGap": "a consigné un écart de change réalisé",
+    "homelessWarn": "{n, plural, one {# ligne est} other {# lignes sont}} sans catégorie — le couple les lirait sous « Beyond the envelopes ». Les placer d'abord garde le livre net ; publier quand même reste votre mot."
   },
   "help": {
     "title": "Les touches",

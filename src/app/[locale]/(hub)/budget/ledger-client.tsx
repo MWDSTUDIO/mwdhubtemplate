@@ -13,6 +13,7 @@ import {
   restoreBudgetLine,
   setLineEnvelope,
   setLineVendor,
+  splitBudgetLine,
   saveLineItem,
   deleteLineItem
 } from "@/app/actions/budget";
@@ -372,8 +373,12 @@ function Ledger({
     return [...byEnv.entries()]
       .filter(([envId, ps]) => envId !== "" || ps.length > 0 || isTeam)
       .sort((a, b) => {
-        if (a[0] === "") return 1;
-        if (b[0] === "") return -1;
+        // Homeless engagements never hide at the bottom (axe 1b): the
+        // Beyond group leads while it holds lines, trails when empty.
+        const aBeyond = a[0] === "";
+        const bBeyond = b[0] === "";
+        if (aBeyond) return a[1].length > 0 ? -1 : 1;
+        if (bBeyond) return b[1].length > 0 ? 1 : -1;
         return envLabel(a[0]).localeCompare(envLabel(b[0]));
       })
       .map(([envId, ps]) => ({
@@ -1030,6 +1035,16 @@ function Ledger({
                 </select>
               </label>
             )}
+            {isTeam && r.kind === "line" && Number(r.committed ?? 0) > 0 && (
+              <SplitPanel
+                lineId={r.id}
+                weddingId={weddingId}
+                currentEnvelope={r.envelopeId}
+                committed={Number(r.committed ?? 0)}
+                items={itemsByLine.get(r.id) ?? []}
+                envelopes={envelopes}
+              />
+            )}
             {/* A line names its vendor in place — the fiche link appears,
                 and a homeless line inherits the vendor's category. */}
             {isTeam && (
@@ -1123,6 +1138,11 @@ function Ledger({
                       >
                         {isCollapsed ? "▸" : "▾"} {g.label}
                       </button>
+                      {g.envId === "" && g.parents.length > 0 && (
+                        <span role="status" style={{ marginLeft: 12, fontSize: 12.5, color: "var(--bronze)" }}>
+                          {t("beyondBand", { amount: money(format, sub.ttc) })}
+                        </span>
+                      )}
                     </td>
                     <td className="num" style={{ fontWeight: 500 }}>{money(format, sub.ttc)}</td>
                     <td className="num">{money(format, sub.paid)}</td>
@@ -1276,7 +1296,9 @@ function HouseBook({
 }) {
   const t = useTranslations("budget.views");
   const format = useFormatter();
+  const router = useRouter();
   const [open, setOpen] = useState<string | null>(null);
+  const [, startTransition] = useTransition();
 
   const groups = useMemo(() => {
     const parents = lines.filter((l) => !l.parent_line_id);
@@ -1401,6 +1423,28 @@ function HouseBook({
                           <p className="team-only" style={{ fontSize: 12.5, color: "var(--bronze)", margin: "0 0 8px" }}>
                             {t("noDetailRead")}
                           </p>
+                        )}
+                        {isTeam && !g.env && (
+                          <label className="team-only" style={{ display: "inline-flex", gap: 6, alignItems: "baseline", fontSize: 12.5, color: "var(--bronze)", margin: "0 0 8px" }}>
+                            {t("placeInto")}
+                            <select
+                              defaultValue=""
+                              onChange={(e) => {
+                                const v = e.target.value;
+                                if (!v) return;
+                                startTransition(async () => {
+                                  await setLineEnvelope(p.id, v);
+                                  router.refresh();
+                                });
+                              }}
+                              style={{ padding: "3px 6px", border: "1px solid var(--line)", background: "#fff", fontSize: 12 }}
+                            >
+                              <option value="">{t("placePick")}</option>
+                              {envelopes.map((env) => (
+                                <option key={env.id} value={env.id}>{env.label}</option>
+                              ))}
+                            </select>
+                          </label>
                         )}
                         {isTeam && (
                           <HouseBookAdd
@@ -1551,5 +1595,116 @@ function HouseBookAdd({
       </button>
       <button className="addnote" onClick={() => setOpenForm(false)}>{t("leave")}</button>
     </div>
+  );
+}
+
+
+/**
+ * One vendor across two categories (axe 3, the La Baronne case): the
+ * chosen posts move to a sibling line in another envelope, the split
+ * amount follows the posts' own sum — editable, never invented.
+ */
+function SplitPanel({
+  lineId,
+  weddingId,
+  currentEnvelope,
+  committed,
+  items,
+  envelopes
+}: {
+  lineId: string;
+  weddingId: string;
+  currentEnvelope: string | null;
+  committed: number;
+  items: BudgetLineItem[];
+  envelopes: BudgetEnvelope[];
+}) {
+  const t = useTranslations("budget.views");
+  const format = useFormatter();
+  const router = useRouter();
+  const [open, setOpen] = useState(false);
+  const [target, setTarget] = useState("");
+  const [checked, setChecked] = useState<Set<string>>(new Set());
+  const [amount, setAmount] = useState("");
+  const [pending, startTransition] = useTransition();
+
+  const targets = envelopes.filter((e) => e.id !== currentEnvelope);
+  const checkedSum = items
+    .filter((it) => checked.has(it.id))
+    .reduce((s, it) => s + Number(it.total_ttc ?? it.total_ht ?? 0), 0);
+  const part = amount.trim() !== "" ? Number(amount.replace(/\s/g, "").replace(",", ".")) : checkedSum;
+  const valid = Number.isFinite(part) && part > 0 && part <= committed && Boolean(target);
+
+  if (!open) {
+    return (
+      <button className="addnote" onClick={() => setOpen(true)}>
+        {t("splitOpen")}
+      </button>
+    );
+  }
+  return (
+    <span style={{ display: "inline-flex", gap: 8, alignItems: "baseline", flexWrap: "wrap", fontSize: 12.5 }}>
+      <label style={{ display: "inline-flex", gap: 6, alignItems: "baseline", color: "var(--ink2)" }}>
+        {t("splitInto")}
+        <select
+          value={target}
+          onChange={(e) => setTarget(e.target.value)}
+          style={{ padding: "3px 6px", border: "1px solid var(--line)", background: "#fff", fontSize: 12 }}
+        >
+          <option value="">{t("placePick")}</option>
+          {targets.map((e) => (
+            <option key={e.id} value={e.id}>{e.label}</option>
+          ))}
+        </select>
+      </label>
+      {items.map((it) => (
+        <label key={it.id} style={{ display: "inline-flex", gap: 4, alignItems: "baseline" }}>
+          <input
+            type="checkbox"
+            checked={checked.has(it.id)}
+            onChange={(e) =>
+              setChecked((prev) => {
+                const n = new Set(prev);
+                if (e.target.checked) n.add(it.id); else n.delete(it.id);
+                return n;
+              })
+            }
+          />
+          {it.label}
+        </label>
+      ))}
+      <input
+        value={amount}
+        onChange={(e) => setAmount(e.target.value)}
+        placeholder={checkedSum > 0 ? String(Math.round(checkedSum * 100) / 100) : t("splitAmountPh")}
+        aria-label={t("splitAmountPh")}
+        style={{ width: 90, textAlign: "right", fontSize: 12, padding: "3px 6px" }}
+      />
+      <button
+        className="addnote"
+        disabled={pending || !valid}
+        title={!valid && part > committed ? t("splitTooMuch", { amount: money(format, committed) }) : undefined}
+        onClick={() =>
+          startTransition(async () => {
+            await splitBudgetLine({
+              lineId,
+              weddingId,
+              envelopeId: target,
+              itemIds: [...checked],
+              amount: amount.trim() !== "" ? part : null
+            });
+            setOpen(false);
+            setChecked(new Set());
+            setAmount("");
+            router.refresh();
+          })
+        }
+      >
+        {pending ? "…" : t("splitGo")}
+      </button>
+      <button className="addnote" onClick={() => setOpen(false)} style={{ color: "var(--ink2)" }}>
+        {t("splitCancel")}
+      </button>
+    </span>
   );
 }

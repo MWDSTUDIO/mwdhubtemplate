@@ -17,6 +17,9 @@ async function teamSession() {
 
 export interface PublishState {
   budgetLines: number;
+  /** Draft lines without a category — the couple would read them
+      "Beyond the envelopes" (axe 2: warned, never blocked). */
+  homelessLines: number;
   envelopeNotes: number;
   milestones: number;
   /** yyyy-mm of monthly notes still in draft. */
@@ -45,12 +48,19 @@ export async function getPublishState(weddingId: string): Promise<PublishState> 
   await teamSession();
   const supabase = await createClient();
 
-  const [linesRes, notesRes, milestonesRes, monthsRes, docsRes, journalRes] = await Promise.all([
+  const [linesRes, homelessRes, notesRes, milestonesRes, monthsRes, docsRes, journalRes] = await Promise.all([
     supabase
       .from("budget_lines")
       .select("id", { count: "exact", head: true })
       .eq("wedding_id", weddingId)
       .eq("status", "draft"),
+    supabase
+      .from("budget_lines")
+      .select("id", { count: "exact", head: true })
+      .eq("wedding_id", weddingId)
+      .eq("status", "draft")
+      .is("envelope_id", null)
+      .is("parent_line_id", null),
     supabase
       .from("envelope_notes")
       .select("id", { count: "exact", head: true })
@@ -83,6 +93,7 @@ export async function getPublishState(weddingId: string): Promise<PublishState> 
 
   return {
     budgetLines: linesRes.count ?? 0,
+    homelessLines: homelessRes.count ?? 0,
     envelopeNotes: notesRes.count ?? 0,
     milestones: milestonesRes.count ?? 0,
     months: (monthsRes.data ?? []).map((m) => String(m.month).slice(0, 7)),

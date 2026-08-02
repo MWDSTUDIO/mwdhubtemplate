@@ -46,6 +46,10 @@ export async function acceptReading(input: {
   scheduleIdx: number[];
   acceptBanking: boolean;
   acceptMinSpend: boolean;
+  /** Where the engagement lands (axe 1a): an envelope chosen at the
+      desk. Undefined = inherit the vendor's home (0019); null = the
+      house explicitly keeps it beyond the envelopes. */
+  envelopeId?: string | null;
 }) {
   await teamSession();
   const supabase = await createClient();
@@ -72,6 +76,23 @@ export async function acceptReading(input: {
   const currency = p.currency ?? "EUR";
   const total = p.total_amount ?? p.total_ttc ?? null;
 
+  // The landing category: the desk's explicit word wins; otherwise the
+  // vendor's budget home (0019). A reading never lands homeless by
+  // accident anymore — only by Estelle's explicit choice.
+  let landingEnvelope: string | null = input.envelopeId ?? null;
+  if (input.envelopeId === undefined && vendorId) {
+    try {
+      const { data: v } = await supabase
+        .from("vendors")
+        .select("envelope_id")
+        .eq("id", vendorId)
+        .maybeSingle();
+      landingEnvelope = v?.envelope_id ?? null;
+    } catch {
+      /* pre-0019: no home to inherit */
+    }
+  }
+
   // ── The vendor's line: reworked if it exists, opened if not ──
   let lineId: string | null = null;
   if (vendorId) {
@@ -96,6 +117,7 @@ export async function acceptReading(input: {
           vendor_id: vendorId,
           label: p.vendor_name ?? p.label ?? reading.label,
           committed: input.acceptLine ? total : null,
+          envelope_id: landingEnvelope,
           status: "draft",
           sort: (count ?? 0) + 1
         })
@@ -103,10 +125,25 @@ export async function acceptReading(input: {
         .single();
       lineId = newLine?.id ?? null;
     } else if (lineId && input.acceptLine && total != null) {
-      await supabase
-        .from("budget_lines")
-        .update({ committed: Math.round(Number(total)), committed_note: null, status: "draft" })
-        .eq("id", lineId);
+      // An explicit choice at the desk moves the line; otherwise a
+      // homeless line takes the inherited home, and a placed line
+      // keeps the place Estelle gave it.
+      const patch: Record<string, unknown> = {
+        committed: Math.round(Number(total)),
+        committed_note: null,
+        status: "draft"
+      };
+      if (input.envelopeId !== undefined) {
+        patch.envelope_id = input.envelopeId;
+      } else if (landingEnvelope) {
+        const { data: cur } = await supabase
+          .from("budget_lines")
+          .select("envelope_id")
+          .eq("id", lineId)
+          .maybeSingle();
+        if (!cur?.envelope_id) patch.envelope_id = landingEnvelope;
+      }
+      await supabase.from("budget_lines").update(patch).eq("id", lineId);
     }
   }
 

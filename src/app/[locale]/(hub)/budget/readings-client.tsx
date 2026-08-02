@@ -33,6 +33,7 @@ export interface ReadingRow {
   label: string;
   created_at: string;
   vendorName: string | null;
+  vendorId: string | null;
   payload: ReadingPayload;
   current: {
     committed: number | null;
@@ -48,7 +49,15 @@ export interface ReadingRow {
  * already holds, and Estelle accepts line by line or in one gesture.
  * The agent proposes; it never decrees.
  */
-export function ReadingsDesk({ readings }: { readings: ReadingRow[] }) {
+export function ReadingsDesk({
+  readings,
+  envelopes,
+  vendorHomes
+}: {
+  readings: ReadingRow[];
+  envelopes: { id: string; label: string }[];
+  vendorHomes: Record<string, string | null>;
+}) {
   const t = useTranslations("budget.readings");
   if (readings.length === 0) return null;
   return (
@@ -58,13 +67,26 @@ export function ReadingsDesk({ readings }: { readings: ReadingRow[] }) {
       </div>
       <p style={{ margin: "8px 0 4px", fontSize: 13.5, color: "var(--ink2)" }}>{t("blurb")}</p>
       {readings.map((r) => (
-        <Reading key={r.id} reading={r} />
+        <Reading
+          key={r.id}
+          reading={r}
+          envelopes={envelopes}
+          homeEnvelope={r.vendorId ? vendorHomes[r.vendorId] ?? null : null}
+        />
       ))}
     </div>
   );
 }
 
-function Reading({ reading }: { reading: ReadingRow }) {
+function Reading({
+  reading,
+  envelopes,
+  homeEnvelope
+}: {
+  reading: ReadingRow;
+  envelopes: { id: string; label: string }[];
+  homeEnvelope: string | null;
+}) {
   const t = useTranslations("budget.readings");
   const format = useFormatter();
   const router = useRouter();
@@ -82,6 +104,8 @@ function Reading({ reading }: { reading: ReadingRow }) {
   const [itemSel, setItemSel] = useState<boolean[]>(items.map(() => true));
   const [schedSel, setSchedSel] = useState<boolean[]>(schedule.map(() => true));
   const [acceptBanking, setAcceptBanking] = useState(Boolean(p.banking?.iban || p.banking?.swift));
+  // The landing category (axe 1a): the vendor's home proposed, hers to change.
+  const [landEnvelope, setLandEnvelope] = useState<string>(homeEnvelope ?? "");
   const [acceptMinSpend, setAcceptMinSpend] = useState(false);
 
   const itemsTotal = items.reduce((s, it) => s + Number(it.total_ttc ?? it.total_ht ?? 0), 0);
@@ -259,6 +283,23 @@ function Reading({ reading }: { reading: ReadingRow }) {
         </div>
       )}
 
+      <label style={{ display: "flex", gap: 8, alignItems: "baseline", marginTop: 12, fontSize: 13 }}>
+        {t("landIn")}
+        <select
+          value={landEnvelope}
+          onChange={(e) => setLandEnvelope(e.target.value)}
+          style={{ padding: "6px 8px", border: landEnvelope ? "1px solid var(--line)" : "1px solid var(--bronze)", background: "#fff", fontSize: 12.5 }}
+        >
+          <option value="">{t("landNone")}</option>
+          {envelopes.map((env) => (
+            <option key={env.id} value={env.id}>{env.label}</option>
+          ))}
+        </select>
+        {!landEnvelope && (
+          <span style={{ fontSize: 12, color: "var(--bronze)" }}>{t("landHint")}</span>
+        )}
+      </label>
+
       <div style={{ display: "flex", gap: 10, marginTop: 14, flexWrap: "wrap" }}>
         <button
           className="btn sm"
@@ -271,7 +312,8 @@ function Reading({ reading }: { reading: ReadingRow }) {
                 itemIdx: itemSel.map((v, i) => (v ? i : -1)).filter((i) => i >= 0),
                 scheduleIdx: schedSel.map((v, i) => (v ? i : -1)).filter((i) => i >= 0),
                 acceptBanking,
-                acceptMinSpend
+                acceptMinSpend,
+                envelopeId: landEnvelope || null
               });
               router.refresh();
             })

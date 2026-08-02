@@ -375,7 +375,8 @@
       "headCommitted": "Comprometido",
       "headStillToPlace": "Aún por colocar",
       "envNamePh": "El nombre de la categoría",
-      "renameHint": "Cada nombre aquí es suyo — escriba directamente en él, añada, retire; todo el scope se guarda con un solo gesto."
+      "renameHint": "Cada nombre aquí es suyo — escriba directamente en él, añada, retire; todo el scope se guarda con un solo gesto.",
+      "beyondAlert": "{amount} comprometidos fuera de toda categoría — el Ledger y el House Book llevan el gesto para colocarlos."
     },
     "master": {
       "unfold": "Desplegar ({count})",
@@ -602,7 +603,10 @@
       "acceptSelection": "Aceptar la selección como borrador",
       "dismiss": "Apartar",
       "dismissConfirm": "¿Apartar esta lectura? El documento queda archivado; el presupuesto, intacto.",
-      "draftNote": "Todo llega como borrador — la pareja no ve nada antes de su publicación."
+      "draftNote": "Todo llega como borrador — la pareja no ve nada antes de su publicación.",
+      "landIn": "Aterriza en",
+      "landNone": "Fuera de categorías",
+      "landHint": "Elija una categoría — o déjelo fuera, a sabiendas."
     },
     "views": {
       "switch": "Elegir su lectura",
@@ -675,7 +679,16 @@
       "fxNeedsMigration": "Ejecute la migración 0017 antes de retener un tipo.",
       "fxBadRate": "Un tipo es un número positivo y una fuente nombrada.",
       "vendor": "Proveedor",
-      "noVendor": "Sin proveedor asignado"
+      "noVendor": "Sin proveedor asignado",
+      "beyondBand": "{amount} comprometidos fuera de las categorías — dé un hogar a cada línea abajo.",
+      "placeInto": "Colocar en",
+      "placePick": "Elegir una categoría…",
+      "splitOpen": "Repartir hacia otra categoría",
+      "splitInto": "Hacia",
+      "splitAmountPh": "Importe",
+      "splitGo": "Repartir",
+      "splitCancel": "Dejar así",
+      "splitTooMuch": "Como máximo {amount} — lo comprometido de la línea."
     },
     "bar": {
       "aria": "Dónde está el presupuesto",
@@ -1325,7 +1338,8 @@
     "unpublish": "Retomar",
     "reverted": "retomada",
     "journalFxRate": "retuvo un tipo de cambio",
-    "journalFxGap": "consignó una diferencia de cambio realizada"
+    "journalFxGap": "consignó una diferencia de cambio realizada",
+    "homelessWarn": "{n, plural, one {# línea está} other {# líneas están}} sin categoría — la pareja las leería bajo «Beyond the envelopes». Colocarlas primero mantiene el libro limpio; publicar igualmente sigue siendo su palabra."
   },
   "help": {
     "title": "Las teclas",

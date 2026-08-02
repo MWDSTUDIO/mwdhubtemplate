@@ -26,6 +26,7 @@ export function ScopeStudio({
   total,
   envelopes,
   committedByEnvelope,
+  beyondCommitted,
   notes,
   isTeam
 }: {
@@ -33,6 +34,8 @@ export function ScopeStudio({
   total: number;
   envelopes: BudgetEnvelope[];
   committedByEnvelope: Record<string, number>;
+  /** Committed on lines without a category — named, never silent (axe 2). */
+  beyondCommitted: number;
   notes: EnvelopeNote[];
   isTeam: boolean;
 }) {
@@ -153,7 +156,7 @@ export function ScopeStudio({
     // The couple's reading — never a cold ledger. Three figures at the
     // head of the page, then each envelope as a small house page:
     // the counsel, the decision, the real (brief §4).
-    const committedAll = envelopes.reduce((s, e) => s + committedFor(e.id), 0);
+    const committedAll = envelopes.reduce((s, e) => s + committedFor(e.id), 0) + beyondCommitted;
     const stillToPlace = Math.max(0, total - committedAll);
     return (
       <div className="card">
@@ -261,6 +264,11 @@ export function ScopeStudio({
         </div>
         {/* The names are hers — say so, where the scope is weighed. */}
         <p style={{ fontSize: 12.5, color: "var(--ink2)", margin: "0 0 10px" }}>{t("renameHint")}</p>
+        {beyondCommitted > 0 && (
+          <p role="alert" style={{ fontSize: 13, color: "var(--bronze)", margin: "0 0 12px" }}>
+            {t("beyondAlert", { amount: money(beyondCommitted) })}
+          </p>
+        )}
 
         {over && (
           <p role="alert" style={{ fontSize: 13.5, color: "var(--bronze)", margin: "6px 0 10px" }}>

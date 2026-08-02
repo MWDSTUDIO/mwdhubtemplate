@@ -71,9 +71,21 @@ export default async function BudgetPage({
           .limit(1)
           .maybeSingle()
       : Promise.resolve({ data: null }),
-    supabase.from("vendors").select("id, name").eq("wedding_id", wedding.id).order("name")
+    supabase.from("vendors").select("id, name, envelope_id").eq("wedding_id", wedding.id).order("name")
   ]);
-  const vendorOptions = (vendorRows ?? []) as { id: string; name: string }[];
+  let vendorList = (vendorRows ?? []) as { id: string; name: string; envelope_id?: string | null }[];
+  if (!vendorRows) {
+    // Pre-0019 the home column is absent — the names still stand.
+    const { data: bare } = await supabase
+      .from("vendors")
+      .select("id, name")
+      .eq("wedding_id", wedding.id)
+      .order("name");
+    vendorList = (bare ?? []) as { id: string; name: string }[];
+  }
+  const vendorOptions = vendorList.map((v) => ({ id: v.id, name: v.name }));
+  const vendorHomes: Record<string, string | null> = {};
+  for (const v of vendorList) vendorHomes[v.id] = v.envelope_id ?? null;
 
   // The analyst's desk — readings proposed by a dropped document,
   // awaiting Estelle's word (absent until migration 0013).
@@ -113,6 +125,13 @@ export default async function BudgetPage({
       committedByEnvelope[l.envelope_id] = (committedByEnvelope[l.envelope_id] ?? 0) + v.committedEur;
     }
   }
+  // The homeless committed (axe 2): counted once, shown everywhere the
+  // envelopes speak — the bar and the scope may never disagree again.
+  const beyondCommitted = sumMoney(
+    eurLines
+      .filter(({ l, v }) => !l.parent_line_id && !l.envelope_id && v.converted)
+      .map(({ v }) => v.committedEur)
+  );
 
   const nextByLine: Record<string, string> = {};
   for (const p of allPayments) {
@@ -143,6 +162,7 @@ export default async function BudgetPage({
       label: r.label,
       created_at: r.created_at,
       vendorName: (r.vendors as { name?: string } | null)?.name ?? null,
+      vendorId: (r.vendor_id as string | null) ?? null,
       payload: r.payload as ReadingPayload,
       current: {
         committed: line?.committed ?? null,
@@ -167,6 +187,7 @@ export default async function BudgetPage({
         total={total}
         envelopes={(envelopes ?? []) as BudgetEnvelope[]}
         committedByEnvelope={committedByEnvelope}
+        beyondCommitted={beyondCommitted}
         notes={(notes ?? []) as EnvelopeNote[]}
         isTeam={session.isTeam}
       />
@@ -179,7 +200,13 @@ export default async function BudgetPage({
     <>
       {session.isTeam && <PublishBar weddingId={wedding.id} draftCount={draftCount} />}
 
-      {session.isTeam && <ReadingsDesk readings={readings} />}
+      {session.isTeam && (
+        <ReadingsDesk
+          readings={readings}
+          envelopes={((envelopes ?? []) as BudgetEnvelope[]).map((e) => ({ id: e.id, label: e.label }))}
+          vendorHomes={vendorHomes}
+        />
+      )}
       <div className="grid3" style={{ marginBottom: 18 }}>
         <div className="card" style={{ marginBottom: 0 }}>
           <div className="eyebrow">{t("mgmt.total")}</div>

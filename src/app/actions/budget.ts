@@ -365,6 +365,87 @@ export async function setLineVendor(lineId: string, vendorId: string | null) {
   return { ok: !error };
 }
 
+/**
+ * One vendor, several categories (the La Baronne case): part of a line
+ * moves out into a sibling line in another envelope — same vendor, the
+ * chosen posts following, the committed split exactly, nothing lost.
+ * Both sides return to draft: the couple never sees a half-made split.
+ */
+export async function splitBudgetLine(input: {
+  lineId: string;
+  weddingId: string;
+  envelopeId: string | null;
+  itemIds: string[];
+  amount?: number | null;
+  label?: string;
+}) {
+  const session = await teamSession();
+  const supabase = await createClient();
+  const { data: src } = await supabase
+    .from("budget_lines")
+    .select("*")
+    .eq("id", input.lineId)
+    .eq("wedding_id", input.weddingId)
+    .single();
+  if (!src) return { ok: false as const };
+
+  let movedSum = 0;
+  if (input.itemIds.length) {
+    const { data: moved } = await supabase
+      .from("budget_line_items")
+      .select("total_ttc, total_ht")
+      .in("id", input.itemIds)
+      .eq("budget_line_id", input.lineId);
+    movedSum = sumMoney((moved ?? []).map((it) => Number(it.total_ttc ?? it.total_ht ?? 0)));
+  }
+  const part = roundMoney(Number(input.amount ?? movedSum));
+  if (!(part > 0)) return { ok: false as const };
+
+  const { count } = await supabase
+    .from("budget_lines")
+    .select("id", { count: "exact", head: true })
+    .eq("wedding_id", input.weddingId);
+  const { data: created, error } = await supabase
+    .from("budget_lines")
+    .insert({
+      wedding_id: input.weddingId,
+      vendor_id: src.vendor_id,
+      envelope_id: input.envelopeId,
+      label: input.label?.trim() || src.label,
+      budgeted: null,
+      committed: part,
+      status: "draft",
+      sort: (count ?? 0) + 1
+    })
+    .select("id")
+    .single();
+  if (error || !created) return { ok: false as const };
+
+  if (input.itemIds.length) {
+    await supabase
+      .from("budget_line_items")
+      .update({ budget_line_id: created.id })
+      .in("id", input.itemIds)
+      .eq("budget_line_id", input.lineId);
+  }
+  await supabase
+    .from("budget_lines")
+    .update({
+      committed: Math.max(0, roundMoney(Number(src.committed ?? 0) - part)),
+      status: "draft"
+    })
+    .eq("id", input.lineId);
+
+  await logActivity(supabase, input.weddingId, session.profile.full_name, "line_split", {
+    from: input.lineId,
+    to: created.id,
+    amount: part,
+    items: input.itemIds.length
+  });
+  revalidateRooms("budget");
+  return { ok: true as const, id: created.id };
+}
+
 /** A line changes envelope in place — never delete-and-recreate. */
 export async function setLineEnvelope(lineId: string, envelopeId: string | null) {
   await teamSession();
