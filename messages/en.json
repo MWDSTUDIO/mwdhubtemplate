@@ -552,7 +552,22 @@
       },
       "itemsCategory": "The post's own category — follows the line unless set",
       "itemsFollows": "Follows the line",
-      "itemsCat0020": "The post is kept; its own category awaits migration 0020."
+      "itemsCat0020": "The post is kept; its own category awaits migration 0020.",
+      "departure": {
+        "open": "Remove this vendor from the house…",
+        "title": "The vendor's departure",
+        "recapIntro": "Leaving with it, for good:",
+        "recapNothing": "Nothing else hangs on this vendor — only its card leaves.",
+        "recapLines": "{n, plural, one {# financial line} other {# financial lines}}",
+        "recapItems": "{n, plural, one {# post} other {# posts}}",
+        "recapPayments": "{n, plural, one {# instalment (and its reminders)} other {# instalments (and their reminders)}}",
+        "recapPapers": "{n, plural, one {# filed paper and its original} other {# filed papers and their originals}}",
+        "recapBanking": "the encrypted banking coordinates and their history",
+        "finalNote": "This is final — the journal keeps the trace, the data does not linger. To step back now, choose Keep.",
+        "typePh": "Type the vendor's name to confirm — {name}",
+        "confirm": "Remove for good",
+        "keep": "Keep the vendor"
+      }
     },
     "risks": {
       "title": "Risk buffer & contingency",

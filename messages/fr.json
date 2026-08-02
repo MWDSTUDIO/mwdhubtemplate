@@ -552,7 +552,22 @@
       },
       "itemsCategory": "La catégorie propre du poste — suit la ligne sauf réglage",
       "itemsFollows": "Suit la ligne",
-      "itemsCat0020": "Le poste est gardé ; sa catégorie propre attend la migration 0020."
+      "itemsCat0020": "Le poste est gardé ; sa catégorie propre attend la migration 0020.",
+      "departure": {
+        "open": "Retirer ce prestataire de la maison…",
+        "title": "Le départ du prestataire",
+        "recapIntro": "Part avec lui, définitivement :",
+        "recapNothing": "Rien d'autre ne tient à ce prestataire — seule sa carte part.",
+        "recapLines": "{n, plural, one {# ligne financière} other {# lignes financières}}",
+        "recapItems": "{n, plural, one {# poste} other {# postes}}",
+        "recapPayments": "{n, plural, one {# échéance (et ses rappels)} other {# échéances (et leurs rappels)}}",
+        "recapPapers": "{n, plural, one {# papier classé et son original} other {# papiers classés et leurs originaux}}",
+        "recapBanking": "les coordonnées bancaires chiffrées et leur historique",
+        "finalNote": "C'est définitif — le journal garde la trace, les données ne s'attardent pas. Pour reculer, choisissez Garder.",
+        "typePh": "Tapez le nom du prestataire pour confirmer — {name}",
+        "confirm": "Retirer définitivement",
+        "keep": "Garder le prestataire"
+      }
     },
     "risks": {
       "title": "Réserve & risques",

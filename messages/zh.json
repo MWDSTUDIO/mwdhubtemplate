@@ -552,7 +552,22 @@
       },
       "itemsCategory": "该项自有的类别——未设则随其条目",
       "itemsFollows": "随条目",
-      "itemsCat0020": "该项已保留；其自有类别尚待迁移 0020。"
+      "itemsCat0020": "该项已保留；其自有类别尚待迁移 0020。",
+      "departure": {
+        "open": "将此供应方移出本馆……",
+        "title": "供应方的离去",
+        "recapIntro": "随之永久离去的有：",
+        "recapNothing": "此供应方名下别无他物——仅其名片离去。",
+        "recapLines": "{n, plural, other {# 条财务条目}}",
+        "recapItems": "{n, plural, other {# 个明细项}}",
+        "recapPayments": "{n, plural, other {# 笔到期款（及其提醒）}}",
+        "recapPapers": "{n, plural, other {# 份归档文件及其原件}}",
+        "recapBanking": "加密的银行信息及其历史",
+        "finalNote": "此举不可逆——日志留痕，数据不留。欲退一步，请选保留。",
+        "typePh": "输入供应方名称以确认——{name}",
+        "confirm": "永久移除",
+        "keep": "保留供应方"
+      }
     },
     "risks": {
       "title": "储备与风险",

@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { requireHouseSession } from "@/lib/session";
 import { revalidateRooms } from "@/lib/revalidate";
+import { logActivity } from "@/lib/activity";
 import { runAgent } from "@/lib/agents/run";
 
 async function teamSession() {
@@ -51,6 +52,103 @@ export async function updateVendorMeta(
   revalidateRooms("budget");
   revalidatePath("/vendors");
   return { ok: !error, envelopeSaved };
+}
+
+/**
+ * What would leave with this vendor — counted before anything moves,
+ * so the confirmation names exactly what it destroys.
+ */
+export async function previewVendorDeletion(weddingId: string, vendorId: string) {
+  await teamSession();
+  const supabase = await createClient();
+  const { data: vendor } = await supabase
+    .from("vendors")
+    .select("name")
+    .eq("id", vendorId)
+    .eq("wedding_id", weddingId)
+    .maybeSingle();
+  if (!vendor) return { ok: false as const };
+  const { data: lineRows } = await supabase
+    .from("budget_lines")
+    .select("id")
+    .eq("vendor_id", vendorId);
+  const lineIds = (lineRows ?? []).map((l) => l.id);
+  const [items, payments, papers, banking] = await Promise.all([
+    lineIds.length
+      ? supabase.from("budget_line_items").select("id", { count: "exact", head: true }).in("budget_line_id", lineIds)
+      : Promise.resolve({ count: 0 }),
+    lineIds.length
+      ? supabase.from("payments").select("id", { count: "exact", head: true }).in("budget_line_id", lineIds)
+      : Promise.resolve({ count: 0 }),
+    supabase.from("vendor_documents").select("id", { count: "exact", head: true }).eq("vendor_id", vendorId),
+    supabase.from("vendor_banking").select("vendor_id", { count: "exact", head: true }).eq("vendor_id", vendorId)
+  ]);
+  return {
+    ok: true as const,
+    name: vendor.name,
+    lines: lineIds.length,
+    items: items.count ?? 0,
+    payments: payments.count ?? 0,
+    papers: papers.count ?? 0,
+    banking: (banking.count ?? 0) > 0
+  };
+}
+
+/**
+ * The vendor leaves the house for good — Estelle's explicit word, the
+ * name retyped. Its financial lines leave WITH it (posts, instalments
+ * and their reminders cascade), its papers and their originals, its
+ * readings, its encrypted coordinates. The journal keeps the trace;
+ * the data does not linger.
+ */
+export async function deleteVendor(weddingId: string, vendorId: string) {
+  const session = await teamSession();
+  const supabase = await createClient();
+  const preview = await previewVendorDeletion(weddingId, vendorId);
+  if (!preview.ok) return { ok: false as const };
+
+  // The filed originals leave storage too — nothing lingers.
+  const { data: paperRows } = await supabase
+    .from("vendor_documents")
+    .select("storage_path")
+    .eq("vendor_id", vendorId);
+  const paths = (paperRows ?? [])
+    .map((d) => d.storage_path)
+    .filter((sp): sp is string => Boolean(sp?.startsWith("internal/")))
+    .map((sp) => sp.slice("internal/".length));
+  if (paths.length) await supabase.storage.from("internal").remove(paths);
+
+  const { data: lineRows } = await supabase
+    .from("budget_lines")
+    .select("id")
+    .eq("vendor_id", vendorId);
+  const lineIds = (lineRows ?? []).map((l) => l.id);
+  if (lineIds.length) {
+    // Nested credits first, then the lines — posts, instalments and
+    // reminders cascade from them.
+    await supabase.from("budget_lines").delete().in("parent_line_id", lineIds);
+    await supabase.from("budget_lines").delete().eq("vendor_id", vendorId);
+  }
+  await supabase.from("document_readings").delete().eq("vendor_id", vendorId);
+  // Banking, its history, the papers and the sheet note cascade here.
+  const { error } = await supabase
+    .from("vendors")
+    .delete()
+    .eq("id", vendorId)
+    .eq("wedding_id", weddingId);
+  if (error) return { ok: false as const };
+
+  await logActivity(supabase, weddingId, session.profile.full_name, "vendor_deleted", {
+    name: preview.name,
+    lines: preview.lines,
+    items: preview.items,
+    payments: preview.payments,
+    papers: preview.papers,
+    banking: preview.banking
+  });
+  revalidateRooms("budget");
+  revalidatePath("/vendors");
+  return { ok: true as const };
 }
 
 export async function setVendorStage(

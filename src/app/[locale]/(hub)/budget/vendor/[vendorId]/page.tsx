@@ -8,7 +8,7 @@ import { decryptProfile, type BankingProfile } from "@/lib/banking";
 import { ibanGroups } from "@/lib/banking-checks";
 import { logActivity } from "@/lib/activity";
 import type { BudgetLine, BudgetLineItem, Payment } from "@/lib/types";
-import { VendorNoteEditor, BankingDesk, CopyLine, QuoteItems, VendorMeta, FicheDocDrop } from "./vendor-client";
+import { VendorNoteEditor, BankingDesk, CopyLine, QuoteItems, VendorMeta, FicheDocDrop, VendorDeparture } from "./vendor-client";
 
 /**
  * The vendor sheet — what the couple pays this house, in full clarity:
@@ -331,6 +331,9 @@ export default async function VendorSheetPage({
             />
           </div>
         </div>
+      )}
+      {session.isTeam && (
+        <VendorDeparture weddingId={wedding.id} vendorId={vendorId} vendorName={vendor.name} />
       )}
     </section>
   );

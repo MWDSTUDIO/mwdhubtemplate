@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { useFormatter, useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
-import { refineVendorNote, saveVendorClientNote, updateVendorMeta } from "@/app/actions/vendors";
+import { refineVendorNote, saveVendorClientNote, updateVendorMeta, deleteVendor, previewVendorDeletion } from "@/app/actions/vendors";
 import {
   readVendorBanking,
   saveVendorBanking,
@@ -1025,6 +1025,96 @@ export function FicheDocDrop({ weddingId, vendorId }: { weddingId: string; vendo
           {word}
         </p>
       )}
+    </div>
+  );
+}
+
+/* ══════════ The vendor's departure — named, retyped, journaled ══════ */
+
+
+/**
+ * A destructive gesture wears the house's guards: the recap counts
+ * exactly what leaves, the vendor's name is retyped by hand, and the
+ * journal keeps the trace. Nothing here happens by accident.
+ */
+export function VendorDeparture({
+  weddingId,
+  vendorId,
+  vendorName
+}: {
+  weddingId: string;
+  vendorId: string;
+  vendorName: string;
+}) {
+  const t = useTranslations("budget.fiche.departure");
+  const router = useRouter();
+  const [preview, setPreview] = useState<{
+    lines: number; items: number; payments: number; papers: number; banking: boolean;
+  } | null>(null);
+  const [typed, setTyped] = useState("");
+  const [pending, startTransition] = useTransition();
+
+  if (!preview) {
+    return (
+      <div className="team-only" style={{ marginTop: 26, paddingTop: 14, borderTop: "1px solid var(--line)" }}>
+        <button
+          className="addnote"
+          style={{ color: "var(--bronze)" }}
+          onClick={() =>
+            startTransition(async () => {
+              const r = await previewVendorDeletion(weddingId, vendorId);
+              if (r.ok) setPreview(r);
+            })
+          }
+        >
+          {pending ? "…" : t("open")}
+        </button>
+      </div>
+    );
+  }
+
+  const recap = [
+    preview.lines > 0 ? t("recapLines", { n: preview.lines }) : null,
+    preview.items > 0 ? t("recapItems", { n: preview.items }) : null,
+    preview.payments > 0 ? t("recapPayments", { n: preview.payments }) : null,
+    preview.papers > 0 ? t("recapPapers", { n: preview.papers }) : null,
+    preview.banking ? t("recapBanking") : null
+  ].filter(Boolean);
+
+  return (
+    <div className="team-only" style={{ marginTop: 26, padding: "16px 18px", border: "1px solid var(--bronze)", background: "var(--parchment)" }}>
+      <div className="eyebrow" style={{ color: "var(--bronze)" }}>{t("title")}</div>
+      <p style={{ fontSize: 13.5, margin: "8px 0 4px" }}>
+        {recap.length > 0 ? t("recapIntro") + " " + recap.join(" · ") + "." : t("recapNothing")}
+      </p>
+      <p style={{ fontSize: 12.5, color: "var(--ink2)", margin: "0 0 10px" }}>{t("finalNote")}</p>
+      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+        <input
+          value={typed}
+          onChange={(e) => setTyped(e.target.value)}
+          placeholder={t("typePh", { name: vendorName })}
+          aria-label={t("typePh", { name: vendorName })}
+          style={{ flex: "1 1 240px", fontSize: 13 }}
+        />
+        <button
+          className="btn sm"
+          disabled={pending || typed.trim() !== vendorName}
+          onClick={async () => {
+            // The navigation leaves the transition: the gone page must
+            // not swallow it with its own not-found rerender.
+            const r = await deleteVendor(weddingId, vendorId);
+            if (r.ok) {
+              router.push("/vendors");
+              router.refresh();
+            }
+          }}
+        >
+          {pending ? "…" : t("confirm")}
+        </button>
+        <button className="btn ghost sm" onClick={() => { setPreview(null); setTyped(""); }}>
+          {t("keep")}
+        </button>
+      </div>
     </div>
   );
 }

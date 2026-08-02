@@ -552,7 +552,22 @@
       },
       "itemsCategory": "La categoría propia de la partida — sigue la línea salvo ajuste",
       "itemsFollows": "Sigue la línea",
-      "itemsCat0020": "La partida queda guardada; su categoría propia espera la migración 0020."
+      "itemsCat0020": "La partida queda guardada; su categoría propia espera la migración 0020.",
+      "departure": {
+        "open": "Retirar este proveedor de la casa…",
+        "title": "La partida del proveedor",
+        "recapIntro": "Parte con él, definitivamente:",
+        "recapNothing": "Nada más pende de este proveedor — solo parte su carta.",
+        "recapLines": "{n, plural, one {# línea financiera} other {# líneas financieras}}",
+        "recapItems": "{n, plural, one {# partida} other {# partidas}}",
+        "recapPayments": "{n, plural, one {# vencimiento (y sus recordatorios)} other {# vencimientos (y sus recordatorios)}}",
+        "recapPapers": "{n, plural, one {# papel archivado y su original} other {# papeles archivados y sus originales}}",
+        "recapBanking": "las coordenadas bancarias cifradas y su historial",
+        "finalNote": "Es definitivo — el diario guarda la huella, los datos no se demoran. Para retroceder, elija Conservar.",
+        "typePh": "Escriba el nombre del proveedor para confirmar — {name}",
+        "confirm": "Retirar definitivamente",
+        "keep": "Conservar el proveedor"
+      }
     },
     "risks": {
       "title": "Reserva y riesgos",

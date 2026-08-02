@@ -552,7 +552,22 @@
       },
       "itemsCategory": "この項目自身の区分——定めなければ行に従います",
       "itemsFollows": "行に従う",
-      "itemsCat0020": "項目は留めました。固有の区分はマイグレーション 0020 を待っております。"
+      "itemsCat0020": "項目は留めました。固有の区分はマイグレーション 0020 を待っております。",
+      "departure": {
+        "open": "このお相手を当館から外す……",
+        "title": "お相手の退去",
+        "recapIntro": "共に、永久に去るもの：",
+        "recapNothing": "このお相手に連なるものは他にございません——名札のみが去ります。",
+        "recapLines": "{n, plural, other {財務の行 # 件}}",
+        "recapItems": "{n, plural, other {明細 # 件}}",
+        "recapPayments": "{n, plural, other {お支払い # 件（ご案内とも）}}",
+        "recapPapers": "{n, plural, other {書類 # 件と原本}}",
+        "recapBanking": "暗号化されたお口座情報とその履歴",
+        "finalNote": "取り消しは叶いません——記録は残り、データは留まりません。思い直されるなら「留める」を。",
+        "typePh": "確認のためお相手の名をご入力ください——{name}",
+        "confirm": "永久に外す",
+        "keep": "お相手を留める"
+      }
     },
     "risks": {
       "title": "備えと危うさ",
