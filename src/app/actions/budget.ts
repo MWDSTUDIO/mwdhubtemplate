@@ -734,6 +734,21 @@ export async function addPayment(input: {
     const session = await requireHouseSession();
     await applyReminderDefaults(supabase, input.weddingId, inserted.id, session.profile.full_name);
   }
+  // A movement recorded settled at birth reaches the Timeline too
+  // (PRD Timeline §14) — the same anchor setPaymentStatus would hold.
+  if (inserted?.id && input.status === "confirmed") {
+    const { syncModuleMilestone } = await import("@/lib/timeline-sync");
+    await syncModuleMilestone(supabase, {
+      weddingId: input.weddingId,
+      source: "budget",
+      sourceId: inserted.id,
+      label: `${input.label.trim()} — settled`,
+      date: new Date().toISOString().slice(0, 10),
+      done: true,
+      module: "budget",
+      budgetLineId: input.budgetLineId
+    });
+  }
   revalidateRooms("budget");
   return { ok: !error };
 }
