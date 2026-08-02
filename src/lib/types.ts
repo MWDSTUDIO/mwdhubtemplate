@@ -245,6 +245,8 @@ export interface BudgetEnvelope {
   locked?: boolean;
   /** Recommended by the house — the counsel (migration 0014). */
   recommended_pct?: number | null;
+  /** Archived, never hard-deleted (migration 0027). */
+  archived?: boolean;
 }
 
 export interface EnvelopeNote {
@@ -275,6 +277,8 @@ export interface BudgetLine {
   currency?: string;
   committed_eur?: number | null;
   fx_rate_id?: string | null;
+  /** Archived, never hard-deleted (migration 0027). */
+  archived?: boolean;
 }
 
 /** One line of a vendor's quote, grouped by event (migration 0011). */
@@ -312,6 +316,78 @@ export interface Payment {
   refundable?: boolean;
   reveal_banking?: boolean;
   notified_at?: string | null;
+  /** Payment lifecycle (migration 0027) — only confirmed movements
+      count in paid totals. Absent pre-0027: paid_at speaks alone. */
+  status?: PaymentStatus;
+  kind?: PaymentKind;
+  reference?: string | null;
+  invoice_id?: string | null;
+}
+
+export type PaymentStatus =
+  | "draft"
+  | "expected"
+  | "pending_verification"
+  | "confirmed"
+  | "rejected"
+  | "reversed"
+  | "refunded"
+  | "partially_refunded";
+
+export type PaymentKind = "payment" | "deposit" | "refund" | "credit_note";
+
+/** A record of account (migration 0027): invoice, proposal,
+    commitment or credit note — never just an editable total. */
+export interface Invoice {
+  id: string;
+  wedding_id: string;
+  vendor_id: string | null;
+  budget_line_id: string | null;
+  document_id: string | null;
+  kind: "invoice" | "proposal" | "commitment" | "credit_note";
+  number: string | null;
+  label: string;
+  issue_date: string | null;
+  due_date: string | null;
+  amount_ht: number | null;
+  vat_amount: number | null;
+  amount_ttc: number | null;
+  currency: string;
+  status: "draft" | "received" | "approved" | "disputed" | "cancelled";
+  notes: string | null;
+  created_by: string | null;
+  created_at: string;
+}
+
+/** One settlement spread over invoices, lines or a deposit (0027). */
+export interface PaymentAllocation {
+  id: string;
+  wedding_id: string;
+  payment_id: string;
+  invoice_id: string | null;
+  budget_line_id: string | null;
+  kind: "invoice" | "line" | "deposit";
+  amount: number;
+  created_at: string;
+}
+
+/** A saved envelope set — compared, then published or kept (0027). */
+export interface BudgetScenario {
+  id: string;
+  wedding_id: string;
+  label: string;
+  status: "draft" | "published";
+  data: {
+    label: string;
+    percent: number;
+    recommended_pct: number | null;
+    priority: "high" | "standard";
+    locked: boolean;
+    sort: number;
+  }[];
+  created_by: string | null;
+  created_at: string;
+  published_at: string | null;
 }
 
 /** A programmable reminder on an instalment (migration 0018). */

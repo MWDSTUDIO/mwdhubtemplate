@@ -13,7 +13,21 @@ import {
   updatePayment,
   updatePaymentFlags
 } from "@/app/actions/budget";
+import { setPaymentStatus } from "@/app/actions/budget-financial";
 import { deleteRisk, saveRisk } from "@/app/actions/budget-scope";
+import { isSettledPayment } from "@/lib/money";
+
+/** The lifecycle a movement can take (§12) — Estelle's hand alone. */
+const PAYMENT_STATUSES = [
+  "draft",
+  "expected",
+  "pending_verification",
+  "confirmed",
+  "rejected",
+  "reversed",
+  "refunded",
+  "partially_refunded"
+] as const;
 
 const money = (format: ReturnType<typeof useFormatter>, n: number | null | undefined, currency = "EUR") =>
   n == null ? "—" : format.number(n, { style: "currency", currency, maximumFractionDigits: 0 });
@@ -126,7 +140,28 @@ export function PaymentsCalendar({
                         <td>
                           {p.refundable && <span className="tag">{t("refundable")}</span>}{" "}
                           {p.notified_at && <span className="tag int">{t("notified")}</span>}{" "}
-                          {p.paid_at ? (
+                          {p.kind && p.kind !== "payment" && <span className="tag int">{t(`kind.${p.kind}`)}</span>}{" "}
+                          {isTeam ? (
+                            // Only Estelle moves a movement through its
+                            // states (§12) — the agents prepare, never confirm.
+                            <select
+                              className="team-only"
+                              value={p.status ?? (p.paid_at ? "confirmed" : "expected")}
+                              onChange={(e) =>
+                                startTransition(async () => {
+                                  const r = await setPaymentStatus(p.id, e.target.value);
+                                  if (!r.ok && "needsMigration" in r && r.needsMigration) alert(t("statusNeedsMigration"));
+                                  router.refresh();
+                                })
+                              }
+                              aria-label={t("statusAria", { label: p.label })}
+                              style={{ padding: "3px 6px", border: "1px solid var(--line)", background: "#fff", fontSize: 12 }}
+                            >
+                              {PAYMENT_STATUSES.map((s) => (
+                                <option key={s} value={s}>{t(`payStatus.${s}`)}</option>
+                              ))}
+                            </select>
+                          ) : isSettledPayment(p) ? (
                             <span className="tag ok">{t("settled")}</span>
                           ) : (
                             <span className="tag wait">{t("upcoming")}</span>
@@ -176,9 +211,11 @@ export function PaymentsCalendar({
                             )}{" "}
                             <button
                               className="addnote"
+                              title={t("removeHint")}
                               onClick={() =>
                                 startTransition(async () => {
-                                  await deletePayment(p.id);
+                                  const r = await deletePayment(p.id);
+                                  if (r.reversed) alert(t("reversedInstead"));
                                   router.refresh();
                                 })
                               }

@@ -1,14 +1,20 @@
 "use client";
 
 import React, { useEffect, useMemo, useRef, useState, useTransition } from "react";
+import dynamic from "next/dynamic";
 import { useFormatter, useTranslations } from "next-intl";
 import { Link, useRouter } from "@/i18n/navigation";
-import type { BudgetEnvelope, BudgetLine, BudgetLineItem, EnvelopeNote, Payment } from "@/lib/types";
+
+// The import wizard rides in only when called for (§17).
+const BudgetImportLazy = dynamic(() => import("./budget-import").then((m) => m.BudgetImport), { ssr: false });
+import type { BudgetEnvelope, BudgetLine, BudgetLineItem, EnvelopeNote, Invoice, Payment, VendorDocument } from "@/lib/types";
 import { envelopeCommitted } from "@/lib/budget-math";
+import { isSettledPayment } from "@/lib/money";
 import {
   updateBudgetLine,
   setLineFxRate,
   addBudgetLine,
+  addPayment,
   duplicateBudgetLine,
   deleteBudgetLineWithUndo,
   restoreBudgetLine,
@@ -16,8 +22,26 @@ import {
   setLineVendor,
   splitBudgetLine,
   saveLineItem,
-  deleteLineItem
+  deleteLineItem,
+  saveInternalBudgetNote
 } from "@/app/actions/budget";
+import {
+  setLineArchived,
+  bulkLines,
+  lineHistory,
+  saveInvoice,
+  removeInvoice,
+  attachDocument,
+  detachDocument
+} from "@/app/actions/budget-financial";
+
+/** One paper linked to one record — the link, never a copy (0027). */
+export interface FinDocLink {
+  id: string;
+  document_id: string;
+  target_kind: string;
+  target_id: string;
+}
 
 /**
  * Two readings of the same budget (brief §5): THE LEDGER — the rigour
@@ -31,7 +55,7 @@ import {
  * actions, nothing to synchronise.
  */
 
-type LineField = "label" | "committed" | "paid" | "currency";
+type LineField = "label" | "budgeted" | "committed" | "paid" | "currency";
 type ItemField = "label" | "ht" | "vat" | "ttc";
 
 type UndoEntry =
@@ -57,7 +81,10 @@ export function BudgetViews({
   envelopeNotes,
   vendors,
   nextByLine,
-  isTeam
+  isTeam,
+  docs = [],
+  finLinks = [],
+  invoices = []
 }: {
   weddingId: string;
   lines: BudgetLine[];
@@ -68,6 +95,9 @@ export function BudgetViews({
   vendors: { id: string; name: string }[];
   nextByLine: Record<string, string>;
   isTeam: boolean;
+  docs?: VendorDocument[];
+  finLinks?: FinDocLink[];
+  invoices?: Invoice[];
 }) {
   const t = useTranslations("budget.views");
   const defaultView: ViewKind = isTeam ? "ledger" : "housebook";
@@ -163,6 +193,9 @@ export function BudgetViews({
           ghosts={ghosts}
           undoStack={undoStack}
           redoStack={redoStack}
+          docs={docs}
+          finLinks={finLinks}
+          invoices={invoices}
         />
       ) : (
         <HouseBook
@@ -206,10 +239,12 @@ interface Row {
   hasFxRate: boolean;
   /** Items: read from a document, or entered by the house (§4.3). */
   sourceRead?: boolean;
+  /** Archived, out of the working view and the totals (0027). */
+  archived: boolean;
 }
 
-const LINE_EDITABLE: Record<string, LineField> = { "1": "label", "2": "currency", "5": "committed", "6": "paid" };
-const ITEM_EDITABLE: Record<string, ItemField> = { "1": "label", "3": "ht", "4": "vat", "5": "ttc" };
+const LINE_EDITABLE: Record<string, LineField> = { "1": "label", "2": "currency", "3": "budgeted", "6": "committed", "7": "paid" };
+const ITEM_EDITABLE: Record<string, ItemField> = { "1": "label", "4": "ht", "5": "vat", "6": "ttc" };
 
 interface Ghosts {
   addLine: (line: BudgetLine) => void;
@@ -228,7 +263,10 @@ function Ledger({
   isTeam,
   ghosts,
   undoStack,
-  redoStack
+  redoStack,
+  docs,
+  finLinks,
+  invoices
 }: {
   weddingId: string;
   lines: BudgetLine[];
@@ -240,6 +278,9 @@ function Ledger({
   ghosts: Ghosts;
   undoStack: React.MutableRefObject<UndoEntry[]>;
   redoStack: React.MutableRefObject<UndoEntry[]>;
+  docs: VendorDocument[];
+  finLinks: FinDocLink[];
+  invoices: Invoice[];
 }) {
   const t = useTranslations("budget.views");
   const tm = useTranslations("budget.mgmt");
@@ -260,6 +301,12 @@ function Ledger({
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [pendingFocusId, setPendingFocusId] = useState<string | null>(null);
+  // Row selection for the bulk gestures (§8), the archived toggle
+  // (§18) and the line drawer behind each row's ⋯ (§7).
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [showArchived, setShowArchived] = useState(false);
+  const [drawerFor, setDrawerFor] = useState<string | null>(null);
+  const [importing, setImporting] = useState(false);
   const gridRef = useRef<HTMLTableElement>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
 
@@ -316,7 +363,8 @@ function Ledger({
           status,
           draft: l.status === "draft",
           committedEur: (l as { committed_eur?: number | null }).committed_eur ?? null,
-          hasFxRate: Boolean((l as { fx_rate_id?: string | null }).fx_rate_id)
+          hasFxRate: Boolean((l as { fx_rate_id?: string | null }).fx_rate_id),
+          archived: Boolean(l.archived)
         };
       }),
     [lines, itemsByLine, nextByLine, local]
@@ -342,13 +390,15 @@ function Ledger({
     draft: false,
     committedEur: null,
     hasFxRate: false,
-    sourceRead: Boolean((it as { source_document_id?: string | null }).source_document_id)
+    sourceRead: Boolean((it as { source_document_id?: string | null }).source_document_id),
+    archived: false
   });
 
   // Envelope groups: EVERY envelope appears — an empty one still
   // offers its "+ add a line" (§2). Unassigned lines close the list.
   const groups = useMemo(() => {
     let parents = rows.filter((r) => r.kind === "line");
+    if (!showArchived) parents = parents.filter((r) => !r.archived);
     if (statusFilter !== "all") parents = parents.filter((r) => r.status === statusFilter);
     if (sort.key) {
       const value = (r: Row): string | number => {
@@ -387,7 +437,7 @@ function Ledger({
         label: envId ? envLabel(envId) : t("noEnvelope"),
         parents: ps
       }));
-  }, [rows, statusFilter, sort, envelopes, t, isTeam]);
+  }, [rows, statusFilter, sort, envelopes, t, isTeam, showArchived]);
 
   // The flat visible row list — the keyboard's geometry. Items ride
   // just under their line when it is unfolded, before the child lines.
@@ -400,14 +450,14 @@ function Ledger({
         if (expanded.has(p.id)) {
           for (const it of itemsByLine.get(p.id) ?? []) out.push(itemRow(it, p));
         }
-        for (const c of rows.filter((r) => r.parentId === p.id && r.kind === "child")) out.push(c);
+        for (const c of rows.filter((r) => r.parentId === p.id && r.kind === "child" && (showArchived || !r.archived))) out.push(c);
       }
     }
     return out;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [groups, rows, collapsed, expanded, itemsByLine]);
+  }, [groups, rows, collapsed, expanded, itemsByLine, showArchived]);
 
-  const COLS = 9;
+  const COLS = 10;
 
   const editableFor = (row: Row, col: number): LineField | ItemField | null => {
     if (!isTeam) return null;
@@ -771,8 +821,8 @@ function Ledger({
     if (!text || (!text.includes("\t") && !text.includes("\n"))) return;
     e.preventDefault();
     const matrix = text.replace(/\r/g, "").split("\n").filter((l) => l.length).map((l) => l.split("\t"));
-    const editCols = [1, 5, 6];
-    const startCol = editCols.includes(focus.c) ? focus.c : 5;
+    const editCols = [1, 3, 6, 7];
+    const startCol = editCols.includes(focus.c) ? focus.c : 6;
     matrix.forEach((cells, dr) => {
       const row = flat[focus.r + dr];
       if (!row || row.kind === "item") return;
@@ -784,43 +834,6 @@ function Ledger({
         persistLine(row.id, field, field === "paid" && value == null ? 0 : value);
       });
     });
-  }
-
-  async function exportSheet(kind: "csv" | "xlsx") {
-    const header = [t("colLine"), t("colCurrency"), "HT", t("colVat"), "TTC", t("colPaid"), t("colRemaining"), t("colNext"), t("colStatus")];
-    const data = flat.map((r) => [
-      (r.kind === "child" ? "  ↳ " : r.kind === "item" ? "    · " : "") + r.label,
-      r.currency,
-      r.ht,
-      r.vatPct != null ? `${r.vatPct}%` : null,
-      r.committed,
-      r.kind === "item" ? null : r.paid,
-      r.kind === "item" ? null : r.committed != null ? r.committed - r.paid : null,
-      r.next || null,
-      r.kind === "item" ? null : t(`status.${r.status}`)
-    ]);
-    if (kind === "csv") {
-      const csv = [header, ...data]
-        .map((row) => row.map((c) => `"${String(c ?? "").replace(/"/g, '""')}"`).join(";"))
-        .join("\n");
-      const blob = new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8" });
-      const a = document.createElement("a");
-      a.href = URL.createObjectURL(blob);
-      a.download = "budget-ledger.csv";
-      a.click();
-      return;
-    }
-    const XLSX = await import("xlsx");
-    const ws = XLSX.utils.aoa_to_sheet([header, ...data]);
-    const n = data.length;
-    XLSX.utils.sheet_add_aoa(ws, [[t("total"), null, null, null, null, null, null, null, null]], { origin: n + 1 });
-    ws[XLSX.utils.encode_cell({ r: n + 1, c: 4 })] = { t: "n", f: `SUM(E2:E${n + 1})` };
-    ws[XLSX.utils.encode_cell({ r: n + 1, c: 5 })] = { t: "n", f: `SUM(F2:F${n + 1})` };
-    ws[XLSX.utils.encode_cell({ r: n + 1, c: 6 })] = { t: "n", f: `SUM(G2:G${n + 1})` };
-    ws["!cols"] = [{ wch: 38 }, { wch: 6 }, { wch: 12 }, { wch: 8 }, { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 22 }, { wch: 12 }];
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Ledger");
-    XLSX.writeFile(wb, "budget-ledger.xlsx");
   }
 
   const th = (label: string, key: SortKey, num = false) => (
@@ -869,9 +882,29 @@ function Ledger({
       <tr
         key={r.id}
         className={isActiveRow ? "row-active" : undefined}
-        style={r.kind === "child" ? { color: "var(--ink2)", fontSize: "0.94em" } : undefined}
+        style={{
+          ...(r.kind === "child" ? { color: "var(--ink2)", fontSize: "0.94em" } : {}),
+          ...(r.archived ? { opacity: 0.55 } : {})
+        }}
       >
-        <td style={{ textAlign: "center", paddingRight: 4 }}>
+        <td style={{ textAlign: "center", paddingRight: 4, whiteSpace: "nowrap" }}>
+          {isTeam && (
+            <input
+              type="checkbox"
+              className="team-only"
+              checked={selected.has(r.id)}
+              onChange={(e) => {
+                setSelected((prev) => {
+                  const n = new Set(prev);
+                  if (e.target.checked) n.add(r.id); else n.delete(r.id);
+                  return n;
+                });
+              }}
+              onClick={(e) => e.stopPropagation()}
+              aria-label={t("selectLine", { label: r.label })}
+              style={{ marginRight: 3 }}
+            />
+          )}
           {r.draft && (
             <span className="draft-dot" role="img" aria-label={t("status.draftAria")} title={t("status.draft")}>
               <span className="sr-only">{t("status.draftAria")}</span>
@@ -905,6 +938,7 @@ function Ledger({
                 {t("gapShort")}
               </span>
             )}
+            {r.archived && <span className="tag" style={{ marginLeft: 8 }}>{t("archivedTag")}</span>}
             {r.vendorId && r.kind === "line" && (
               <Link className="addnote" style={{ marginLeft: 8, fontSize: 12 }} href={`/budget/vendor/${r.vendorId}`}>
                 {tmaster("sheet")}
@@ -920,13 +954,25 @@ function Ledger({
                 ×
               </button>
             )}
+            {isTeam && (
+              <button
+                className="addnote team-only"
+                title={t("lineActions")}
+                aria-label={t("lineActions")}
+                onClick={(e) => { e.stopPropagation(); setDrawerFor(r.lineId); }}
+                style={{ marginLeft: 6, fontWeight: 600 }}
+              >
+                ⋯
+              </button>
+            )}
           </>
         )}
         {cell(r, ri, 2, r.currency)}
-        {cell(r, ri, 3, r.ht != null ? money(format, r.ht, r.currency) : "—", true)}
-        {cell(r, ri, 4, r.vatPct != null ? `${r.vatPct} %` : "—", true)}
+        {cell(r, ri, 3, r.budgeted != null ? money(format, r.budgeted, r.currency) : "—", true)}
+        {cell(r, ri, 4, r.ht != null ? money(format, r.ht, r.currency) : "—", true)}
+        {cell(r, ri, 5, r.vatPct != null ? `${r.vatPct} %` : "—", true)}
         {cell(
-          r, ri, 5,
+          r, ri, 6,
           r.committed != null ? (
             <>
               {money(format, r.committed, r.currency)}
@@ -939,9 +985,9 @@ function Ledger({
           ),
           true
         )}
-        {cell(r, ri, 6, r.paid ? money(format, r.paid, r.currency) : "—", true)}
-        {cell(r, ri, 7, r.committed != null ? money(format, r.committed - r.paid, r.currency) : "—", true)}
-        {cell(r, ri, 8, r.next || "—")}
+        {cell(r, ri, 7, r.paid ? money(format, r.paid, r.currency) : "—", true)}
+        {cell(r, ri, 8, r.committed != null ? money(format, r.committed - r.paid, r.currency) : "—", true)}
+        {cell(r, ri, 9, r.next || "—")}
       </tr>
     );
   };
@@ -967,12 +1013,13 @@ function Ledger({
         </>
       )}
       {cell(r, ri, 2, "")}
-      {cell(r, ri, 3, r.ht != null ? money(format, r.ht) : "—", true)}
-      {cell(r, ri, 4, r.vatPct != null ? `${r.vatPct} %` : "—", true)}
-      {cell(r, ri, 5, r.committed != null ? money(format, r.committed) : "—", true)}
-      {cell(r, ri, 6, "", true)}
+      {cell(r, ri, 3, "", true)}
+      {cell(r, ri, 4, r.ht != null ? money(format, r.ht) : "—", true)}
+      {cell(r, ri, 5, r.vatPct != null ? `${r.vatPct} %` : "—", true)}
+      {cell(r, ri, 6, r.committed != null ? money(format, r.committed) : "—", true)}
       {cell(r, ri, 7, "", true)}
-      {cell(r, ri, 8, "")}
+      {cell(r, ri, 8, "", true)}
+      {cell(r, ri, 9, "")}
     </tr>
   );
 
@@ -984,7 +1031,7 @@ function Ledger({
     return (
       <tr key={`${r.id}-tools`} className="ledger-tools team-only">
         <td></td>
-        <td colSpan={8}>
+        <td colSpan={9}>
           <div style={{ display: "flex", gap: 14, alignItems: "baseline", flexWrap: "wrap", padding: "2px 0 6px" }}>
             {isTeam && (
               <button className="addnote" onClick={() => insertItem(r.id)}>
@@ -1090,8 +1137,19 @@ function Ledger({
             {dense ? t("comfortable") : t("compact")}
           </button>
         )}
-        <button className="addnote" onClick={() => exportSheet("csv")}>CSV</button>
-        <button className="addnote" onClick={() => exportSheet("xlsx")}>XLSX</button>
+        {isTeam && rows.some((r) => r.archived) && (
+          <button className="addnote team-only" onClick={() => setShowArchived((v) => !v)} aria-pressed={showArchived}>
+            {showArchived ? t("hideArchived") : t("showArchived", { count: rows.filter((r) => r.archived && r.kind === "line").length })}
+          </button>
+        )}
+        {/* Exports leave through the journaled workflow — team only. */}
+        {isTeam && (
+          <span className="team-only" style={{ display: "inline-flex", gap: 10 }}>
+            <button className="addnote" onClick={() => setImporting(true)}>{t("importOpen")}</button>
+            <a className="addnote" style={{ textDecoration: "none" }} href="/api/budget-exports?kind=ledger&format=csv">CSV</a>
+            <a className="addnote" style={{ textDecoration: "none" }} href="/api/budget-exports?kind=ledger&format=xlsx">XLSX</a>
+          </span>
+        )}
         {isTeam && (
           <span style={{ fontSize: 12.5, color: saved === "saving" ? "var(--bronze)" : "var(--ink2)" }} role="status" aria-live="polite">
             {saved === "saving" ? t("saving") : saved === "saved" ? t("savedNote") : ""}
@@ -1099,13 +1157,26 @@ function Ledger({
         )}
       </div>
 
+      {/* The bulk bar appears with a selection, never before (§8). */}
+      {isTeam && selected.size > 0 && (
+        <BulkBar
+          weddingId={weddingId}
+          selected={selected}
+          clear={() => setSelected(new Set())}
+          envelopes={envelopes}
+          vendors={vendors}
+          lines={lines}
+        />
+      )}
+
       <div ref={wrapRef} className="ledger-wrap" onKeyDown={onKey} onPaste={onPaste} tabIndex={0} role="grid" aria-label={tm("lineByLine")}>
         <table className={`sheet-table ledger${dense ? " dense" : ""}`} ref={gridRef}>
           <thead>
             <tr>
-              <th aria-label={t("colStatus")} style={{ width: 20 }}></th>
+              <th aria-label={t("colStatus")} style={{ width: 40 }}></th>
               {th(t("colLine"), "label")}
               {th(t("colCurrency"), null)}
+              {th(t("colBudgeted"), null, true)}
               {th("HT", null, true)}
               {th(t("colVat"), null, true)}
               {th("TTC", "committed", true)}
@@ -1116,7 +1187,7 @@ function Ledger({
           </thead>
           <tbody>
             {groups.map((g) => {
-              const groupLineRows = g.parents.flatMap((p) => [p, ...rows.filter((r) => r.parentId === p.id && r.kind === "child")]);
+              const groupLineRows = g.parents.flatMap((p) => [p, ...rows.filter((r) => r.parentId === p.id && r.kind === "child" && (showArchived || !r.archived))]);
               const sub = groupLineRows.reduce(
                 (a, r) => ({ ttc: a.ttc + Number(r.committed ?? 0), paid: a.paid + Number(r.paid ?? 0) }),
                 { ttc: 0, paid: 0 }
@@ -1125,7 +1196,7 @@ function Ledger({
               return (
                 <React.Fragment key={g.envId || "none"}>
                   <tr className="ledger-group">
-                    <td colSpan={5}>
+                    <td colSpan={6}>
                       <button
                         className="addnote"
                         onClick={() =>
@@ -1163,7 +1234,7 @@ function Ledger({
                         }
                         out.push(renderLineTools(p));
                       }
-                      for (const c of rows.filter((r) => r.parentId === p.id && r.kind === "child")) {
+                      for (const c of rows.filter((r) => r.parentId === p.id && r.kind === "child" && (showArchived || !r.archived))) {
                         const ci = flat.findIndex((f) => f.id === c.id);
                         out.push(renderLineRow(c, ci, flat[focus.r]?.id === c.id));
                       }
@@ -1172,7 +1243,7 @@ function Ledger({
                   {!isCollapsed && isTeam && (
                     <tr className="ledger-addrow team-only">
                       <td></td>
-                      <td colSpan={8}>
+                      <td colSpan={9}>
                         <button className="addnote" onClick={() => insertLine(g.envId || null)}>
                           {t("addLine")}
                         </button>
@@ -1191,7 +1262,408 @@ function Ledger({
           {t("draftLegend")} — {t("ledgerHint")} {t("insertHint")}
         </p>
       )}
+      {isTeam && importing && (
+        <BudgetImportLazy
+          weddingId={weddingId}
+          existingLabels={lines.map((l) => l.label)}
+          onClose={() => setImporting(false)}
+        />
+      )}
+      {isTeam && drawerFor && (() => {
+        const line = lines.find((l) => l.id === drawerFor);
+        if (!line) return null;
+        return (
+          <LineDrawer
+            weddingId={weddingId}
+            line={line}
+            envelopes={envelopes}
+            vendors={vendors}
+            docs={docs}
+            finLinks={finLinks}
+            invoices={invoices}
+            onClose={() => setDrawerFor(null)}
+          />
+        );
+      })()}
     </div>
+  );
+}
+
+/** The selection's quiet toolbelt (§8) — shown only while rows are chosen. */
+function BulkBar({
+  weddingId,
+  selected,
+  clear,
+  envelopes,
+  vendors,
+  lines
+}: {
+  weddingId: string;
+  selected: Set<string>;
+  clear: () => void;
+  envelopes: BudgetEnvelope[];
+  vendors: { id: string; name: string }[];
+  lines: BudgetLine[];
+}) {
+  const t = useTranslations("budget.views.bulk");
+  const router = useRouter();
+  const [pending, startTransition] = useTransition();
+  const ids = [...selected];
+
+  const run = (gesture: Parameters<typeof bulkLines>[2]) =>
+    startTransition(async () => {
+      await bulkLines(weddingId, ids, gesture);
+      clear();
+      router.refresh();
+    });
+
+  return (
+    <div className="team-only" role="toolbar" aria-label={t("aria")} style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center", padding: "8px 12px", marginBottom: 10, background: "var(--parchment)", border: "1px solid var(--line)" }}>
+      <strong style={{ fontSize: 13 }}>{t("count", { count: selected.size })}</strong>
+      <label style={{ display: "inline-flex", gap: 6, alignItems: "baseline", fontSize: 12.5, color: "var(--ink2)" }}>
+        {t("move")}
+        <select
+          defaultValue=""
+          onChange={(e) => { if (e.target.value !== "×") run({ kind: "envelope", envelopeId: e.target.value || null }); }}
+          style={{ padding: "3px 6px", border: "1px solid var(--line)", background: "#fff", fontSize: 12 }}
+        >
+          <option value="×">—</option>
+          <option value="">{t("noEnvelope")}</option>
+          {envelopes.filter((e) => !e.archived).map((e) => <option key={e.id} value={e.id}>{e.label}</option>)}
+        </select>
+      </label>
+      <label style={{ display: "inline-flex", gap: 6, alignItems: "baseline", fontSize: 12.5, color: "var(--ink2)" }}>
+        {t("vendor")}
+        <select
+          defaultValue="×"
+          onChange={(e) => { if (e.target.value !== "×") run({ kind: "vendor", vendorId: e.target.value || null }); }}
+          style={{ padding: "3px 6px", border: "1px solid var(--line)", background: "#fff", fontSize: 12 }}
+        >
+          <option value="×">—</option>
+          <option value="">{t("noVendor")}</option>
+          {vendors.map((v) => <option key={v.id} value={v.id}>{v.name}</option>)}
+        </select>
+      </label>
+      <button
+        className="addnote"
+        disabled={pending}
+        onClick={() => {
+          const note = window.prompt(t("notePrompt"));
+          if (!note?.trim()) return;
+          const labels = lines.filter((l) => selected.has(l.id)).map((l) => l.label).join(" · ");
+          startTransition(async () => {
+            await saveInternalBudgetNote(weddingId, `[${labels}] ${note.trim()}`);
+            clear();
+            router.refresh();
+          });
+        }}
+      >
+        {t("note")}
+      </button>
+      <button className="addnote" disabled={pending} onClick={() => run({ kind: "archive", archived: true })}>{t("archive")}</button>
+      <a className="addnote" style={{ textDecoration: "none" }} href={`/api/budget-exports?kind=selected&format=xlsx&ids=${ids.join(",")}`}>
+        {t("export")}
+      </a>
+      <button className="addnote" disabled={pending} onClick={() => run({ kind: "publish" })}>{t("publish")}</button>
+      <button className="addnote" disabled={pending} title={t("hideHint")} onClick={() => run({ kind: "hide" })}>{t("hide")}</button>
+      <button className="addnote" style={{ marginLeft: "auto", color: "var(--ink2)" }} onClick={clear}>{t("clear")}</button>
+    </div>
+  );
+}
+
+/**
+ * The line's drawer (§7): every gesture a line supports, off the page —
+ * vendor connection (canonical, read-only), category, records of
+ * account, papers attached by link, archive/restore, the draft's
+ * delete, and the line's own history from the journal.
+ */
+function LineDrawer({
+  weddingId,
+  line,
+  envelopes,
+  vendors,
+  docs,
+  finLinks,
+  invoices,
+  onClose
+}: {
+  weddingId: string;
+  line: BudgetLine;
+  envelopes: BudgetEnvelope[];
+  vendors: { id: string; name: string }[];
+  docs: VendorDocument[];
+  finLinks: FinDocLink[];
+  invoices: Invoice[];
+  onClose: () => void;
+}) {
+  const t = useTranslations("budget.views.drawer");
+  const tc = useTranslations("common");
+  const format = useFormatter();
+  const router = useRouter();
+  const [pending, startTransition] = useTransition();
+  const [history, setHistory] = useState<{ actor: string; action: string; created_at: string }[] | null>(null);
+  const [recordKind, setRecordKind] = useState<Invoice["kind"]>("invoice");
+  const [recordLabel, setRecordLabel] = useState("");
+  const [recordTtc, setRecordTtc] = useState("");
+  const [payLabel, setPayLabel] = useState("");
+  const [payAmount, setPayAmount] = useState("");
+  const [payDue, setPayDue] = useState("");
+  const [paySettled, setPaySettled] = useState(false);
+  const [attachId, setAttachId] = useState("");
+
+  const vendor = vendors.find((v) => v.id === line.vendor_id) ?? null;
+  const lineInvoices = invoices.filter((i) => i.budget_line_id === line.id);
+  const linked = finLinks.filter((l) => l.target_kind === "budget_line" && l.target_id === line.id);
+  const vendorDocs = docs.filter((d) => d.vendor_id === line.vendor_id && !d.archived);
+  const num = (s: string) => (s.trim() === "" ? null : Number(s.replace(/[^\d.-]/g, "")) || 0);
+  const eur = (n: number | null | undefined) => money(format, n != null ? Number(n) : null);
+
+  useEffect(() => {
+    let alive = true;
+    void lineHistory(weddingId, line.id).then((r) => { if (alive && r.ok) setHistory(r.entries); });
+    return () => { alive = false; };
+  }, [weddingId, line.id]);
+
+  const sectionTitle: React.CSSProperties = { margin: "16px 0 6px" };
+
+  return (
+    <>
+      <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(34,56,43,.25)", zIndex: 40 }} aria-hidden />
+      <aside aria-label={t("title", { label: line.label })} style={{ position: "fixed", top: 0, right: 0, bottom: 0, width: "min(560px, 100%)", background: "var(--white, #fffdf9)", borderLeft: "1px solid var(--line)", padding: "24px 26px", overflow: "auto", zIndex: 50, boxShadow: "-12px 0 40px rgba(34,56,43,.12)" }}>
+        <p className="eyebrow" style={{ color: "var(--bronze)", margin: 0 }}>{t("eyebrow")}</p>
+        <div style={{ display: "flex", gap: 10, alignItems: "baseline", flexWrap: "wrap", marginTop: 4 }}>
+          <strong className="serif" style={{ fontSize: 19 }}>{line.label}</strong>
+          {line.status === "draft" ? <span className="tag int">{tc("draft")}</span> : <span className="tag ok">{t("published")}</span>}
+          {line.archived && <span className="tag">{t("archived")}</span>}
+        </div>
+        <p style={{ fontSize: 13, color: "var(--ink2)", margin: "6px 0 0" }}>
+          {t("figures", { committed: eur(line.committed), paid: eur(line.paid) })}
+        </p>
+
+        {/* Vendor — the connection is canonical, the figures read-only (§4). */}
+        <div className="eyebrow" style={sectionTitle}>{t("vendorTitle")}</div>
+        <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "baseline" }}>
+          <select
+            value={line.vendor_id ?? ""}
+            onChange={(e) =>
+              startTransition(async () => {
+                await setLineVendor(line.id, e.target.value || null);
+                router.refresh();
+              })
+            }
+            style={{ padding: "6px 8px", border: "1px solid var(--line)", background: "#fff", fontSize: 12.5 }}
+            aria-label={t("vendorTitle")}
+          >
+            <option value="">{t("noVendor")}</option>
+            {vendors.map((v) => <option key={v.id} value={v.id}>{v.name}</option>)}
+          </select>
+          {vendor && (
+            <>
+              <Link className="addnote" href={`/vendors/${vendor.id}`}>{t("viewProfile")}</Link>
+              <Link className="addnote" href={`/budget/vendor/${vendor.id}`}>{t("openSheet")}</Link>
+            </>
+          )}
+        </div>
+
+        <div className="eyebrow" style={sectionTitle}>{t("categoryTitle")}</div>
+        <select
+          value={line.envelope_id ?? ""}
+          onChange={(e) =>
+            startTransition(async () => {
+              await setLineEnvelope(line.id, e.target.value || null);
+              router.refresh();
+            })
+          }
+          style={{ padding: "6px 8px", border: "1px solid var(--line)", background: "#fff", fontSize: 12.5 }}
+          aria-label={t("categoryTitle")}
+        >
+          <option value="">{t("noEnvelope")}</option>
+          {envelopes.filter((e) => !e.archived).map((e) => <option key={e.id} value={e.id}>{e.label}</option>)}
+        </select>
+
+        {/* Records of account (§6): the figures' provenance, never a bare total. */}
+        <div className="eyebrow" style={sectionTitle}>{t("recordsTitle")}</div>
+        {lineInvoices.length > 0 && (
+          <div style={{ border: "1px solid var(--line)", marginBottom: 8 }}>
+            {lineInvoices.map((i) => (
+              <div key={i.id} style={{ display: "flex", gap: 8, alignItems: "baseline", padding: "6px 10px", borderBottom: "1px solid rgba(201,178,145,.2)", fontSize: 13 }}>
+                <span className="tag int">{t(`recordKind.${i.kind}`)}</span>
+                <span style={{ flex: 1 }}>{i.label}{i.number ? ` · ${i.number}` : ""}</span>
+                <span className="num">{eur(i.amount_ttc)}</span>
+                <span style={{ fontSize: 11.5, color: "var(--ink2)" }}>{t(`recordStatus.${i.status}`)}</span>
+                <button
+                  className="addnote"
+                  disabled={pending}
+                  title={i.status === "draft" ? t("removeDraft") : t("cancelRecord")}
+                  onClick={() => startTransition(async () => { await removeInvoice(i.id); router.refresh(); })}
+                >
+                  ×
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+          <select value={recordKind} onChange={(e) => setRecordKind(e.target.value as Invoice["kind"])} style={{ padding: "6px 8px", border: "1px solid var(--line)", background: "#fff", fontSize: 12.5 }}>
+            {(["proposal", "commitment", "invoice", "credit_note"] as const).map((k) => (
+              <option key={k} value={k}>{t(`recordKind.${k}`)}</option>
+            ))}
+          </select>
+          <input value={recordLabel} onChange={(e) => setRecordLabel(e.target.value)} placeholder={t("recordLabelPh")} style={{ flex: 1, minWidth: 120, padding: "6px 8px", border: "1px solid var(--line)", fontSize: 12.5 }} />
+          <input value={recordTtc} onChange={(e) => setRecordTtc(e.target.value)} placeholder="TTC" inputMode="decimal" style={{ width: 90, padding: "6px 8px", border: "1px solid var(--line)", fontSize: 12.5, textAlign: "right" }} />
+          <button
+            className="addnote"
+            disabled={pending || !recordLabel.trim()}
+            onClick={() =>
+              startTransition(async () => {
+                const r = await saveInvoice({
+                  weddingId,
+                  vendorId: line.vendor_id ?? null,
+                  budgetLineId: line.id,
+                  kind: recordKind,
+                  label: recordLabel.trim(),
+                  amountTtc: num(recordTtc)
+                });
+                if (r.ok) { setRecordLabel(""); setRecordTtc(""); router.refresh(); }
+                else window.alert(t("needsMigration"));
+              })
+            }
+          >
+            {t("recordAdd")}
+          </button>
+        </div>
+
+        {/* Instalment or settled payment, straight from the line (§7). */}
+        <div className="eyebrow" style={sectionTitle}>{t("payTitle")}</div>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+          <input value={payLabel} onChange={(e) => setPayLabel(e.target.value)} placeholder={t("payLabelPh")} style={{ flex: 1, minWidth: 120, padding: "6px 8px", border: "1px solid var(--line)", fontSize: 12.5 }} />
+          <input value={payAmount} onChange={(e) => setPayAmount(e.target.value)} placeholder="8 000" inputMode="decimal" style={{ width: 90, padding: "6px 8px", border: "1px solid var(--line)", fontSize: 12.5, textAlign: "right" }} />
+          <input type="date" value={payDue} onChange={(e) => setPayDue(e.target.value)} style={{ padding: "5px 8px", border: "1px solid var(--line)", fontSize: 12.5 }} aria-label={t("payDue")} />
+          <label style={{ fontSize: 12, display: "inline-flex", gap: 5, alignItems: "center" }}>
+            <input type="checkbox" checked={paySettled} onChange={(e) => setPaySettled(e.target.checked)} />
+            {t("paySettled")}
+          </label>
+          <button
+            className="addnote"
+            disabled={pending || !payLabel.trim() || !num(payAmount)}
+            onClick={() =>
+              startTransition(async () => {
+                await addPayment({
+                  weddingId,
+                  budgetLineId: line.id,
+                  label: payLabel.trim(),
+                  amount: num(payAmount)!,
+                  currency: "EUR",
+                  amountEur: num(payAmount),
+                  dueDate: payDue || null,
+                  method: "Bank transfer",
+                  payer: "",
+                  refundable: false,
+                  status: paySettled ? "confirmed" : "expected"
+                });
+                setPayLabel(""); setPayAmount(""); setPayDue("");
+                router.refresh();
+              })
+            }
+          >
+            {t("payAdd")}
+          </button>
+        </div>
+
+        {/* One paper, linked — never copied (§9). */}
+        <div className="eyebrow" style={sectionTitle}>{t("docsTitle")}</div>
+        {linked.map((l) => {
+          const doc = docs.find((d) => d.id === l.document_id);
+          return (
+            <div key={l.id} style={{ display: "flex", gap: 8, alignItems: "baseline", fontSize: 13, padding: "3px 0" }}>
+              <span style={{ flex: 1 }}>{doc?.label ?? t("docGone")}</span>
+              <button className="addnote" disabled={pending} onClick={() => startTransition(async () => { await detachDocument(l.id); router.refresh(); })}>
+                {t("detach")}
+              </button>
+            </div>
+          );
+        })}
+        {vendorDocs.length > 0 ? (
+          <div style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 4 }}>
+            <select value={attachId} onChange={(e) => setAttachId(e.target.value)} style={{ flex: 1, padding: "6px 8px", border: "1px solid var(--line)", background: "#fff", fontSize: 12.5 }} aria-label={t("attach")}>
+              <option value="">{t("attachPick")}</option>
+              {vendorDocs.filter((d) => !linked.some((l) => l.document_id === d.id)).map((d) => (
+                <option key={d.id} value={d.id}>{d.label}</option>
+              ))}
+            </select>
+            <button
+              className="addnote"
+              disabled={pending || !attachId}
+              onClick={() =>
+                startTransition(async () => {
+                  const r = await attachDocument({ weddingId, documentId: attachId, targetKind: "budget_line", targetId: line.id });
+                  if (!r.ok) window.alert(t("needsMigration"));
+                  setAttachId("");
+                  router.refresh();
+                })
+              }
+            >
+              {t("attach")}
+            </button>
+          </div>
+        ) : (
+          linked.length === 0 && <p style={{ fontSize: 12.5, color: "var(--ink2)", margin: 0 }}>{t("noDocs")}</p>
+        )}
+
+        {/* Archive / restore / the draft's delete (§18). */}
+        <div className="eyebrow" style={sectionTitle}>{t("gesturesTitle")}</div>
+        <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+          <button
+            className="addnote"
+            disabled={pending}
+            onClick={() =>
+              startTransition(async () => {
+                const r = await setLineArchived(line.id, !line.archived);
+                if (!r.ok) window.alert(t("needsMigration"));
+                router.refresh();
+              })
+            }
+          >
+            {line.archived ? t("restore") : t("archive")}
+          </button>
+          <a className="addnote" style={{ textDecoration: "none" }} href={`/api/budget-exports?kind=selected&format=xlsx&ids=${line.id}`}>
+            {t("exportLine")}
+          </a>
+          {line.status === "draft" ? (
+            <button
+              className="addnote"
+              style={{ color: "var(--bronze)" }}
+              disabled={pending}
+              onClick={() => {
+                if (!window.confirm(t("deleteConfirm", { label: line.label }))) return;
+                startTransition(async () => {
+                  await deleteBudgetLineWithUndo(line.id);
+                  onClose();
+                  router.refresh();
+                });
+              }}
+            >
+              {t("deleteDraft")}
+            </button>
+          ) : (
+            <span style={{ fontSize: 12.5, color: "var(--ink2)", alignSelf: "center" }}>{t("publishedNoDelete")}</span>
+          )}
+        </div>
+
+        <div className="eyebrow" style={sectionTitle}>{t("historyTitle")}</div>
+        {history === null && <p style={{ fontSize: 12.5, color: "var(--ink2)" }}>…</p>}
+        {history?.length === 0 && <p style={{ fontSize: 12.5, color: "var(--ink2)" }}>{t("historyNone")}</p>}
+        {(history ?? []).map((e, i) => (
+          <p key={i} style={{ fontSize: 12.5, margin: "3px 0", color: "var(--ink2)" }}>
+            {format.dateTime(new Date(e.created_at), { day: "numeric", month: "short" })} · <strong style={{ color: "var(--hunter)" }}>{e.actor}</strong> — {e.action}
+          </p>
+        ))}
+
+        <div style={{ marginTop: 18 }}>
+          <button className="btn ghost sm" onClick={onClose}>{tc("close")}</button>
+        </div>
+      </aside>
+    </>
   );
 }
 
@@ -1302,12 +1774,14 @@ function HouseBook({
   const [, startTransition] = useTransition();
 
   const groups = useMemo(() => {
-    const parents = lines.filter((l) => !l.parent_line_id);
+    // Archived lines and envelopes rest outside the book (0027).
+    const living = lines.filter((l) => !l.archived);
+    const parents = living.filter((l) => !l.parent_line_id);
     const byEnv = new Map<string | null, BudgetLine[]>();
-    for (const e of envelopes) byEnv.set(e.id, []);
+    for (const e of envelopes.filter((x) => !x.archived)) byEnv.set(e.id, []);
     for (const p of parents) byEnv.set(p.envelope_id ?? null, [...(byEnv.get(p.envelope_id ?? null) ?? []), p]);
     const envTotals = envelopeCommitted(
-      lines.map((l) => ({
+      living.map((l) => ({
         id: l.id,
         envelope_id: l.envelope_id ?? null,
         parent_line_id: l.parent_line_id ?? null,
@@ -1325,7 +1799,7 @@ function HouseBook({
       .map(([envId, ps]) => {
         const env = envelopes.find((e) => e.id === envId) ?? null;
         const note = envelopeNotes.find((n) => n.envelope_id === envId && n.status === "published") ?? null;
-        const kids = (p: BudgetLine) => lines.filter((l) => l.parent_line_id === p.id);
+        const kids = (p: BudgetLine) => living.filter((l) => l.parent_line_id === p.id);
         const all = ps.flatMap((p) => [p, ...kids(p)]);
         // Committed through the shared computation (0020): a post
         // carrying its own category counts there, not here.
@@ -1486,7 +1960,7 @@ function HouseBook({
                               <div key={x.id} className="hb-item">
                                 <span>
                                   {x.label}
-                                  {x.paid_at && <span className="tag ok" style={{ marginLeft: 8 }}>{t("settled")}</span>}
+                                  {isSettledPayment(x) && <span className="tag ok" style={{ marginLeft: 8 }}>{t("settled")}</span>}
                                 </span>
                                 <span className="num">
                                   {format.number(x.amount, { style: "currency", currency: x.currency || "EUR", maximumFractionDigits: 0 })}

@@ -34,6 +34,8 @@ export interface ReadingRow {
   created_at: string;
   vendorName: string | null;
   vendorId: string | null;
+  /** The filed original — a re-read starts from it, never a re-upload. */
+  storagePath: string | null;
   payload: ReadingPayload;
   current: {
     committed: number | null;
@@ -50,10 +52,12 @@ export interface ReadingRow {
  * The agent proposes; it never decrees.
  */
 export function ReadingsDesk({
+  weddingId,
   readings,
   envelopes,
   vendorHomes
 }: {
+  weddingId: string;
   readings: ReadingRow[];
   envelopes: { id: string; label: string }[];
   vendorHomes: Record<string, string | null>;
@@ -69,6 +73,7 @@ export function ReadingsDesk({
       {readings.map((r) => (
         <Reading
           key={r.id}
+          weddingId={weddingId}
           reading={r}
           envelopes={envelopes}
           homeEnvelope={r.vendorId ? vendorHomes[r.vendorId] ?? null : null}
@@ -79,10 +84,12 @@ export function ReadingsDesk({
 }
 
 function Reading({
+  weddingId,
   reading,
   envelopes,
   homeEnvelope
 }: {
+  weddingId: string;
   reading: ReadingRow;
   envelopes: { id: string; label: string }[];
   homeEnvelope: string | null;
@@ -336,6 +343,72 @@ function Reading({
         </button>
         <span style={{ fontSize: 12.5, color: "var(--ink2)", alignSelf: "center" }}>{t("draftNote")}</span>
       </div>
+      {reading.storagePath && (
+        <Reread weddingId={weddingId} storagePath={reading.storagePath} vendorId={reading.vendorId} />
+      )}
+    </div>
+  );
+}
+
+/**
+ * Re-read the filed original (PRD §10) — one wrong value never costs
+ * a re-upload: Estelle names what to attend to (a field, pages), and
+ * the analyst reads the same paper again from the register.
+ */
+function Reread({
+  weddingId,
+  storagePath,
+  vendorId
+}: {
+  weddingId: string;
+  storagePath: string;
+  vendorId: string | null;
+}) {
+  const t = useTranslations("budget.readings");
+  const router = useRouter();
+  const [open, setOpen] = useState(false);
+  const [focus, setFocus] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [note, setNote] = useState<string | null>(null);
+
+  async function go() {
+    if (busy) return;
+    setBusy(true);
+    setNote(null);
+    try {
+      const form = new FormData();
+      form.append("weddingId", weddingId);
+      form.append("rereadPath", storagePath);
+      if (vendorId) form.append("vendorId", vendorId);
+      if (focus.trim()) form.append("focus", focus.trim());
+      const r = await fetch("/api/agents/document", { method: "POST", body: form });
+      const d = await r.json();
+      setNote(d.text ?? t("rereadFailed"));
+      router.refresh();
+    } catch {
+      setNote(t("rereadFailed"));
+    }
+    setBusy(false);
+  }
+
+  if (!open) {
+    return (
+      <button className="addnote" style={{ marginTop: 8 }} onClick={() => setOpen(true)}>
+        {t("reread")}
+      </button>
+    );
+  }
+  return (
+    <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center", marginTop: 8 }}>
+      <input
+        value={focus}
+        onChange={(e) => setFocus(e.target.value)}
+        placeholder={t("rereadFocusPh")}
+        style={{ flex: "1 1 240px", padding: "7px 10px", border: "1px solid var(--line)", fontSize: 13 }}
+      />
+      <button className="btn ghost sm" disabled={busy} onClick={go}>{busy ? "…" : t("rereadGo")}</button>
+      <button className="addnote" onClick={() => setOpen(false)}>{t("rereadClose")}</button>
+      {note && <p style={{ flexBasis: "100%", fontSize: 12.5, color: "var(--ink2)", margin: 0 }}>{note}</p>}
     </div>
   );
 }

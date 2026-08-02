@@ -6,11 +6,15 @@ import type {
   BudgetLine,
   BudgetLineItem,
   BudgetRisk,
+  BudgetScenario,
   EnvelopeNote,
-  Payment
+  Invoice,
+  Payment,
+  VendorDocument
 } from "@/lib/types";
 import {
   BudgetTabs,
+  BudgetActionBar,
   MadameBudgetAdd,
   PublishBar,
   BudgetAsk,
@@ -18,6 +22,7 @@ import {
   InternalNotes,
   AnalysisDesk
 } from "./budget-client";
+import type { FinDocLink } from "./ledger-client";
 import { ScopeStudio, ScopeAnalysisDrop } from "./scope-client";
 import { PaymentsCalendar, RiskBuffer } from "./mgmt-client";
 import { RemindersDesk } from "./reminders-client";
@@ -73,19 +78,34 @@ export default async function BudgetPage({
           .limit(1)
           .maybeSingle()
       : Promise.resolve({ data: null }),
-    supabase.from("vendors").select("id, name, envelope_id").eq("wedding_id", wedding.id).order("name")
+    supabase.from("vendors").select("id, name, category, stage, envelope_id").eq("wedding_id", wedding.id).order("name")
   ]);
-  let vendorList = (vendorRows ?? []) as { id: string; name: string; envelope_id?: string | null }[];
+
+  // The financial records (0027) and the papers — team material,
+  // absent before the migration: the page keeps its manners.
+  const [invoicesRes, scenariosRes, docsRes, linksRes] = session.isTeam
+    ? await Promise.all([
+        supabase.from("invoices").select("*").eq("wedding_id", wedding.id).order("created_at"),
+        supabase.from("budget_scenarios").select("*").eq("wedding_id", wedding.id).order("created_at"),
+        supabase.from("vendor_documents").select("*").eq("wedding_id", wedding.id),
+        supabase.from("financial_document_links").select("*").eq("wedding_id", wedding.id)
+      ])
+    : [{ data: null }, { data: null }, { data: null }, { data: null }];
+  const invoices = ((invoicesRes as { data: unknown }).data ?? []) as Invoice[];
+  const scenarios = ((scenariosRes as { data: unknown }).data ?? []) as BudgetScenario[];
+  const vendorDocs = ((docsRes as { data: unknown }).data ?? []) as VendorDocument[];
+  const finLinks = ((linksRes as { data: unknown }).data ?? []) as FinDocLink[];
+  let vendorList = (vendorRows ?? []) as { id: string; name: string; category?: string; stage?: string; envelope_id?: string | null }[];
   if (!vendorRows) {
     // Pre-0019 the home column is absent — the names still stand.
     const { data: bare } = await supabase
       .from("vendors")
-      .select("id, name")
+      .select("id, name, category, stage")
       .eq("wedding_id", wedding.id)
       .order("name");
-    vendorList = (bare ?? []) as { id: string; name: string }[];
+    vendorList = (bare ?? []) as { id: string; name: string; category?: string; stage?: string }[];
   }
-  const vendorOptions = vendorList.map((v) => ({ id: v.id, name: v.name }));
+  const vendorOptions = vendorList.map((v) => ({ id: v.id, name: v.name, category: v.category, stage: v.stage }));
   const vendorHomes: Record<string, string | null> = {};
   for (const v of vendorList) vendorHomes[v.id] = v.envelope_id ?? null;
 
@@ -101,11 +121,14 @@ export default async function BudgetPage({
     : { data: null };
 
   const allLines = (lines ?? []) as BudgetLine[];
+  // Archived lines rest outside every total (0027) — the ledger alone
+  // can unfold them, on request.
+  const liveLines = allLines.filter((l) => !l.archived);
   const allPayments = (payments ?? []) as Payment[];
   const items = (itemsRes.data ?? []) as BudgetLineItem[];
   const risks = (risksRes.data ?? []) as BudgetRisk[];
   const risksAvailable = !risksRes.error;
-  const draftCount = allLines.filter((l) => l.status === "draft").length;
+  const draftCount = liveLines.filter((l) => l.status === "draft").length;
 
   const money = (n: number | null | undefined) =>
     n == null ? "—" : format.number(n, { style: "currency", currency: "EUR", maximumFractionDigits: 0 });
@@ -114,7 +137,7 @@ export default async function BudgetPage({
   // Totals are computed HERE, server-side, and never mix currencies
   // without a traced conversion (application-financière §1.1, §1.5):
   // a foreign line without a held rate stands apart, named to the team.
-  const eurLines = allLines.map((l) => ({ l, v: lineEurValues(l) }));
+  const eurLines = liveLines.map((l) => ({ l, v: lineEurValues(l) }));
   const committed = sumMoney(eurLines.map(({ v }) => (v.converted ? v.committedEur : 0)));
   const paid = sumMoney(eurLines.map(({ v }) => (v.converted ? v.paidEur : 0)));
   const unconverted = eurLines.filter(({ v }) => !v.converted).map(({ l }) => l.label);
@@ -170,6 +193,7 @@ export default async function BudgetPage({
       created_at: r.created_at,
       vendorName: (r.vendors as { name?: string } | null)?.name ?? null,
       vendorId: (r.vendor_id as string | null) ?? null,
+      storagePath: (r.storage_path as string | null) ?? null,
       payload: r.payload as ReadingPayload,
       current: {
         committed: line?.committed ?? null,
@@ -197,6 +221,7 @@ export default async function BudgetPage({
         beyondCommitted={beyondCommitted}
         notes={(notes ?? []) as EnvelopeNote[]}
         isTeam={session.isTeam}
+        scenarios={scenarios}
       />
       {session.isTeam && <ScopeAnalysisDrop weddingId={wedding.id} />}
       {session.isTeam && <MadameBudgetAdd weddingId={wedding.id} />}
@@ -209,8 +234,9 @@ export default async function BudgetPage({
 
       {session.isTeam && (
         <ReadingsDesk
+          weddingId={wedding.id}
           readings={readings}
-          envelopes={((envelopes ?? []) as BudgetEnvelope[]).map((e) => ({ id: e.id, label: e.label }))}
+          envelopes={((envelopes ?? []) as BudgetEnvelope[]).filter((e) => !e.archived).map((e) => ({ id: e.id, label: e.label }))}
           vendorHomes={vendorHomes}
         />
       )}
@@ -320,11 +346,14 @@ export default async function BudgetPage({
         lines={allLines}
         items={items}
         payments={allPayments}
-        envelopes={(envelopes ?? []) as BudgetEnvelope[]}
+        envelopes={((envelopes ?? []) as BudgetEnvelope[]).filter((e) => !e.archived)}
         envelopeNotes={(notes ?? []) as EnvelopeNote[]}
         vendors={vendorOptions}
         nextByLine={nextByLine}
         isTeam={session.isTeam}
+        docs={vendorDocs}
+        finLinks={finLinks}
+        invoices={invoices}
       />
 
       {session.isTeam && (
@@ -399,10 +428,10 @@ export default async function BudgetPage({
       })()}
 
       {session.isTeam && (
-        <div className="ia team-only" style={{ marginTop: 14 }}>
+        <div className="ia team-only" id="budget-doc-drop" style={{ marginTop: 14 }}>
           <div className="eyebrow">{t("docs.title")}</div>
           <p style={{ marginTop: 8, fontSize: 13.5 }}>{t("docs.blurb")}</p>
-          <BudgetDocDrop weddingId={wedding.id} />
+          <BudgetDocDrop weddingId={wedding.id} vendors={vendorOptions} />
         </div>
       )}
 
@@ -421,6 +450,16 @@ export default async function BudgetPage({
       <div className="eyebrow">{t("eyebrow")}</div>
       <h1 className="title">{t("headline")}</h1>
       <p className="lead">{t("lead")}</p>
+      {/* One stable action bar (PRD §3) — team only, above both views. */}
+      {session.isTeam && (
+        <BudgetActionBar
+          weddingId={wedding.id}
+          draftCount={draftCount}
+          envelopes={((envelopes ?? []) as BudgetEnvelope[]).filter((e) => !e.archived).map((e) => ({ id: e.id, label: e.label }))}
+          vendors={vendorOptions}
+          lines={liveLines.map((l) => ({ id: l.id, label: l.label, vendor_id: l.vendor_id }))}
+        />
+      )}
       <BudgetTabs scope={scopePanel} mgmt={mgmtPanel} />
     </section>
   );

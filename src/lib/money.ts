@@ -34,6 +34,24 @@ export function isCurrencyCode(s: string): boolean {
   return /^[A-Z]{3}$/.test(s);
 }
 
+/**
+ * Only confirmed movements count in paid totals (PRD Budget §12).
+ * Pre-0027 the status column is absent and paid_at speaks alone —
+ * partially refunded stays counted; the refund itself subtracts.
+ */
+export function isSettledPayment(p: { status?: string | null; paid_at?: string | null }): boolean {
+  if (p.status) return p.status === "confirmed" || p.status === "partially_refunded";
+  return Boolean(p.paid_at);
+}
+
+/** The sign a movement carries in paid totals: refunds subtract,
+    credit notes are records of account, not money moved. */
+export function paymentSign(p: { kind?: string | null }): number {
+  if (p.kind === "refund") return -1;
+  if (p.kind === "credit_note") return 0;
+  return 1;
+}
+
 export interface EurLine {
   currency?: string | null;
   committed?: number | null;

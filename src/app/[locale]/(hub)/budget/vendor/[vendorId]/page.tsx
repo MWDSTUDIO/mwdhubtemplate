@@ -163,6 +163,10 @@ export default async function VendorSheetPage({
           <h1 className="title" style={{ fontStyle: "italic" }}>{vendor.name}</h1>
         </div>
         <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+          {/* Vendors owns the relationship; Budget owns the figures (§20). */}
+          {session.isTeam && (
+            <Link className="btn ghost team-only" href={`/vendors/${vendorId}`}>{t("openInVendors")}</Link>
+          )}
           <a className="btn ghost" href={`/api/pdf/vendor/${vendorId}`} target="_blank" rel="noreferrer">
             {t("exportPdf")}
           </a>

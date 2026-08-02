@@ -47,29 +47,87 @@ export async function POST(request: Request) {
     const form = await request.formData();
     const weddingId = String(form.get("weddingId"));
     const vendorId = form.get("vendorId") ? String(form.get("vendorId")) : null;
+    const sha256 = form.get("sha256") ? String(form.get("sha256")) : null;
+    const force = Boolean(form.get("force"));
+    // Re-read (PRD Budget §10): the paper already filed is read again
+    // from its original — the user never re-uploads the whole file.
+    const rereadPath = form.get("rereadPath") ? String(form.get("rereadPath")) : null;
+    const focus = form.get("focus") ? String(form.get("focus")).slice(0, 500) : null;
     const file = form.get("file") as File | null;
-    if (!file || !weddingId) {
+    if ((!file && !rereadPath) || !weddingId) {
       return NextResponse.json({ error: "missing file" }, { status: 400 });
     }
 
-    const buffer = Buffer.from(await file.arrayBuffer());
-    const mediaType = READABLE.has(file.type) ? file.type : null;
-
     const supabase = await createClient();
+
+    let buffer: Buffer;
+    let fileName: string;
+    let fileType: string;
+    let path: string;
+    if (rereadPath) {
+      const storageKey = rereadPath.replace(/^internal\//, "");
+      const { data: blob, error: dlErr } = await supabase.storage.from("internal").download(storageKey);
+      if (dlErr || !blob) return NextResponse.json({ error: "original not found" }, { status: 404 });
+      buffer = Buffer.from(await blob.arrayBuffer());
+      fileName = storageKey.split("/").pop() ?? "document";
+      fileType = /\.pdf$/i.test(fileName)
+        ? "application/pdf"
+        : /\.(png)$/i.test(fileName)
+          ? "image/png"
+          : /\.(jpe?g)$/i.test(fileName)
+            ? "image/jpeg"
+            : blob.type || "application/octet-stream";
+      path = storageKey;
+    } else {
+      buffer = Buffer.from(await file!.arrayBuffer());
+      fileName = file!.name;
+      fileType = file!.type;
+      path = "";
+    }
+    const mediaType = READABLE.has(fileType) ? fileType : null;
+
+    // The same paper is never filed twice (§9): the fingerprint is
+    // checked before any reading — Estelle may still insist.
+    if (sha256 && !force && !rereadPath) {
+      try {
+        const { data: twin } = await supabase
+          .from("vendor_documents")
+          .select("id, label")
+          .eq("wedding_id", weddingId)
+          .eq("file_sha256", sha256)
+          .limit(1)
+          .maybeSingle();
+        if (twin) return NextResponse.json({ duplicate: true, label: twin.label });
+      } catch {
+        // Pre-0027 the fingerprint column is absent — no check to make.
+      }
+    }
+
+    // A rough page count for the paper's file (0027) — PDF only.
+    let pageCount: number | null = null;
+    if (fileType === "application/pdf") {
+      const m = buffer.toString("latin1").match(/\/Type\s*\/Page(?![a-zA-Z])/g);
+      pageCount = m?.length || null;
+    }
+
     const { data: vendors } = await supabase
       .from("vendors")
       .select("id, name, category")
       .eq("wedding_id", weddingId);
 
-    // The original is filed first — whatever the reading yields.
-    const path = `${weddingId}/${Date.now()}-${file.name}`;
-    await supabase.storage.from("internal").upload(path, buffer, {
-      contentType: file.type || "application/octet-stream"
-    });
+    // The original is filed first — whatever the reading yields. A
+    // re-read never duplicates the file: the filed original serves.
+    if (!rereadPath) {
+      path = `${weddingId}/${Date.now()}-${fileName}`;
+      await supabase.storage.from("internal").upload(path, buffer, {
+        contentType: fileType || "application/octet-stream"
+      });
+    }
 
     const intro = mediaType
-      ? "Read the attached document in its entirety — every page, every line."
-      : `A file named "${file.name}" was dropped (its format cannot be read inline).`;
+      ? "Read the attached document in its entirety — every page, every line." +
+        (focus ? ` Estelle asks particular care on this re-reading: ${focus}.` : "")
+      : `A file named "${fileName}" was dropped (its format cannot be read inline).`;
     const baseFields =
       `Reply with STRICT JSON only — no prose before or after: {` +
       `"doc_type": "proposal"|"contract"|"invoice"|"guest_list"|"other", ` +
@@ -159,12 +217,12 @@ export async function POST(request: Request) {
     if (!parsed) {
       const { error: docErr } = await supabase.from("documents").insert({
         wedding_id: weddingId,
-        label: file.name,
+        label: fileName,
         internal: true,
         storage_path: `internal/${path}`
       });
       if (docErr) {
-        await supabase.from("documents").insert({ wedding_id: weddingId, label: file.name, internal: true });
+        await supabase.from("documents").insert({ wedding_id: weddingId, label: fileName, internal: true });
       }
       return NextResponse.json({
         text: keyMissing
@@ -214,20 +272,30 @@ export async function POST(request: Request) {
         .delete()
         .eq("vendor_id", matchedVendor)
         .eq("type", docType)
-        .eq("label", parsed.label ?? file.name);
-      const { data: vendorDoc } = await supabase
+        .eq("label", parsed.label ?? fileName);
+      const docRow = {
+        vendor_id: matchedVendor,
+        wedding_id: weddingId,
+        type: docType,
+        label: parsed.label ?? fileName,
+        storage_path: `internal/${path}`,
+        extraction: parsed,
+        client_visible: false
+      };
+      // The fingerprint and page count ride along (0027) — shed
+      // gracefully while the columns are still to come.
+      let { data: vendorDoc, error: vdErr } = await supabase
         .from("vendor_documents")
-        .insert({
-          vendor_id: matchedVendor,
-          wedding_id: weddingId,
-          type: docType,
-          label: parsed.label ?? file.name,
-          storage_path: `internal/${path}`,
-          extraction: parsed,
-          client_visible: false
-        })
+        .insert({ ...docRow, file_sha256: sha256, page_count: pageCount })
         .select("id")
         .single();
+      if (vdErr) {
+        ({ data: vendorDoc } = await supabase
+          .from("vendor_documents")
+          .insert(docRow)
+          .select("id")
+          .single());
+      }
 
       // C6 — the reading lands as a PROPOSAL. Nothing touches the
       // budget until Estelle's word; the comparison waits in the hub.
@@ -236,13 +304,13 @@ export async function POST(request: Request) {
         .from("document_readings")
         .delete()
         .eq("vendor_id", matchedVendor)
-        .eq("label", parsed.label ?? file.name)
+        .eq("label", parsed.label ?? fileName)
         .eq("status", "proposed");
       const { error: insErr } = await supabase.from("document_readings").insert({
         wedding_id: weddingId,
         vendor_id: matchedVendor,
         vendor_document_id: vendorDoc?.id ?? null,
-        label: parsed.label ?? file.name,
+        label: parsed.label ?? fileName,
         storage_path: `internal/${path}`,
         payload: { ...parsed, items_lost: itemsLost }
       });
@@ -266,14 +334,14 @@ export async function POST(request: Request) {
     // Not vendor paper — it goes to the internal register as before.
     const { error: docErr } = await supabase.from("documents").insert({
       wedding_id: weddingId,
-      label: parsed.label ?? file.name,
+      label: parsed.label ?? fileName,
       internal: true,
       storage_path: `internal/${path}`
     });
     if (docErr) {
       await supabase.from("documents").insert({
         wedding_id: weddingId,
-        label: parsed.label ?? file.name,
+        label: parsed.label ?? fileName,
         internal: true
       });
     }

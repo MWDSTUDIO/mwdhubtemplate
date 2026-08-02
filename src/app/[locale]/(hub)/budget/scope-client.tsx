@@ -3,7 +3,7 @@
 import { useMemo, useState, useTransition } from "react";
 import { useFormatter, useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
-import type { BudgetEnvelope, EnvelopeNote } from "@/lib/types";
+import type { BudgetEnvelope, BudgetScenario, EnvelopeNote } from "@/lib/types";
 import type { EnvelopeDraft } from "@/lib/templates";
 import {
   adoptHouseEnvelopes,
@@ -13,6 +13,12 @@ import {
   saveScope,
   scopeViaMadame
 } from "@/app/actions/budget-scope";
+import {
+  publishScenario,
+  removeScenario,
+  saveScenario,
+  setEnvelopeArchived
+} from "@/app/actions/budget-financial";
 import { Dictate } from "@/components/Dictate";
 
 /**
@@ -28,7 +34,8 @@ export function ScopeStudio({
   committedByEnvelope,
   beyondCommitted,
   notes,
-  isTeam
+  isTeam,
+  scenarios = []
 }: {
   weddingId: string;
   total: number;
@@ -38,22 +45,26 @@ export function ScopeStudio({
   beyondCommitted: number;
   notes: EnvelopeNote[];
   isTeam: boolean;
+  scenarios?: BudgetScenario[];
 }) {
   const t = useTranslations("budget.scopeStudio");
   const tc = useTranslations("common");
   const format = useFormatter();
   const router = useRouter();
 
+  const archivedEnvelopes = envelopes.filter((e) => e.archived);
   const [drafts, setDrafts] = useState<EnvelopeDraft[]>(
-    envelopes.map((e, i) => ({
-      id: e.id,
-      label: e.label,
-      percent: Number(e.percent ?? 0),
-      recommendedPct: e.recommended_pct != null ? Number(e.recommended_pct) : null,
-      priority: e.priority ?? "standard",
-      locked: e.locked ?? false,
-      sort: e.sort ?? i + 1
-    }))
+    envelopes
+      .filter((e) => !e.archived)
+      .map((e, i) => ({
+        id: e.id,
+        label: e.label,
+        percent: Number(e.percent ?? 0),
+        recommendedPct: e.recommended_pct != null ? Number(e.recommended_pct) : null,
+        priority: e.priority ?? "standard",
+        locked: e.locked ?? false,
+        sort: e.sort ?? i + 1
+      }))
   );
   const [dirty, setDirty] = useState(false);
   const [madameNote, setMadameNote] = useState<string | null>(null);
@@ -177,7 +188,7 @@ export function ScopeStudio({
             </div>
           </div>
         )}
-        {envelopes.map((env) => {
+        {envelopes.filter((e) => !e.archived).map((env) => {
           const note = noteFor(env.id);
           const forecastAmt = total > 0 && env.percent != null ? (env.percent / 100) * total : null;
           const recAmt =
@@ -354,6 +365,73 @@ export function ScopeStudio({
                 >
                   {d.locked ? "🔒" : "🔓"}
                 </button>
+                {/* The envelope's own gestures (§5): order, double, archive. */}
+                <span style={{ display: "inline-flex", gap: 2 }}>
+                  <button
+                    className="addnote"
+                    aria-label={t("moveUp", { name: d.label })}
+                    disabled={i === 0}
+                    onClick={() => {
+                      setDrafts((list) => {
+                        const n = [...list];
+                        [n[i - 1], n[i]] = [n[i], n[i - 1]];
+                        return n;
+                      });
+                      setDirty(true);
+                    }}
+                  >
+                    ↑
+                  </button>
+                  <button
+                    className="addnote"
+                    aria-label={t("moveDown", { name: d.label })}
+                    disabled={i === drafts.length - 1}
+                    onClick={() => {
+                      setDrafts((list) => {
+                        const n = [...list];
+                        [n[i], n[i + 1]] = [n[i + 1], n[i]];
+                        return n;
+                      });
+                      setDirty(true);
+                    }}
+                  >
+                    ↓
+                  </button>
+                </span>
+                <button
+                  className="addnote"
+                  title={t("duplicateHint")}
+                  onClick={() => {
+                    setDrafts((list) => [
+                      ...list.slice(0, i + 1),
+                      { label: `${d.label} — ii`, percent: 0, recommendedPct: d.recommendedPct, priority: d.priority, locked: false, sort: i + 2 },
+                      ...list.slice(i + 1)
+                    ]);
+                    setDirty(true);
+                  }}
+                >
+                  {t("duplicateEnv")}
+                </button>
+                {d.id && (
+                  <button
+                    className="addnote"
+                    title={t("archiveHint")}
+                    onClick={() => {
+                      if (committedFor(d.id) > 0) {
+                        window.alert(t("archiveBlocked", { amount: money(committedFor(d.id)) }));
+                        return;
+                      }
+                      startTransition(async () => {
+                        const r = await setEnvelopeArchived(d.id!, true);
+                        if (!r.ok) window.alert(t("needsMigration"));
+                        else setDrafts((list) => list.filter((_, j) => j !== i));
+                        router.refresh();
+                      });
+                    }}
+                  >
+                    {t("archiveEnv")}
+                  </button>
+                )}
                 <button
                   className="addnote"
                   onClick={() => {
@@ -441,7 +519,34 @@ export function ScopeStudio({
           </button>
           {dirty && !over && <span style={{ fontSize: 12, color: "var(--bronze)" }}>{tc("draft")}</span>}
         </div>
+
+        {archivedEnvelopes.length > 0 && (
+          <details style={{ marginTop: 12 }}>
+            <summary className="addnote" style={{ cursor: "pointer" }}>
+              {t("archivedList", { count: archivedEnvelopes.length })}
+            </summary>
+            {archivedEnvelopes.map((e) => (
+              <div key={e.id} style={{ display: "flex", gap: 10, alignItems: "baseline", padding: "5px 0", fontSize: 13.5, opacity: 0.75 }}>
+                <span style={{ flex: 1 }}>{e.label}</span>
+                <button
+                  className="addnote"
+                  disabled={pending}
+                  onClick={() =>
+                    startTransition(async () => {
+                      await setEnvelopeArchived(e.id, false);
+                      router.refresh();
+                    })
+                  }
+                >
+                  {t("restoreEnv")}
+                </button>
+              </div>
+            ))}
+          </details>
+        )}
       </div>
+
+      <ScenariosDesk weddingId={weddingId} drafts={drafts} scenarios={scenarios} />
 
       <div className="ia team-only">
         <div className="eyebrow">
@@ -555,6 +660,140 @@ function ScopeNote({
         </button>
         <button className="btn ghost sm" onClick={() => setOpen(false)}>{tc("cancel")}</button>
       </div>
+    </div>
+  );
+}
+
+/**
+ * Scenarios (§5): the envelope set frozen under a name — compared
+ * beside the live scope, and published over it only at Estelle's
+ * word, through the same 100 % rule.
+ */
+function ScenariosDesk({
+  weddingId,
+  drafts,
+  scenarios
+}: {
+  weddingId: string;
+  drafts: EnvelopeDraft[];
+  scenarios: BudgetScenario[];
+}) {
+  const t = useTranslations("budget.scopeStudio.scenarios");
+  const tc = useTranslations("common");
+  const router = useRouter();
+  const [compareId, setCompareId] = useState<string | null>(null);
+  const [pending, startTransition] = useTransition();
+
+  const comparing = scenarios.find((s) => s.id === compareId) ?? null;
+  const norm = (s: string) => s.toLowerCase().replace(/\s+/g, " ").trim();
+  const compareRows = comparing
+    ? (() => {
+        const labels = new Map<string, { label: string; current: number | null; scenario: number | null }>();
+        for (const d of drafts) labels.set(norm(d.label), { label: d.label, current: Number(d.percent) || 0, scenario: null });
+        for (const s of comparing.data) {
+          const k = norm(s.label);
+          const row = labels.get(k);
+          if (row) row.scenario = Number(s.percent) || 0;
+          else labels.set(k, { label: s.label, current: null, scenario: Number(s.percent) || 0 });
+        }
+        return [...labels.values()];
+      })()
+    : [];
+
+  return (
+    <div className="card team-only" style={{ marginTop: 14 }}>
+      <div style={{ display: "flex", gap: 10, alignItems: "baseline", flexWrap: "wrap" }}>
+        <div className="eyebrow" style={{ marginRight: "auto" }}>{t("title")}</div>
+        <button
+          className="btn ghost sm"
+          disabled={pending || drafts.length === 0}
+          onClick={() => {
+            const label = window.prompt(t("savePrompt"));
+            if (!label?.trim()) return;
+            startTransition(async () => {
+              const r = await saveScenario(weddingId, label.trim(), drafts);
+              if (!r.ok) window.alert(t("needsMigration"));
+              router.refresh();
+            });
+          }}
+        >
+          {t("saveCurrent")}
+        </button>
+      </div>
+      {scenarios.length === 0 && (
+        <p style={{ fontSize: 13, color: "var(--ink2)", margin: "8px 0 0" }}>{t("empty")}</p>
+      )}
+      {scenarios.map((s) => (
+        <div key={s.id} style={{ display: "flex", gap: 10, alignItems: "baseline", flexWrap: "wrap", padding: "7px 0", borderTop: "1px solid rgba(201,178,145,.22)", marginTop: 6 }}>
+          <strong style={{ fontSize: 13.5 }}>{s.label}</strong>
+          {s.status === "published" ? <span className="tag ok">{t("published")}</span> : <span className="tag int">{tc("draft")}</span>}
+          <span style={{ fontSize: 12, color: "var(--ink2)" }}>
+            {t("meta", { n: s.data.length, total: Math.round(s.data.reduce((x, e) => x + (Number(e.percent) || 0), 0) * 10) / 10 })}
+          </span>
+          <span style={{ marginLeft: "auto", display: "inline-flex", gap: 10 }}>
+            <button className="addnote" onClick={() => setCompareId(compareId === s.id ? null : s.id)} aria-pressed={compareId === s.id}>
+              {compareId === s.id ? t("compareClose") : t("compare")}
+            </button>
+            <button
+              className="addnote"
+              disabled={pending}
+              onClick={() => {
+                if (!window.confirm(t("publishConfirm", { label: s.label }))) return;
+                startTransition(async () => {
+                  const r = await publishScenario(s.id);
+                  if (!r.ok) window.alert("reason" in r && r.reason === "over" ? t("publishOver") : t("needsMigration"));
+                  router.refresh();
+                });
+              }}
+            >
+              {t("publish")}
+            </button>
+            <button
+              className="addnote"
+              style={{ color: "var(--bronze)" }}
+              disabled={pending}
+              onClick={() =>
+                startTransition(async () => {
+                  await removeScenario(s.id);
+                  if (compareId === s.id) setCompareId(null);
+                  router.refresh();
+                })
+              }
+            >
+              {t("remove")}
+            </button>
+          </span>
+        </div>
+      ))}
+      {comparing && (
+        <div style={{ overflowX: "auto", marginTop: 10 }}>
+          <table className="sheet-table" style={{ background: "#fff", fontSize: 13 }}>
+            <thead>
+              <tr>
+                <th>{t("colEnvelope")}</th>
+                <th className="num">{t("colCurrent")}</th>
+                <th className="num">{comparing.label}</th>
+                <th className="num">{t("colGap")}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {compareRows.map((r, i) => {
+                const gap = r.current != null && r.scenario != null ? Math.round((r.scenario - r.current) * 10) / 10 : null;
+                return (
+                  <tr key={i}>
+                    <td>{r.label}</td>
+                    <td className="num">{r.current != null ? `${r.current} %` : "—"}</td>
+                    <td className="num">{r.scenario != null ? `${r.scenario} %` : "—"}</td>
+                    <td className="num" style={{ color: gap ? "var(--bronze)" : "var(--ink2)" }}>
+                      {gap != null ? `${gap > 0 ? "+" : ""}${gap} %` : "—"}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 }

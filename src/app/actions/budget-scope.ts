@@ -223,12 +223,24 @@ export async function deleteRisk(id: string) {
  * analysis the couple reads on their budget page.
  */
 export async function publishScopeAnalysis(weddingId: string, text: string) {
-  await teamSession();
+  const session = await teamSession();
   const supabase = await createClient();
-  const { error } = await supabase
-    .from("weddings")
-    .update({ budget_analysis: text.trim() })
-    .eq("id", weddingId);
+  // Her explicit gesture publishes — through the 0022 gate, journaled,
+  // never around it (audit §7).
+  const patch: Record<string, unknown> = {
+    budget_analysis: text.trim(),
+    budget_analysis_at: new Date().toISOString(),
+    budget_analysis_status: "published"
+  };
+  let { error } = await supabase.from("weddings").update(patch).eq("id", weddingId);
+  if (error) {
+    delete patch.budget_analysis_status;
+    ({ error } = await supabase.from("weddings").update(patch).eq("id", weddingId));
+  }
+  if (!error) {
+    const { logActivity } = await import("@/lib/activity");
+    await logActivity(supabase, weddingId, session.profile.full_name, "analysis_published", { from: "scope_analysis" });
+  }
   revalidatePath("/budget");
   return { ok: !error };
 }

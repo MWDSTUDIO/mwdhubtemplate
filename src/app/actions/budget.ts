@@ -6,7 +6,7 @@ import { requireHouseSession } from "@/lib/session";
 import { notifyCouple, sendHouseEmailToCouple } from "@/lib/notify";
 import { logActivity } from "@/lib/activity";
 import { revalidateRooms } from "@/lib/revalidate";
-import { roundMoney, sumMoney, convertMoney, isCurrencyCode } from "@/lib/money";
+import { roundMoney, sumMoney, convertMoney, isCurrencyCode, isSettledPayment, paymentSign } from "@/lib/money";
 import { applyReminderDefaults } from "@/lib/reminders";
 import { runAgent } from "@/lib/agents/run";
 
@@ -60,6 +60,27 @@ export async function saveInternalBudgetNote(weddingId: string, body: string) {
 export async function publishBudget(weddingId: string) {
   const session = await teamSession();
   const supabase = await createClient();
+  // What is about to reach the couple is kept as a version (0027) —
+  // the drafts' state just before they go live.
+  try {
+    const { data: draftLines } = await supabase
+      .from("budget_lines")
+      .select("id, label, envelope_id, vendor_id, budgeted, committed, paid, status")
+      .eq("wedding_id", weddingId)
+      .eq("status", "draft");
+    if (draftLines?.length) {
+      await supabase.from("publication_versions").insert({
+        wedding_id: weddingId,
+        kind: "budget",
+        summary: { lines: draftLines.length },
+        snapshot: { lines: draftLines },
+        created_by: session.profile.full_name
+      });
+    }
+  } catch {
+    // Pre-0027 there is no register of versions — publication stands.
+  }
+
   const { data: published } = await supabase.rpc("publish_budget", { p_wedding: weddingId });
   await logActivity(supabase, weddingId, session.profile.full_name, "publish_budget", {
     counts: { lines: published ?? 0 }
@@ -657,6 +678,11 @@ export async function addPayment(input: {
   method: string;
   payer: string;
   refundable: boolean;
+  /** The lifecycle (0027): expected by default; a recorded settlement
+      arrives confirmed. Kind: payment, deposit, refund, credit note. */
+  status?: string;
+  kind?: string;
+  reference?: string;
 }) {
   await teamSession();
   const supabase = await createClient();
@@ -670,11 +696,23 @@ export async function addPayment(input: {
     due_date: input.dueDate,
     method: input.method.trim() || null,
     payer: input.payer.trim() || null,
-    refundable: input.refundable
+    refundable: input.refundable,
+    ...(input.status ? { status: input.status } : {}),
+    ...(input.kind ? { kind: input.kind } : {}),
+    ...(input.reference?.trim() ? { reference: input.reference.trim() } : {}),
+    ...(input.status === "confirmed" ? { paid_at: new Date().toISOString().slice(0, 10) } : {})
   };
   let inserted: { id: string } | null = null;
   let { data, error } = await supabase.from("payments").insert(full).select("id").single();
   inserted = data;
+  if (error) {
+    // Pre-0027 the lifecycle columns are absent — the movement lands.
+    delete full.status;
+    delete full.kind;
+    delete full.reference;
+    ({ data, error } = await supabase.from("payments").insert(full).select("id").single());
+    inserted = data;
+  }
   if (error) {
     // Before migration 0011 the v2 columns are absent.
     ({ data, error } = await supabase
@@ -749,7 +787,15 @@ export async function markPaymentPaid(paymentId: string, paidAt: string | null) 
     .select("*")
     .eq("id", paymentId)
     .single();
-  await supabase.from("payments").update({ paid_at: paidAt }).eq("id", paymentId);
+  // Settling confirms; unsettling returns the movement to expected —
+  // the lifecycle column follows the gesture (0027), silently before.
+  const { error: withStatus } = await supabase
+    .from("payments")
+    .update({ paid_at: paidAt, status: paidAt ? "confirmed" : "expected" })
+    .eq("id", paymentId);
+  if (withStatus) {
+    await supabase.from("payments").update({ paid_at: paidAt }).eq("id", paymentId);
+  }
 
   // §1.3 — the realized exchange difference exists: when a foreign
   // instalment settles at an equivalent different from the line's
@@ -780,15 +826,22 @@ export async function markPaymentPaid(paymentId: string, paidAt: string | null) 
     }
   }
 
-  // The line's "paid" follows its settled instalments (EUR equivalent).
+  // The line's "paid" follows its settled instalments (EUR
+  // equivalent) — confirmed movements only, refunds subtracting (§12).
   if (payment?.budget_line_id) {
     const { data: siblings } = await supabase
       .from("payments")
-      .select("amount, amount_eur, paid_at, currency")
+      .select("*")
       .eq("budget_line_id", payment.budget_line_id);
-    const paid = (siblings ?? [])
-      .filter((p) => p.paid_at)
-      .reduce((s, p) => s + Number(p.amount_eur ?? (("currency" in p ? p.currency : "EUR") === "EUR" ? p.amount : 0)), 0);
+    const paid = sumMoney(
+      (siblings ?? [])
+        .filter((p) => isSettledPayment(p))
+        .map(
+          (p) =>
+            paymentSign(p) *
+            Number(p.amount_eur ?? ((("currency" in p ? p.currency : "EUR") ?? "EUR") === "EUR" ? p.amount : 0))
+        )
+    );
     await supabase
       .from("budget_lines")
       .update({ paid })
@@ -814,12 +867,42 @@ export async function updatePaymentFlags(
   return { ok: !error };
 }
 
+/**
+ * Delete is for drafts; a confirmed movement is REVERSED, kept (§18).
+ * Pre-0027 the lifecycle is absent and the old gesture stands.
+ */
 export async function deletePayment(paymentId: string) {
-  await teamSession();
+  const session = await teamSession();
   const supabase = await createClient();
+  const { data: p } = await supabase.from("payments").select("*").eq("id", paymentId).maybeSingle();
+  if (!p) return { ok: true as const, reversed: false };
+  const status = (p as { status?: string }).status;
+  if (status === "confirmed" || status === "partially_refunded") {
+    const { error } = await supabase.from("payments").update({ status: "reversed" }).eq("id", paymentId);
+    if (!error) {
+      await logActivity(supabase, p.wedding_id, session.profile.full_name, "payment_reversed", {
+        paymentId, label: p.label, amount: p.amount
+      });
+      if (p.budget_line_id) {
+        const { data: siblings } = await supabase.from("payments").select("*").eq("budget_line_id", p.budget_line_id);
+        const paid = sumMoney(
+          (siblings ?? [])
+            .filter((x) => isSettledPayment(x))
+            .map(
+              (x) =>
+                paymentSign(x) *
+                Number(x.amount_eur ?? ((("currency" in x ? x.currency : "EUR") ?? "EUR") === "EUR" ? x.amount : 0))
+            )
+        );
+        await supabase.from("budget_lines").update({ paid }).eq("id", p.budget_line_id);
+      }
+      revalidateRooms("budget");
+      return { ok: true as const, reversed: true };
+    }
+  }
   await supabase.from("payments").delete().eq("id", paymentId);
   revalidateRooms("budget");
-  return { ok: true as const };
+  return { ok: true as const, reversed: false };
 }
 
 /**
