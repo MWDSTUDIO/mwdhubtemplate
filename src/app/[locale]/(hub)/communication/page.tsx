@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import type { Correspondence, Guest, GuestEvent, HotelBlock, WeddingEvent } from "@/lib/types";
 import { HotelDesk, OpenRoomingButton } from "./communication-client";
 import { AddGuestForm, GuestList, StationerReview } from "./guests-client";
+import { GuestSheet } from "./guest-sheet";
 
 /**
  * Wedding Communication — one page for the whole conversation with
@@ -133,13 +134,31 @@ export default async function WeddingCommunicationPage({
         aiSuggest={session.isTeam}
       />
 
-      <GuestList
-        weddingId={wedding.id}
-        guests={allGuests}
-        events={allEvents}
-        links={links}
-        canManage={!session.isCoordinator}
-      />
+      {/* The team works the sheet; the couple keeps their list. The
+          Client-view preview renders the couple's reading too — the
+          scope taught us a hidden branch is a broken preview. */}
+      {session.isTeam ? (
+        <>
+          <GuestSheet weddingId={wedding.id} guests={allGuests} events={allEvents} links={links} />
+          <div className="client-preview">
+            <GuestList
+              weddingId={wedding.id}
+              guests={allGuests}
+              events={allEvents}
+              links={links}
+              canManage={false}
+            />
+          </div>
+        </>
+      ) : (
+        <GuestList
+          weddingId={wedding.id}
+          guests={allGuests}
+          events={allEvents}
+          links={links}
+          canManage={!session.isCoordinator}
+        />
+      )}
 
       {session.isTeam && <StationerReview weddingId={wedding.id} latestFlag={latestFlag} />}
 

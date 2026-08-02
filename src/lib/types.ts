@@ -305,6 +305,12 @@ export interface Guest {
   party_children: number | null;
   /** The household's own word — set by hand or by phone (migration 0010). */
   rsvp?: Rsvp | null;
+  /** American stationery fields (migration 0021). */
+  suffix?: string | null;
+  and_guest?: boolean;
+  /** couple · import · house — whose hand wrote the row last (0021). */
+  provenance?: string;
+  house_touched_at?: string | null;
 }
 
 export type Rsvp = "pending" | "confirmed" | "declined";

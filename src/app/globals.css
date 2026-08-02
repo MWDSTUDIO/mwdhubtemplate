@@ -329,6 +329,11 @@ table.sheet-table { width: 100%; border-collapse: collapse; font-size: 15px; }
 /* Team-only material disappears entirely in client view. */
 body.client-view .team-only { display: none !important; }
 
+/* The couple's reading, rendered for the team but shown only when the
+   Client view is on — the preview never lies by omission. */
+.client-preview { display: none; }
+body.client-view .client-preview { display: block; }
+
 .hero-count { display: flex; align-items: baseline; gap: 14px; margin: 8px 0 4px; }
 .hero-count .serif { font-size: 88px; font-weight: 300; line-height: 1; }
 

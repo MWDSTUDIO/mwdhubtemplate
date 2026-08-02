@@ -187,3 +187,169 @@ export async function stationerReview(weddingId: string) {
   revalidatePath("/communication");
   return { ok: true as const, note: parsed.note, count: parsed.flags?.length ?? 0 };
 }
+
+/* ══════════ The sheet under the house's hand (lot A, step 2) ══════ */
+
+const HOUSE_FIELDS = new Set([
+  "title", "first_names", "surname", "suffix", "invitation_line",
+  "address", "locale", "travel", "dietary", "party_adults",
+  "party_children", "and_guest"
+]);
+
+async function houseSession() {
+  const session = await requireHouseSession();
+  if (!session.isTeam) throw new Error("team only");
+  return session;
+}
+
+/**
+ * One cell, corrected in place — no modal for a civility or a
+ * spelling. The house's hand marks the row (provenance 'house',
+ * house_touched_at): an import or an agent never overwrites it.
+ */
+export async function patchGuestField(
+  guestId: string,
+  weddingId: string,
+  field: string,
+  value: string | number | boolean | null
+) {
+  await houseSession();
+  if (!HOUSE_FIELDS.has(field)) return { ok: false as const };
+  const supabase = await createClient();
+  const patch: Record<string, unknown> = {
+    [field]: value === "" ? null : value,
+    provenance: "house",
+    house_touched_at: new Date().toISOString()
+  };
+  let { error } = await supabase
+    .from("guests")
+    .update(patch)
+    .eq("id", guestId)
+    .eq("wedding_id", weddingId);
+  if (error) {
+    // Pre-0021: the mark columns are absent — the correction still lands.
+    ({ error } = await supabase
+      .from("guests")
+      .update({ [field]: value === "" ? null : value })
+      .eq("id", guestId)
+      .eq("wedding_id", weddingId));
+  }
+  revalidatePath("/communication");
+  return { ok: !error };
+}
+
+/** "+ add a household" — created at once, the pen lands in the first field. */
+export async function quickAddHousehold(weddingId: string, createId?: string) {
+  const session = await houseSession();
+  void session;
+  const supabase = await createClient();
+  let { data, error } = await supabase
+    .from("guests")
+    .insert({
+      ...(createId ? { id: createId } : {}),
+      wedding_id: weddingId,
+      locale: "en",
+      provenance: "house",
+      house_touched_at: new Date().toISOString()
+    })
+    .select("id")
+    .single();
+  if (error) {
+    ({ data, error } = await supabase
+      .from("guests")
+      .insert({ ...(createId ? { id: createId } : {}), wedding_id: weddingId, locale: "en" })
+      .select("id")
+      .single());
+  }
+  revalidatePath("/communication");
+  return { ok: !error, id: data?.id ?? null };
+}
+
+/**
+ * Twenty corrections in one gesture (brief §2.2): the selected
+ * households take the word together — status, an event granted or
+ * withdrawn, or the departure.
+ */
+export async function bulkGuests(
+  weddingId: string,
+  guestIds: string[],
+  action:
+    | { kind: "rsvp"; rsvp: "pending" | "confirmed" | "declined" }
+    | { kind: "addEvent"; eventId: string }
+    | { kind: "removeEvent"; eventId: string }
+    | { kind: "delete" }
+) {
+  await houseSession();
+  if (!guestIds.length) return { ok: false as const };
+  const supabase = await createClient();
+  if (action.kind === "rsvp") {
+    await supabase.from("guests").update({ rsvp: action.rsvp }).in("id", guestIds).eq("wedding_id", weddingId);
+    await supabase.from("guest_events").update({ rsvp: action.rsvp }).in("guest_id", guestIds);
+  } else if (action.kind === "addEvent") {
+    const { data: existing } = await supabase
+      .from("guest_events")
+      .select("guest_id")
+      .eq("event_id", action.eventId)
+      .in("guest_id", guestIds);
+    const have = new Set((existing ?? []).map((l) => l.guest_id));
+    const rows = guestIds
+      .filter((id) => !have.has(id))
+      .map((guest_id) => ({ guest_id, event_id: action.eventId, wedding_id: weddingId }));
+    if (rows.length) await supabase.from("guest_events").insert(rows);
+  } else if (action.kind === "removeEvent") {
+    await supabase
+      .from("guest_events")
+      .delete()
+      .eq("event_id", action.eventId)
+      .in("guest_id", guestIds);
+  } else if (action.kind === "delete") {
+    await supabase.from("guests").delete().in("id", guestIds).eq("wedding_id", weddingId);
+  }
+  revalidatePath("/communication");
+  return { ok: true as const };
+}
+
+/** The way back for a removed household — same id, same events (Cmd+Z). */
+export async function restoreGuest(
+  weddingId: string,
+  row: Record<string, unknown>,
+  eventIds: string[]
+) {
+  await houseSession();
+  const supabase = await createClient();
+  const { created_at, ...rest } = row;
+  void created_at;
+  let { error } = await supabase.from("guests").insert({ ...rest, wedding_id: weddingId });
+  if (error) {
+    const { suffix, and_guest, provenance, house_touched_at, ...bare } = rest;
+    void suffix; void and_guest; void provenance; void house_touched_at;
+    ({ error } = await supabase.from("guests").insert({ ...bare, wedding_id: weddingId }));
+  }
+  if (!error && eventIds.length && row.id) {
+    await supabase.from("guest_events").insert(
+      eventIds.map((event_id) => ({ guest_id: row.id, event_id, wedding_id: weddingId }))
+    );
+  }
+  revalidatePath("/communication");
+  return { ok: !error };
+}
+
+/** One event granted or withdrawn for one household, in place. */
+export async function toggleGuestEvent(
+  guestId: string,
+  weddingId: string,
+  eventId: string,
+  on: boolean
+) {
+  await houseSession();
+  const supabase = await createClient();
+  if (on) {
+    await supabase
+      .from("guest_events")
+      .upsert({ guest_id: guestId, event_id: eventId, wedding_id: weddingId }, { onConflict: "guest_id,event_id" });
+  } else {
+    await supabase.from("guest_events").delete().eq("guest_id", guestId).eq("event_id", eventId);
+  }
+  revalidatePath("/communication");
+  return { ok: true as const };
+}
