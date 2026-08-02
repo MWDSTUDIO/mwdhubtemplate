@@ -22,6 +22,7 @@ import {
   type HomeConfig,
   type HomeSection
 } from "@/lib/home";
+import { nextMoment, type Moment } from "@/lib/moments";
 
 /**
  * Home — the entrance hall of The Inner House (PRD Home): the calm
@@ -72,6 +73,7 @@ export default async function HomePage({
     paymentsRes,
     vendorsRes,
     rsvpRes,
+    momentsRes,
     formsRes,
     activityRes
   ] = await Promise.all([
@@ -115,6 +117,8 @@ export default async function HomePage({
     isTeam ? supabase.from("payments").select("*").eq("wedding_id", wedding.id) : Promise.resolve({ data: [] }),
     isTeam ? supabase.from("vendors").select("id, stage, archived").eq("wedding_id", wedding.id) : Promise.resolve({ data: [] }),
     supabase.from("person_event_status").select("status").eq("wedding_id", wedding.id),
+    // The canonical Wedding Moments registry (0032) — read, never owned.
+    supabase.from("wedding_events").select("id, name, event_date, sort, archived").eq("wedding_id", wedding.id).order("sort"),
     supabase.from("forms").select("id, title, status, due_label").eq("wedding_id", wedding.id),
     isTeam
       ? supabase
@@ -142,6 +146,7 @@ export default async function HomePage({
   const payments = g<{ id: string; label: string; due_date: string | null; paid_at: string | null; status?: string; kind?: string }>(paymentsRes);
   const vendors = g<{ id: string; stage: string; archived?: boolean }>(vendorsRes).filter((v) => !v.archived);
   const rsvp = rsvpAggregate(g<{ status: string }>(rsvpRes).map((x) => x.status));
+  const upcomingMoment = nextMoment(g<Moment>(momentsRes), today);
   const forms = g<{ id: string; title: string; status: string; due_label: string | null }>(formsRes);
   const activity = g<{ actor: string; action: string; created_at: string }>(activityRes);
 
@@ -267,6 +272,14 @@ export default async function HomePage({
               </li>
             ))}
           </ul>
+        )}
+        {upcomingMoment?.event_date && (
+          <p style={{ fontSize: 13, color: "var(--ink2)", marginTop: 8 }}>
+            {t("pulse.nextMoment", {
+              name: upcomingMoment.name,
+              date: format.dateTime(new Date(upcomingMoment.event_date), { month: "long", day: "numeric" })
+            })}
+          </p>
         )}
         {isTeam && (overdueMilestones.length > 0 || overduePayments.length > 0) && (
           <p className="team-only" style={{ fontSize: 12.5, color: "var(--bronze)", marginTop: 8 }}>

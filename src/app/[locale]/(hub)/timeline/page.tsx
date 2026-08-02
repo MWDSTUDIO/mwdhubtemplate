@@ -55,23 +55,24 @@ export default async function TimelinePage({
   // The operational side and the reference pickers — team material,
   // absent before 0029: the page keeps its manners.
   let ops: Record<string, MilestoneOps> = {};
-  let pickers: FrisePickers = { vendors: [], lines: [], documents: [], ceremonies: [] };
+  let pickers: FrisePickers = { vendors: [], lines: [], documents: [], moments: [] };
   if (session.isTeam) {
-    const [opsRes, vendorsRes, linesRes, docsRes, cerRes] = await Promise.all([
+    const [opsRes, vendorsRes, linesRes, docsRes, momentsRes] = await Promise.all([
       supabase.from("milestone_ops").select("*").eq("wedding_id", wedding.id),
       supabase.from("vendors").select("id, name").eq("wedding_id", wedding.id).order("name"),
       supabase.from("budget_lines").select("id, label").eq("wedding_id", wedding.id).order("sort"),
       supabase.from("documents").select("id, label").eq("wedding_id", wedding.id).order("created_at", { ascending: false }),
-      supabase.from("ceremonies").select("id, kind, title").eq("wedding_id", wedding.id).order("sort")
+      // The canonical Wedding Moments registry (0032) — the Desk's rows.
+      supabase.from("wedding_events").select("id, name, archived").eq("wedding_id", wedding.id).order("sort")
     ]);
     for (const o of ((opsRes as { data: unknown }).data ?? []) as MilestoneOps[]) ops[o.milestone_id] = o;
     pickers = {
       vendors: ((vendorsRes as { data: unknown }).data ?? []) as { id: string; name: string }[],
       lines: ((linesRes as { data: unknown }).data ?? []) as { id: string; label: string }[],
       documents: ((docsRes as { data: unknown }).data ?? []) as { id: string; label: string }[],
-      ceremonies: (((cerRes as { data: unknown }).data ?? []) as { id: string; kind: string; title: string | null }[]).map(
-        (c) => ({ id: c.id, label: c.title || c.kind })
-      )
+      moments: (((momentsRes as { data: unknown }).data ?? []) as { id: string; name: string; archived?: boolean }[])
+        .filter((m) => !m.archived)
+        .map((m) => ({ id: m.id, label: m.name }))
     };
   }
 

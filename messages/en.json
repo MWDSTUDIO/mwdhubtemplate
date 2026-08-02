@@ -136,7 +136,8 @@
       "one": "One decision is awaiting your attention.",
       "several": "{count} decisions are awaiting your attention.",
       "progress": "{done} of {total} milestones attended to — {pct} %.",
-      "teamLine": "Late: {milestones} milestones · {payments} payments."
+      "teamLine": "Late: {milestones} milestones · {payments} payments.",
+      "nextMoment": "Next moment: {name} — {date}."
     },
     "next": {
       "title": "Next milestone"
@@ -280,10 +281,10 @@
       "ownerPh": "Owner",
       "dueField": "Due",
       "descriptionPh": "Description",
-      "dependsOn": "Follows…",
-      "linkVendor": "Vendor",
-      "linkLine": "Budget line",
-      "linkDocument": "Paper",
+      "dependsOn": "Previous milestone",
+      "linkVendor": "Related vendor",
+      "linkLine": "Related budget line",
+      "linkDocument": "Related document",
       "linkCeremony": "Ceremony",
       "internalNotePh": "Internal note — never the couple's",
       "exports": {
@@ -292,7 +293,9 @@
         "client": "Client progress summary",
         "checklist": "Operational checklist",
         "milestones": "Milestones"
-      }
+      },
+      "linkMoment": "Related Wedding Moment",
+      "momentHelper": "Connect this milestone to one of the wedding moments created in The Desk."
     },
     "monthly": {
       "title": "This month at the house — {month}",
@@ -1017,7 +1020,9 @@
         "deleteConfirm": "Delete the draft line “{label}”? Undo lives in the ledger (Cmd+Z).",
         "publishedNoDelete": "A published line archives; it never deletes.",
         "historyTitle": "History",
-        "historyNone": "Nothing journaled for this line yet."
+        "historyNone": "Nothing journaled for this line yet.",
+        "momentTitle": "Related Wedding Moment",
+        "noMoment": "No moment"
       }
     },
     "bar": {
@@ -2857,5 +2862,56 @@
     "signoff": "With the house's attentive regards,",
     "inAppTitle": "An instalment approaches",
     "inAppTitleMany": "{count} instalments approach"
+  },
+  "moments": {
+    "title": "Wedding Moments — the registry",
+    "hint": "The canonical moments of the wedding — every module points here. Renaming keeps every link; archive rather than delete once a moment is referenced.",
+    "name": "Name",
+    "date": "Date",
+    "start": "Start time",
+    "type": "Type",
+    "noType": "No type",
+    "venuePh": "Venue",
+    "keep": "Keep",
+    "links": "Linked records",
+    "restore": "Restore",
+    "archive": "Archive",
+    "delete": "Delete",
+    "up": "Move up",
+    "down": "Move down",
+    "add": "Add the moment",
+    "addPh": "A new moment — e.g. Rehearsal dinner",
+    "dupAsk": "“{name}” already lives in the registry. Create anyway? Cancel keeps the existing moment.",
+    "deleteConfirm": "Delete “{name}”? Nothing points at it; this cannot be undone.",
+    "deleteRefused": "{count} records still point at this moment — archive it instead.",
+    "archiveConfirm": "Archive “{name}”? Linked: {links}. The links are kept; the moment leaves the active lists.",
+    "refs": {
+      "milestones": "milestones",
+      "ceremonies": "ceremonies",
+      "budgetLines": "budget lines",
+      "runSheets": "run sheets",
+      "guests": "guest replies",
+      "links": "linked modules",
+      "none": "Nothing points at this moment yet."
+    },
+    "kinds": {
+      "welcome": "Welcome",
+      "rehearsal": "Rehearsal",
+      "ceremony": "Ceremony",
+      "cocktail": "Cocktail",
+      "dinner": "Dinner",
+      "reception": "Reception",
+      "brunch": "Brunch",
+      "farewell": "Farewell",
+      "other": "Other"
+    },
+    "related": "Related Wedding Moments",
+    "attach": "Link a moment…",
+    "detach": "Detach",
+    "needsMigration": "Run migration 0032 first.",
+    "linkedMoment": "Linked Wedding Moment",
+    "noMoment": "No moment",
+    "createFromCeremony": "Create a Wedding Moment from this ceremony",
+    "dupCeremonyAsk": "“{name}” already lives in the registry. OK links the existing moment; Cancel creates a new one anyway."
   }
 }

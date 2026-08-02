@@ -4,6 +4,7 @@ import { useMemo, useRef, useState, useTransition } from "react";
 import { useFormatter, useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import type { DocumentRow } from "@/lib/types";
+import { MomentLinks } from "@/components/moments-desk";
 import {
   publishDocumentToCouple,
   removeDocument,
@@ -135,8 +136,10 @@ function DocLine({
   format: ReturnType<typeof useFormatter>;
 }) {
   const t = useTranslations("documents");
+  const tm = useTranslations("moments");
   const router = useRouter();
   const [pending, startTransition] = useTransition();
+  const [showMoments, setShowMoments] = useState(false);
   const ext = extOf(doc);
   const size = sizeLabel(doc.size_bytes);
   const date = doc.created_at
@@ -157,6 +160,9 @@ function DocLine({
         )}
         {isTeam && (
           <>
+            <button className="addnote team-only" onClick={() => setShowMoments((v) => !v)}>
+              {tm("related")}
+            </button>
             <button
               className="addnote team-only"
               disabled={pending}
@@ -187,6 +193,11 @@ function DocLine({
           </>
         )}
       </span>
+      {isTeam && showMoments && (
+        <div style={{ width: "100%", padding: "4px 0 2px" }}>
+          <MomentLinks weddingId={doc.wedding_id} module="document" recordId={doc.id} />
+        </div>
+      )}
     </li>
   );
 }

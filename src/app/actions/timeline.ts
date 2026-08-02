@@ -32,6 +32,8 @@ export async function saveMilestone(input: {
     budgetLineId?: string | null;
     documentId?: string | null;
     ceremonyId?: string | null;
+    /** The Related Wedding Moment (0032) — a reference to the Desk's registry. */
+    eventId?: string | null;
     noteInternal?: string;
   };
 }) {
@@ -63,7 +65,7 @@ export async function saveMilestone(input: {
   }
   let opsSaved = true;
   if (id && input.ops) {
-    const { error } = await supabase.from("milestone_ops").upsert({
+    const opsRow: Record<string, unknown> = {
       milestone_id: id,
       wedding_id: input.weddingId,
       op_status: input.ops.opStatus ?? (done ? "completed" : "planned"),
@@ -79,7 +81,10 @@ export async function saveMilestone(input: {
       ceremony_id: input.ops.ceremonyId ?? null,
       note_internal: input.ops.noteInternal?.trim() || null,
       updated_at: new Date().toISOString()
-    });
+    };
+    // The Related Wedding Moment column arrives with 0032 — shed first.
+    let { error } = await supabase.from("milestone_ops").upsert({ ...opsRow, event_id: input.ops.eventId ?? null });
+    if (error) ({ error } = await supabase.from("milestone_ops").upsert(opsRow));
     // Pre-0029 the operational table is absent — the milestone stands.
     if (error) opsSaved = false;
   }

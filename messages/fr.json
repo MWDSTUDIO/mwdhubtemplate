@@ -136,7 +136,8 @@
       "one": "Une décision attend votre attention.",
       "several": "{count} décisions attendent votre attention.",
       "progress": "{done} jalons sur {total} accomplis — {pct} %.",
-      "teamLine": "En retard : {milestones} jalons · {payments} règlements."
+      "teamLine": "En retard : {milestones} jalons · {payments} règlements.",
+      "nextMoment": "Prochain moment : {name} — {date}."
     },
     "next": {
       "title": "Prochain jalon"
@@ -280,10 +281,10 @@
       "ownerPh": "Responsable",
       "dueField": "Échéance",
       "descriptionPh": "Description",
-      "dependsOn": "Suit…",
-      "linkVendor": "Prestataire",
-      "linkLine": "Ligne budget",
-      "linkDocument": "Papier",
+      "dependsOn": "Jalon précédent",
+      "linkVendor": "Prestataire lié",
+      "linkLine": "Ligne de budget liée",
+      "linkDocument": "Document lié",
       "linkCeremony": "Cérémonie",
       "internalNotePh": "Note interne — jamais celle du couple",
       "exports": {
@@ -292,7 +293,9 @@
         "client": "Résumé client",
         "checklist": "Liste opérationnelle",
         "milestones": "Jalons"
-      }
+      },
+      "linkMoment": "Wedding Moment lié",
+      "momentHelper": "Reliez ce jalon à l'un des moments du mariage créés dans The Desk."
     },
     "monthly": {
       "title": "Ce mois-ci à la maison — {month}",
@@ -1017,7 +1020,9 @@
         "deleteConfirm": "Supprimer la ligne en brouillon « {label} » ? L'annulation vit dans le grand livre (Cmd+Z).",
         "publishedNoDelete": "Une ligne publiée s'archive ; elle ne se supprime jamais.",
         "historyTitle": "Histoire",
-        "historyNone": "Rien au journal pour cette ligne encore."
+        "historyNone": "Rien au journal pour cette ligne encore.",
+        "momentTitle": "Wedding Moment lié",
+        "noMoment": "Aucun moment"
       }
     },
     "bar": {
@@ -2857,5 +2862,56 @@
     "signoff": "Avec les attentions de la maison,",
     "inAppTitle": "Une échéance approche",
     "inAppTitleMany": "{count} échéances approchent"
+  },
+  "moments": {
+    "title": "Wedding Moments — le registre",
+    "hint": "Les moments canoniques du mariage — chaque module pointe ici. Renommer garde tous les liens ; archivez plutôt que supprimer dès qu'un moment est référencé.",
+    "name": "Nom",
+    "date": "Date",
+    "start": "Heure de début",
+    "type": "Type",
+    "noType": "Sans type",
+    "venuePh": "Lieu",
+    "keep": "Garder",
+    "links": "Éléments liés",
+    "restore": "Restaurer",
+    "archive": "Archiver",
+    "delete": "Supprimer",
+    "up": "Monter",
+    "down": "Descendre",
+    "add": "Ajouter le moment",
+    "addPh": "Un nouveau moment — ex. Dîner de répétition",
+    "dupAsk": "« {name} » vit déjà au registre. Créer quand même ? Annuler garde le moment existant.",
+    "deleteConfirm": "Supprimer « {name} » ? Rien n'y pointe ; ce geste est définitif.",
+    "deleteRefused": "{count} éléments pointent encore vers ce moment — archivez-le plutôt.",
+    "archiveConfirm": "Archiver « {name} » ? Lié à : {links}. Les liens sont gardés ; le moment quitte les listes actives.",
+    "refs": {
+      "milestones": "jalons",
+      "ceremonies": "cérémonies",
+      "budgetLines": "lignes de budget",
+      "runSheets": "feuilles de route",
+      "guests": "réponses d'invités",
+      "links": "modules liés",
+      "none": "Rien ne pointe encore vers ce moment."
+    },
+    "kinds": {
+      "welcome": "Accueil",
+      "rehearsal": "Répétition",
+      "ceremony": "Cérémonie",
+      "cocktail": "Cocktail",
+      "dinner": "Dîner",
+      "reception": "Réception",
+      "brunch": "Brunch",
+      "farewell": "Adieux",
+      "other": "Autre"
+    },
+    "related": "Wedding Moments liés",
+    "attach": "Lier un moment…",
+    "detach": "Détacher",
+    "needsMigration": "Passez d'abord la migration 0032.",
+    "linkedMoment": "Wedding Moment lié",
+    "noMoment": "Aucun moment",
+    "createFromCeremony": "Créer un Wedding Moment depuis cette cérémonie",
+    "dupCeremonyAsk": "« {name} » vit déjà au registre. OK lie le moment existant ; Annuler en crée un nouveau quand même."
   }
 }

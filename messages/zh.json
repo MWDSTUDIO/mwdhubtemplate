@@ -136,7 +136,8 @@
       "one": "有一项决定等待您的关注。",
       "several": "有 {count} 项决定等待您的关注。",
       "progress": "{total} 个里程碑已完成 {done} 个——{pct}%。",
-      "teamLine": "逾期：{milestones} 个里程碑 · {payments} 笔付款。"
+      "teamLine": "逾期：{milestones} 个里程碑 · {payments} 笔付款。",
+      "nextMoment": "下一个时刻:{name}——{date}。"
     },
     "next": {
       "title": "下一个里程碑"
@@ -280,10 +281,10 @@
       "ownerPh": "负责人",
       "dueField": "截止日",
       "descriptionPh": "描述",
-      "dependsOn": "前置于……",
-      "linkVendor": "供应商",
-      "linkLine": "预算条目",
-      "linkDocument": "文件",
+      "dependsOn": "上一个里程碑",
+      "linkVendor": "关联供应商",
+      "linkLine": "关联预算行",
+      "linkDocument": "关联文档",
       "linkCeremony": "仪式",
       "internalNotePh": "内部备注——新人永不可见",
       "exports": {
@@ -292,7 +293,9 @@
         "client": "客户版进度概要",
         "checklist": "操作清单",
         "milestones": "里程碑"
-      }
+      },
+      "linkMoment": "关联婚礼时刻",
+      "momentHelper": "将此里程碑关联到 The Desk 中创建的婚礼时刻。"
     },
     "monthly": {
       "title": "本月馆内 — {month}",
@@ -1017,7 +1020,9 @@
         "deleteConfirm": "删除草稿条目“{label}”？可在分类账中撤销（Cmd+Z）。",
         "publishedNoDelete": "已发布的条目只能归档，绝不删除。",
         "historyTitle": "历史",
-        "historyNone": "此条目尚无日志记录。"
+        "historyNone": "此条目尚无日志记录。",
+        "momentTitle": "关联婚礼时刻",
+        "noMoment": "无时刻"
       }
     },
     "bar": {
@@ -2857,5 +2862,56 @@
     "signoff": "本馆谨候，",
     "inAppTitle": "一笔款项将至",
     "inAppTitleMany": "{count} 笔款项将至"
+  },
+  "moments": {
+    "title": "婚礼时刻——总登记",
+    "hint": "婚礼的正典时刻——各模块均指向此处。重命名保留所有关联；时刻一旦被引用，请归档而非删除。",
+    "name": "名称",
+    "date": "日期",
+    "start": "开始时间",
+    "type": "类型",
+    "noType": "无类型",
+    "venuePh": "场地",
+    "keep": "保存",
+    "links": "关联记录",
+    "restore": "恢复",
+    "archive": "归档",
+    "delete": "删除",
+    "up": "上移",
+    "down": "下移",
+    "add": "添加时刻",
+    "addPh": "新时刻——例如：彩排晚宴",
+    "dupAsk": "“{name}”已存在于登记中。仍要创建吗？取消则沿用现有时刻。",
+    "deleteConfirm": "删除“{name}”？无任何引用；此操作不可撤销。",
+    "deleteRefused": "仍有 {count} 条记录指向此时刻——请改用归档。",
+    "archiveConfirm": "归档“{name}”？关联：{links}。关联将保留；该时刻退出活动列表。",
+    "refs": {
+      "milestones": "里程碑",
+      "ceremonies": "仪式",
+      "budgetLines": "预算行",
+      "runSheets": "流程表",
+      "guests": "宾客回复",
+      "links": "关联模块",
+      "none": "尚无记录指向此时刻。"
+    },
+    "kinds": {
+      "welcome": "迎宾",
+      "rehearsal": "彩排",
+      "ceremony": "仪式",
+      "cocktail": "鸡尾酒会",
+      "dinner": "晚宴",
+      "reception": "宴会",
+      "brunch": "早午餐",
+      "farewell": "欢送",
+      "other": "其他"
+    },
+    "related": "关联婚礼时刻",
+    "attach": "关联一个时刻……",
+    "detach": "解除关联",
+    "needsMigration": "请先执行迁移 0032。",
+    "linkedMoment": "关联的婚礼时刻",
+    "noMoment": "无时刻",
+    "createFromCeremony": "从此仪式创建婚礼时刻",
+    "dupCeremonyAsk": "“{name}”已存在于登记中。确定关联现有时刻；取消则仍创建新时刻。"
   }
 }

@@ -7,6 +7,7 @@ import type {
   Payment, Vendor, VendorContact, VendorDocument, VendorNote, VendorRegistry
 } from "@/lib/types";
 import { ContactsDesk, DocumentsDesk, NotesDesk, ProfileForm, RelationshipActions } from "./profile-client";
+import { MomentLinks } from "@/components/moments-desk";
 
 /**
  * The vendor profile (PRD §5) — one canonical record: identity,
@@ -95,6 +96,10 @@ export default async function VendorProfilePage({
       </p>
 
       <RelationshipActions weddingId={wedding.id} vendor={v} />
+
+      <div style={{ margin: "10px 0 16px" }}>
+        <MomentLinks weddingId={wedding.id} module="vendor" recordId={v.id} />
+      </div>
 
       <div className="grid2" style={{ alignItems: "start" }}>
         <div>

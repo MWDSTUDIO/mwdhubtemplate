@@ -19,6 +19,7 @@ import {
   statusBucket,
   validUrl
 } from "@/lib/forms";
+import { MomentLinks } from "@/components/moments-desk";
 import {
   deleteFormDraft,
   duplicateFormCard,
@@ -684,6 +685,8 @@ function FormDrawer({
             </label>
           </div>
         )}
+
+        {form?.id && <MomentLinks weddingId={weddingId} module="form" recordId={form.id} />}
 
         <button className="addnote team-only" disabled={madameBusy} onClick={() => void askMadame()} style={{ textAlign: "left" }}>
           {madameBusy ? "…" : t("drawer.madame")}

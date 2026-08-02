@@ -7,6 +7,7 @@ import { ClientSheet, TimelineComposer } from "./desk-client";
 import { AccessPanel, TemplatesPanel } from "./access-client";
 import { listMembers } from "@/app/actions/access";
 import { CeremonyList } from "@/components/CeremonyEditor";
+import { MomentsDesk } from "@/components/moments-desk";
 import type { Ceremony } from "@/lib/types";
 
 export default async function DeskPage({
@@ -43,9 +44,11 @@ export default async function DeskPage({
       <ClientSheet
         key={wedding?.id ?? "blank"}
         wedding={wedding}
-        events={(events ?? []) as WeddingEvent[]}
+        events={((events ?? []) as WeddingEvent[]).filter((e) => !e.archived)}
         brief={brief?.body ?? ""}
       />
+
+      {wedding && <MomentsDesk weddingId={wedding.id} moments={(events ?? []) as WeddingEvent[]} />}
 
       {wedding && (
         <>

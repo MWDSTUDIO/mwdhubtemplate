@@ -6,6 +6,7 @@ import { Link } from "@/i18n/navigation";
 import type { Board, SubBoard } from "@/lib/types";
 import { BoardActions } from "./board-client";
 import { BoardSheet, type SheetData, type SheetLinks } from "./sheet-client";
+import { MomentLinks } from "@/components/moments-desk";
 
 const SUB_KINDS = ["rental", "stationery", "invitations", "day_of"] as const;
 type SubKind = (typeof SUB_KINDS)[number];
@@ -149,6 +150,12 @@ export default async function BoardPage({
           <span className="tag">{tc("inCreation")}</span>
         )}
       </div>
+
+      {session.isTeam && !sub && (
+        <div style={{ maxWidth: 1060, margin: "0 auto 14px" }}>
+          <MomentLinks weddingId={wedding.id} module="board" recordId={boardId} />
+        </div>
+      )}
 
       <BoardSheet
         target={{ boardId, weddingId: wedding.id, sub }}

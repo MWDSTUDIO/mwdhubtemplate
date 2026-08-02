@@ -136,7 +136,8 @@
       "one": "Una decisión espera su atención.",
       "several": "{count} decisiones esperan su atención.",
       "progress": "{done} de {total} hitos atendidos — {pct} %.",
-      "teamLine": "Con retraso: {milestones} hitos · {payments} pagos."
+      "teamLine": "Con retraso: {milestones} hitos · {payments} pagos.",
+      "nextMoment": "Próximo momento: {name} — {date}."
     },
     "next": {
       "title": "Próximo hito"
@@ -280,10 +281,10 @@
       "ownerPh": "Responsable",
       "dueField": "Vencimiento",
       "descriptionPh": "Descripción",
-      "dependsOn": "Sigue a…",
-      "linkVendor": "Proveedor",
-      "linkLine": "Línea de presupuesto",
-      "linkDocument": "Papel",
+      "dependsOn": "Hito anterior",
+      "linkVendor": "Proveedor vinculado",
+      "linkLine": "Línea de presupuesto vinculada",
+      "linkDocument": "Documento vinculado",
       "linkCeremony": "Ceremonia",
       "internalNotePh": "Nota interna — nunca de la pareja",
       "exports": {
@@ -292,7 +293,9 @@
         "client": "Resumen para el cliente",
         "checklist": "Lista operativa",
         "milestones": "Hitos"
-      }
+      },
+      "linkMoment": "Wedding Moment vinculado",
+      "momentHelper": "Conecte este hito a uno de los momentos de la boda creados en The Desk."
     },
     "monthly": {
       "title": "Este mes en la casa — {month}",
@@ -1017,7 +1020,9 @@
         "deleteConfirm": "¿Eliminar la línea en borrador «{label}»? Deshacer vive en el libro mayor (Cmd+Z).",
         "publishedNoDelete": "Una línea publicada se archiva; nunca se elimina.",
         "historyTitle": "Historial",
-        "historyNone": "Nada en el diario para esta línea todavía."
+        "historyNone": "Nada en el diario para esta línea todavía.",
+        "momentTitle": "Wedding Moment vinculado",
+        "noMoment": "Ningún momento"
       }
     },
     "bar": {
@@ -2857,5 +2862,56 @@
     "signoff": "Con las atenciones de la casa,",
     "inAppTitle": "Se acerca un vencimiento",
     "inAppTitleMany": "Se acercan {count} vencimientos"
+  },
+  "moments": {
+    "title": "Wedding Moments — el registro",
+    "hint": "Los momentos canónicos de la boda — cada módulo apunta aquí. Renombrar conserva todos los enlaces; archive en lugar de eliminar cuando un momento tenga referencias.",
+    "name": "Nombre",
+    "date": "Fecha",
+    "start": "Hora de inicio",
+    "type": "Tipo",
+    "noType": "Sin tipo",
+    "venuePh": "Lugar",
+    "keep": "Guardar",
+    "links": "Registros vinculados",
+    "restore": "Restaurar",
+    "archive": "Archivar",
+    "delete": "Eliminar",
+    "up": "Subir",
+    "down": "Bajar",
+    "add": "Añadir el momento",
+    "addPh": "Un nuevo momento — p. ej. Cena de ensayo",
+    "dupAsk": "«{name}» ya vive en el registro. ¿Crear de todos modos? Cancelar conserva el momento existente.",
+    "deleteConfirm": "¿Eliminar «{name}»? Nada apunta a él; esto no puede deshacerse.",
+    "deleteRefused": "{count} registros aún apuntan a este momento — mejor archívelo.",
+    "archiveConfirm": "¿Archivar «{name}»? Vinculado: {links}. Los enlaces se conservan; el momento sale de las listas activas.",
+    "refs": {
+      "milestones": "hitos",
+      "ceremonies": "ceremonias",
+      "budgetLines": "líneas de presupuesto",
+      "runSheets": "hojas de ruta",
+      "guests": "respuestas de invitados",
+      "links": "módulos vinculados",
+      "none": "Nada apunta aún a este momento."
+    },
+    "kinds": {
+      "welcome": "Bienvenida",
+      "rehearsal": "Ensayo",
+      "ceremony": "Ceremonia",
+      "cocktail": "Cóctel",
+      "dinner": "Cena",
+      "reception": "Recepción",
+      "brunch": "Brunch",
+      "farewell": "Despedida",
+      "other": "Otro"
+    },
+    "related": "Wedding Moments vinculados",
+    "attach": "Vincular un momento…",
+    "detach": "Desvincular",
+    "needsMigration": "Ejecute primero la migración 0032.",
+    "linkedMoment": "Wedding Moment vinculado",
+    "noMoment": "Ningún momento",
+    "createFromCeremony": "Crear un Wedding Moment desde esta ceremonia",
+    "dupCeremonyAsk": "«{name}» ya vive en el registro. Aceptar vincula el momento existente; Cancelar crea uno nuevo de todos modos."
   }
 }

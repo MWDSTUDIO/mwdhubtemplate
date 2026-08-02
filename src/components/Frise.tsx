@@ -15,7 +15,8 @@ export interface FrisePickers {
   vendors: { id: string; name: string }[];
   lines: { id: string; label: string }[];
   documents: { id: string; label: string }[];
-  ceremonies: { id: string; label: string }[];
+  /** The canonical Wedding Moments (0032) — the Desk's registry, by id. */
+  moments: { id: string; label: string }[];
 }
 
 /**
@@ -29,7 +30,7 @@ export interface FrisePickers {
 export function Frise({
   milestones,
   ops = {},
-  pickers = { vendors: [], lines: [], documents: [], ceremonies: [] },
+  pickers = { vendors: [], lines: [], documents: [], moments: [] },
   weddingId,
   isTeam
 }: {
@@ -352,7 +353,7 @@ function MilestoneDialog({
   const [vendorId, setVendorId] = useState(existingOps?.vendor_id ?? "");
   const [lineId, setLineId] = useState(existingOps?.budget_line_id ?? "");
   const [documentId, setDocumentId] = useState(existingOps?.document_id ?? "");
-  const [ceremonyId, setCeremonyId] = useState(existingOps?.ceremony_id ?? "");
+  const [eventId, setEventId] = useState(existingOps?.event_id ?? "");
   const [noteInternal, setNoteInternal] = useState(existingOps?.note_internal ?? "");
   const [pending, startTransition] = useTransition();
   const labelRef = useRef<HTMLInputElement>(null);
@@ -381,7 +382,8 @@ function MilestoneDialog({
           vendorId: vendorId || null,
           budgetLineId: lineId || null,
           documentId: documentId || null,
-          ceremonyId: ceremonyId || null,
+          ceremonyId: existingOps?.ceremony_id ?? null,
+          eventId: eventId || null,
           noteInternal
         }
       });
@@ -472,11 +474,12 @@ function MilestoneDialog({
             <option value="">{t("linkDocument")}</option>
             {pickers.documents.map((d) => <option key={d.id} value={d.id}>{d.label}</option>)}
           </select>
-          <select value={ceremonyId} onChange={(e) => setCeremonyId(e.target.value)} style={selectS} aria-label={t("linkCeremony")}>
-            <option value="">{t("linkCeremony")}</option>
-            {pickers.ceremonies.map((c) => <option key={c.id} value={c.id}>{c.label}</option>)}
+          <select value={eventId} onChange={(e) => setEventId(e.target.value)} style={selectS} aria-label={t("linkMoment")}>
+            <option value="">{t("linkMoment")}</option>
+            {pickers.moments.map((m) => <option key={m.id} value={m.id}>{m.label}</option>)}
           </select>
         </div>
+        <p style={{ fontSize: 11.5, color: "var(--ink2)", margin: "6px 0 0" }}>{t("momentHelper")}</p>
         <input value={noteInternal} onChange={(e) => setNoteInternal(e.target.value)} placeholder={t("internalNotePh")} style={{ ...selectS, background: undefined, width: "100%", marginTop: 8 }} />
 
         <div style={{ display: "flex", gap: 10, marginTop: 18, flexWrap: "wrap" }}>

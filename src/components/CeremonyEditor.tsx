@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { useFormatter, useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import type {
@@ -39,6 +39,7 @@ import {
   type VendorOption
 } from "@/components/ceremony-sections";
 import { Dictate } from "@/components/Dictate";
+import { createMomentFromCeremony, listMoments, setCeremonyMoment } from "@/app/actions/moments";
 
 /**
  * The ceremonial knowledge of the house — offered as suggestions,
@@ -141,6 +142,11 @@ export function CeremonyForm({
           <label className="eyebrow">{t("planB")}</label>
           <input value={planB} onChange={(e) => setPlanB(e.target.value)} placeholder={t("planBPlaceholder")} />
         </div>
+        {ceremony && (
+          <div className="field" style={{ gridColumn: "1 / -1" }}>
+            <CeremonyMomentField weddingId={weddingId} ceremony={ceremony} />
+          </div>
+        )}
         <div className="field" style={{ gridColumn: "1 / -1" }}>
           <label className="eyebrow" style={{ display: "flex", alignItems: "center", gap: 10 }}>{t("notes")}<Dictate title={t("notes")} onText={(x) => setNotes((v) => (v ? v.trimEnd() + " " + x : x))} /></label>
           <textarea rows={3} value={notes} onChange={(e) => setNotes(e.target.value)} placeholder={t("notesPlaceholder")} />
@@ -193,6 +199,72 @@ export function CeremonyForm({
         </p>
       )}
     </div>
+  );
+}
+
+/**
+ * The Linked Wedding Moment (PRD Moments §6) — a reference to the
+ * Desk's canonical registry, never a copy. When none fits, one
+ * controlled creation; a possible duplicate is named first.
+ */
+function CeremonyMomentField({ weddingId, ceremony }: { weddingId: string; ceremony: Ceremony }) {
+  const t = useTranslations("moments");
+  const router = useRouter();
+  const [, startTransition] = useTransition();
+  const [moments, setMoments] = useState<{ id: string; name: string }[] | null>(null);
+  const [eventId, setEventId] = useState(ceremony.event_id ?? "");
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    void listMoments(weddingId).then((m) => setMoments(m.map(({ id, name }) => ({ id, name }))));
+  }, [weddingId]);
+
+  const refresh = () => startTransition(() => router.refresh());
+
+  if (!moments) return null;
+  return (
+    <>
+      <label className="eyebrow">{t("linkedMoment")}</label>
+      <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+        <select
+          value={eventId}
+          disabled={busy}
+          onChange={async (e) => {
+            const id = e.target.value;
+            setEventId(id);
+            setBusy(true);
+            await setCeremonyMoment(ceremony.id, id || null);
+            setBusy(false);
+            refresh();
+          }}
+          style={{ fontSize: 13.5 }}
+        >
+          <option value="">{t("noMoment")}</option>
+          {moments.map((m) => (
+            <option key={m.id} value={m.id}>{m.name}</option>
+          ))}
+        </select>
+        {!eventId && (
+          <button
+            className="addnote"
+            disabled={busy}
+            onClick={async () => {
+              setBusy(true);
+              let r = await createMomentFromCeremony(ceremony.id);
+              if (!r.ok && "reason" in r && r.reason === "duplicate") {
+                // §15 — Use existing, or create anyway; never silent.
+                const useExisting = window.confirm(t("dupCeremonyAsk", { name: r.duplicate.name }));
+                r = await createMomentFromCeremony(ceremony.id, useExisting ? "useExisting" : "createAnyway");
+              }
+              setBusy(false);
+              if (r.ok) { setEventId(r.id); refresh(); }
+            }}
+          >
+            {t("createFromCeremony")}
+          </button>
+        )}
+      </div>
+    </>
   );
 }
 

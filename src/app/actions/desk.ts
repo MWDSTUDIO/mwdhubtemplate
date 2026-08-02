@@ -135,7 +135,9 @@ export async function saveWedding(input: {
   }
 
   // Events are free labels, synced with the sheet: removed rows leave,
-  // dates follow, new labels arrive in order.
+  // dates follow, new labels arrive in order. Since 0032 the rows are
+  // the canonical Wedding Moments registry — a removed row that other
+  // modules still point at is archived, never hard-deleted.
   {
     const { data: existing } = await supabase
       .from("wedding_events")
@@ -144,18 +146,33 @@ export async function saveWedding(input: {
     const wanted = input.events;
     const wantedNames = new Set(wanted.map((e) => e.name));
     const leftover = (existing ?? []).filter((e) => !wantedNames.has(e.name));
-    if (leftover.length) {
-      await supabase
-        .from("wedding_events")
-        .delete()
-        .in("id", leftover.map((e) => e.id));
+    for (const e of leftover) {
+      let referenced = false;
+      for (const [table, col] of [
+        ["milestone_ops", "event_id"], ["ceremonies", "event_id"], ["budget_lines", "event_id"],
+        ["run_sheets", "event_id"], ["person_event_status", "event_id"], ["moment_links", "event_id"]
+      ] as const) {
+        try {
+          const { count, error } = await supabase
+            .from(table)
+            .select("id", { count: "exact", head: true })
+            .eq(col, e.id);
+          if (!error && (count ?? 0) > 0) { referenced = true; break; }
+        } catch { /* table absent pre-migration */ }
+      }
+      if (referenced) {
+        await supabase.from("wedding_events").update({ archived: true }).eq("id", e.id);
+      } else {
+        await supabase.from("wedding_events").delete().eq("id", e.id);
+      }
     }
     for (const [i, event] of wanted.entries()) {
       const match = (existing ?? []).find((e) => e.name === event.name);
       if (match) {
+        // A returning name restores its archived moment — same id kept.
         await supabase
           .from("wedding_events")
-          .update({ event_date: event.date || null, sort: i + 1 })
+          .update({ event_date: event.date || null, sort: i + 1, archived: false })
           .eq("id", match.id);
       } else {
         await supabase.from("wedding_events").insert({

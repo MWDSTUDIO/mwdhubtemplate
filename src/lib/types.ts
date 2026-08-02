@@ -56,6 +56,8 @@ export interface Ceremony {
   /** Readiness marks: check key → required | optional | na (§16). */
   checklist?: Record<string, "required" | "optional" | "na">;
   milestone_id?: string | null;
+  /** The linked Wedding Moment (0032) — the Desk registry's id. */
+  event_id?: string | null;
 }
 
 export type CeremonyStatus = "draft" | "ready_for_review" | "approved" | "published" | "completed";
@@ -230,6 +232,8 @@ export interface MilestoneOps {
   note_internal: string | null;
   source: string | null;
   source_id: string | null;
+  /** The Related Wedding Moment (0032) — the Desk registry's id. */
+  event_id?: string | null;
 }
 
 export interface InternalTask {
@@ -390,6 +394,8 @@ export interface BudgetLine {
   wedding_id: string;
   envelope_id: string | null;
   vendor_id: string | null;
+  /** The Related Wedding Moment (0032) — the Desk registry's id. */
+  event_id?: string | null;
   label: string;
   budgeted: number | null;
   committed: number | null;

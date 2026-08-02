@@ -34,6 +34,7 @@ import {
   attachDocument,
   detachDocument
 } from "@/app/actions/budget-financial";
+import { listMoments, setBudgetLineMoment } from "@/app/actions/moments";
 
 /** One paper linked to one record — the link, never a copy (0027). */
 export interface FinDocLink {
@@ -1410,6 +1411,11 @@ function LineDrawer({
   const [payDue, setPayDue] = useState("");
   const [paySettled, setPaySettled] = useState(false);
   const [attachId, setAttachId] = useState("");
+  // The canonical Wedding Moments registry (0032) — read, never copied.
+  const [moments, setMoments] = useState<{ id: string; name: string }[]>([]);
+  useEffect(() => {
+    void listMoments(weddingId).then((m) => setMoments(m.map(({ id, name }) => ({ id, name })))).catch(() => {});
+  }, [weddingId]);
 
   const vendor = vendors.find((v) => v.id === line.vendor_id) ?? null;
   const lineInvoices = invoices.filter((i) => i.budget_line_id === line.id);
@@ -1464,6 +1470,26 @@ function LineDrawer({
             </>
           )}
         </div>
+
+        {moments.length > 0 && (
+          <>
+            <div className="eyebrow" style={sectionTitle}>{t("momentTitle")}</div>
+            <select
+              value={line.event_id ?? ""}
+              onChange={(e) =>
+                startTransition(async () => {
+                  await setBudgetLineMoment(line.id, e.target.value || null);
+                  router.refresh();
+                })
+              }
+              style={{ padding: "6px 8px", border: "1px solid var(--line)", background: "#fff", fontSize: 12.5 }}
+              aria-label={t("momentTitle")}
+            >
+              <option value="">{t("noMoment")}</option>
+              {moments.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
+            </select>
+          </>
+        )}
 
         <div className="eyebrow" style={sectionTitle}>{t("categoryTitle")}</div>
         <select

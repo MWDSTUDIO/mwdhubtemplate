@@ -136,7 +136,8 @@
       "one": "ひとつのご決定をお待ちしております。",
       "several": "{count}件のご決定をお待ちしております。",
       "progress": "{total}件のマイルストーンのうち{done}件が完了——{pct}%。",
-      "teamLine": "遅延：マイルストーン{milestones}件 · お支払い{payments}件。"
+      "teamLine": "遅延：マイルストーン{milestones}件 · お支払い{payments}件。",
+      "nextMoment": "次のモーメント:{name}——{date}。"
     },
     "next": {
       "title": "次のマイルストーン"
@@ -280,10 +281,10 @@
       "ownerPh": "担当",
       "dueField": "期日",
       "descriptionPh": "説明",
-      "dependsOn": "先行するのは…",
-      "linkVendor": "ヴェンダー",
-      "linkLine": "予算行",
-      "linkDocument": "書類",
+      "dependsOn": "前のマイルストーン",
+      "linkVendor": "関連ヴェンダー",
+      "linkLine": "関連予算行",
+      "linkDocument": "関連ドキュメント",
       "linkCeremony": "セレモニー",
       "internalNotePh": "内部メモ——お客さまには表示されません",
       "exports": {
@@ -292,7 +293,9 @@
         "client": "お客さま向け進捗",
         "checklist": "運用チェックリスト",
         "milestones": "マイルストーン"
-      }
+      },
+      "linkMoment": "関連ウェディング・モーメント",
+      "momentHelper": "このマイルストーンをThe Deskで作成したウェディング・モーメントに結び付けます。"
     },
     "monthly": {
       "title": "今月の当館より — {month}",
@@ -1017,7 +1020,9 @@
         "deleteConfirm": "下書きの行「{label}」を削除しますか？　台帳で元に戻せます（Cmd+Z）。",
         "publishedNoDelete": "公開済みの行はアーカイブされ、削除されることはありません。",
         "historyTitle": "履歴",
-        "historyNone": "この行の記録はまだございません。"
+        "historyNone": "この行の記録はまだございません。",
+        "momentTitle": "関連ウェディング・モーメント",
+        "noMoment": "モーメントなし"
       }
     },
     "bar": {
@@ -2857,5 +2862,56 @@
     "signoff": "当館より、心を込めて。",
     "inAppTitle": "お支払いの時が近づいております",
     "inAppTitleMany": "{count} 件のお支払いが近づいております"
+  },
+  "moments": {
+    "title": "ウェディング・モーメント——レジストリ",
+    "hint": "ウェディングの正典となるモーメント——各モジュールはここを参照します。名称変更してもリンクは保たれます。参照されているモーメントは削除ではなくアーカイブを。",
+    "name": "名称",
+    "date": "日付",
+    "start": "開始時刻",
+    "type": "種類",
+    "noType": "種類なし",
+    "venuePh": "会場",
+    "keep": "保存",
+    "links": "関連レコード",
+    "restore": "復元",
+    "archive": "アーカイブ",
+    "delete": "削除",
+    "up": "上へ",
+    "down": "下へ",
+    "add": "モーメントを追加",
+    "addPh": "新しいモーメント——例：リハーサルディナー",
+    "dupAsk": "「{name}」は既にレジストリにございます。それでも作成しますか？キャンセルで既存のモーメントを使います。",
+    "deleteConfirm": "「{name}」を削除しますか？参照はありません。この操作は取り消せません。",
+    "deleteRefused": "{count}件のレコードがこのモーメントを参照しています——アーカイブをご利用ください。",
+    "archiveConfirm": "「{name}」をアーカイブしますか？関連：{links}。リンクは保たれ、モーメントはアクティブ一覧から外れます。",
+    "refs": {
+      "milestones": "マイルストーン",
+      "ceremonies": "セレモニー",
+      "budgetLines": "予算行",
+      "runSheets": "ランシート",
+      "guests": "ゲストの回答",
+      "links": "関連モジュール",
+      "none": "まだこのモーメントへの参照はございません。"
+    },
+    "kinds": {
+      "welcome": "ウェルカム",
+      "rehearsal": "リハーサル",
+      "ceremony": "セレモニー",
+      "cocktail": "カクテル",
+      "dinner": "ディナー",
+      "reception": "レセプション",
+      "brunch": "ブランチ",
+      "farewell": "フェアウェル",
+      "other": "その他"
+    },
+    "related": "関連ウェディング・モーメント",
+    "attach": "モーメントをリンク……",
+    "detach": "リンク解除",
+    "needsMigration": "先にマイグレーション0032を実行してください。",
+    "linkedMoment": "リンク済みウェディング・モーメント",
+    "noMoment": "モーメントなし",
+    "createFromCeremony": "このセレモニーからウェディング・モーメントを作成",
+    "dupCeremonyAsk": "「{name}」は既にレジストリにございます。OKで既存のモーメントをリンク、キャンセルで新規作成します。"
   }
 }
