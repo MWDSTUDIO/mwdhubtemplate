@@ -129,6 +129,97 @@
       "joinMeet": "Meet をひらく",
       "hint": "ご確約により、おふたりのアドレスと当館の窓口を添えた予定が作られます——Google の接続が調いましたら。",
       "diaryTaken": "お手元の予定と重なっています"
+    },
+    "pulse": {
+      "title": "ウェディングの鼓動",
+      "calm": "すべて予定どおりに進んでおります。",
+      "one": "ひとつのご決定をお待ちしております。",
+      "several": "{count}件のご決定をお待ちしております。",
+      "progress": "{total}件のマイルストーンのうち{done}件が完了——{pct}%。",
+      "teamLine": "遅延：マイルストーン{milestones}件 · お支払い{payments}件。"
+    },
+    "next": {
+      "title": "次のマイルストーン"
+    },
+    "month": {
+      "title": "今月のハウスより"
+    },
+    "ceremony": {
+      "title": "セレモニー",
+      "toSettle": "ハウスと調整中でございます。",
+      "blockers": "準備項目が{count}件残っております。",
+      "view": "セレモニーを見る",
+      "empty": "セレモニーの詳細は、整い次第こちらに現れます。"
+    },
+    "budget": {
+      "title": "予算",
+      "line": "契約額 {committed} · お支払い済み {paid}。",
+      "next": "次：{label}。",
+      "teamLine": "チーム：契約 {committed} · 支払済 {paid} · 残 {remaining} · 遅延{overdue}件。",
+      "view": "予算を見る",
+      "empty": "承認された予算の概要は、公開され次第こちらに現れます。"
+    },
+    "design": {
+      "title": "クリエイティブ・ディレクション",
+      "line": "ボード{total}点 · 承認{approved}点",
+      "latest": "直近は「{title}」",
+      "awaiting": "{count}点がレビュー待ちです。",
+      "view": "デザインスタジオを見る",
+      "empty": "クリエイティブ・ディレクションを準備しております。"
+    },
+    "vendors": {
+      "title": "ヴェンダー",
+      "line": "{total}社のうち——契約{contracted} · 選定{selected} · 検討中{inReview} · 交渉中{awaiting}。",
+      "view": "ヴェンダーを見る"
+    },
+    "comm": {
+      "title": "ゲストとお便り",
+      "line": "ご出席{attending} · ご返事待ち{pending} · ご欠席{declined}。",
+      "view": "ウェディング・コミュニケーションを見る",
+      "empty": "ゲストリストを整えております。",
+      "forms": "{count}件のアンケートがお待ちしております。",
+      "viewForms": "フォームを見る"
+    },
+    "recent": {
+      "title": "最近整えたもの",
+      "empty": "ハウスは仕事の最中です——最初のひと品からこちらに現れます。",
+      "viewDoc": "ドキュメントを見る",
+      "journal": "ジャーナル:{entries}。"
+    },
+    "priorities": {
+      "title": "ハウスの優先事項",
+      "open": "開く",
+      "overdueMilestones": "件のマイルストーンが遅延",
+      "overduePayments": "件のお支払いが遅延",
+      "ceremonyBlockers": "件のセレモニー項目が未了",
+      "attentionsAwaiting": "件のご決定をお二人に依頼中",
+      "vendorsInReview": "社のヴェンダーを検討中",
+      "boardsAwaiting": "点のボードがレビュー待ち",
+      "formsOpen": "件のアンケートが未回答"
+    },
+    "config": {
+      "open": "エントランスを整える",
+      "title": "エントランスの設え",
+      "up": "上へ",
+      "down": "下へ",
+      "teamOnly": "チームのみ",
+      "previewHint": "上部のClient view切替でお二人の見え方をご確認いただけます。",
+      "save": "設えを保存",
+      "close": "閉じる",
+      "reset": "ハウスの並びに戻す",
+      "needsMigration": "先にマイグレーション0030の実行をお願いいたします。",
+      "sections": {
+        "pulse": "ウェディングの鼓動",
+        "next_milestone": "次のマイルストーン",
+        "month": "今月のハウスより",
+        "ceremony": "セレモニー",
+        "budget": "予算",
+        "design": "クリエイティブ・ディレクション",
+        "vendors": "ヴェンダー",
+        "communication": "ゲストとお便り",
+        "recent": "最近整えたもの",
+        "priorities": "ハウスの優先事項"
+      }
     }
   },
   "timeline": {

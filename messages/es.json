@@ -129,6 +129,97 @@
       "joinMeet": "Abrir el Meet",
       "hint": "Confirmar crea el evento con las direcciones de la pareja y el buzón de la casa — en cuanto Google esté conectado.",
       "diaryTaken": "Ocupado en su agenda"
+    },
+    "pulse": {
+      "title": "El pulso de la boda",
+      "calm": "Todo avanza según lo previsto.",
+      "one": "Una decisión espera su atención.",
+      "several": "{count} decisiones esperan su atención.",
+      "progress": "{done} de {total} hitos atendidos — {pct} %.",
+      "teamLine": "Con retraso: {milestones} hitos · {payments} pagos."
+    },
+    "next": {
+      "title": "Próximo hito"
+    },
+    "month": {
+      "title": "Este mes en la casa"
+    },
+    "ceremony": {
+      "title": "La ceremonia",
+      "toSettle": "En preparación con la casa.",
+      "blockers": "{count} puntos de preparación aún abiertos.",
+      "view": "Ver la ceremonia",
+      "empty": "Los detalles de la ceremonia aparecerán aquí cuando estén listos."
+    },
+    "budget": {
+      "title": "El presupuesto",
+      "line": "Comprometido {committed} · pagado {paid}.",
+      "next": "Próximo: {label}.",
+      "teamLine": "Equipo: comprometido {committed} · pagado {paid} · restante {remaining} · {overdue} atrasados.",
+      "view": "Ver el presupuesto",
+      "empty": "El resumen del presupuesto aprobado aparecerá aquí al publicarse."
+    },
+    "design": {
+      "title": "Dirección creativa",
+      "line": "{total} tableros · {approved} aprobados",
+      "latest": "últimamente «{title}»",
+      "awaiting": "{count} en espera de revisión.",
+      "view": "Ver el Design Studio",
+      "empty": "La dirección creativa se está preparando."
+    },
+    "vendors": {
+      "title": "Los proveedores",
+      "line": "{total} en el círculo de la boda — {contracted} contratados · {selected} seleccionados · {inReview} en revisión · {awaiting} en acercamiento.",
+      "view": "Ver los proveedores"
+    },
+    "comm": {
+      "title": "Invitados y palabra",
+      "line": "{attending} asisten · {pending} por responder · {declined} declinaron.",
+      "view": "Ver Wedding Communication",
+      "empty": "La lista de invitados se está componiendo.",
+      "forms": "{count, plural, one {Un cuestionario espera su atención.} other {# cuestionarios esperan su atención.}}",
+      "viewForms": "Ver los formularios"
+    },
+    "recent": {
+      "title": "Recién preparado",
+      "empty": "La casa está manos a la obra — las primeras piezas aparecerán aquí.",
+      "viewDoc": "Ver los documentos",
+      "journal": "Diario: {entries}."
+    },
+    "priorities": {
+      "title": "Las prioridades de la casa",
+      "open": "Abrir",
+      "overdueMilestones": "{count, plural, one {hito atrasado} other {hitos atrasados}}",
+      "overduePayments": "{count, plural, one {pago atrasado} other {pagos atrasados}}",
+      "ceremonyBlockers": "{count, plural, one {punto de ceremonia abierto} other {puntos de ceremonia abiertos}}",
+      "attentionsAwaiting": "{count, plural, one {decisión esperada de la pareja} other {decisiones esperadas de la pareja}}",
+      "vendorsInReview": "{count, plural, one {proveedor en revisión} other {proveedores en revisión}}",
+      "boardsAwaiting": "{count, plural, one {tablero por revisar} other {tableros por revisar}}",
+      "formsOpen": "{count, plural, one {cuestionario en espera} other {cuestionarios en espera}}"
+    },
+    "config": {
+      "open": "Arreglar el vestíbulo",
+      "title": "La disposición del vestíbulo",
+      "up": "Subir",
+      "down": "Bajar",
+      "teamOnly": "Solo equipo",
+      "previewHint": "Previsualice como la pareja con el conmutador Client view arriba.",
+      "save": "Guardar la disposición",
+      "close": "Cerrar",
+      "reset": "Volver al orden de la casa",
+      "needsMigration": "Ejecute primero la migración 0030.",
+      "sections": {
+        "pulse": "El pulso de la boda",
+        "next_milestone": "Próximo hito",
+        "month": "Este mes en la casa",
+        "ceremony": "La ceremonia",
+        "budget": "El presupuesto",
+        "design": "Dirección creativa",
+        "vendors": "Los proveedores",
+        "communication": "Invitados y palabra",
+        "recent": "Recién preparado",
+        "priorities": "Las prioridades de la casa"
+      }
     }
   },
   "timeline": {

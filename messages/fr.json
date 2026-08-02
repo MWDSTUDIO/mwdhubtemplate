@@ -129,6 +129,97 @@
       "joinMeet": "Ouvrir le Meet",
       "hint": "La confirmation crée l'événement avec les adresses des mariés et la boîte de la maison — dès que Google est connecté.",
       "diaryTaken": "Pris dans votre agenda"
+    },
+    "pulse": {
+      "title": "Le pouls du mariage",
+      "calm": "Tout avance comme prévu.",
+      "one": "Une décision attend votre attention.",
+      "several": "{count} décisions attendent votre attention.",
+      "progress": "{done} jalons sur {total} accomplis — {pct} %.",
+      "teamLine": "En retard : {milestones} jalons · {payments} règlements."
+    },
+    "next": {
+      "title": "Prochain jalon"
+    },
+    "month": {
+      "title": "Ce mois-ci à la maison"
+    },
+    "ceremony": {
+      "title": "La cérémonie",
+      "toSettle": "En cours de règlement avec la maison.",
+      "blockers": "{count} points de préparation encore ouverts.",
+      "view": "Voir la cérémonie",
+      "empty": "Les détails de la cérémonie paraîtront ici dès qu'ils seront prêts."
+    },
+    "budget": {
+      "title": "Le budget",
+      "line": "Engagé {committed} · réglé {paid}.",
+      "next": "Prochain : {label}.",
+      "teamLine": "Équipe : engagé {committed} · réglé {paid} · restant {remaining} · {overdue} en retard.",
+      "view": "Voir le budget",
+      "empty": "Le résumé du budget approuvé paraîtra ici une fois publié."
+    },
+    "design": {
+      "title": "Direction créative",
+      "line": "{total} planches · {approved} approuvées",
+      "latest": "dernièrement « {title} »",
+      "awaiting": "{count} en attente de relecture.",
+      "view": "Voir le Design Studio",
+      "empty": "La direction créative se prépare."
+    },
+    "vendors": {
+      "title": "Les prestataires",
+      "line": "{total} dans le cercle du mariage — {contracted} engagés · {selected} retenus · {inReview} en revue · {awaiting} en approche.",
+      "view": "Voir les prestataires"
+    },
+    "comm": {
+      "title": "Invités & parole",
+      "line": "{attending} présents · {pending} en attente · {declined} excusés.",
+      "view": "Voir Wedding Communication",
+      "empty": "La liste des invités se compose.",
+      "forms": "{count, plural, one {Un questionnaire attend votre attention.} other {# questionnaires attendent votre attention.}}",
+      "viewForms": "Voir les formulaires"
+    },
+    "recent": {
+      "title": "Récemment préparé",
+      "empty": "La maison est à l'œuvre — les premières pièces paraîtront ici.",
+      "viewDoc": "Voir les documents",
+      "journal": "Journal : {entries}."
+    },
+    "priorities": {
+      "title": "Les priorités de la maison",
+      "open": "Ouvrir",
+      "overdueMilestones": "{count, plural, one {jalon en retard} other {jalons en retard}}",
+      "overduePayments": "{count, plural, one {règlement en retard} other {règlements en retard}}",
+      "ceremonyBlockers": "{count, plural, one {point de cérémonie ouvert} other {points de cérémonie ouverts}}",
+      "attentionsAwaiting": "{count, plural, one {décision attendue du couple} other {décisions attendues du couple}}",
+      "vendorsInReview": "{count, plural, one {prestataire en revue} other {prestataires en revue}}",
+      "boardsAwaiting": "{count, plural, one {planche à relire} other {planches à relire}}",
+      "formsOpen": "{count, plural, one {questionnaire en attente} other {questionnaires en attente}}"
+    },
+    "config": {
+      "open": "Arranger le hall d'entrée",
+      "title": "L'arrangement du hall",
+      "up": "Monter",
+      "down": "Descendre",
+      "teamOnly": "Équipe seule",
+      "previewHint": "Prévisualisez comme le couple avec la bascule Client view en haut.",
+      "save": "Enregistrer l'arrangement",
+      "close": "Fermer",
+      "reset": "Revenir à l'ordre de la maison",
+      "needsMigration": "Exécutez d'abord la migration 0030.",
+      "sections": {
+        "pulse": "Le pouls du mariage",
+        "next_milestone": "Prochain jalon",
+        "month": "Ce mois-ci à la maison",
+        "ceremony": "La cérémonie",
+        "budget": "Le budget",
+        "design": "Direction créative",
+        "vendors": "Les prestataires",
+        "communication": "Invités & parole",
+        "recent": "Récemment préparé",
+        "priorities": "Les priorités de la maison"
+      }
     }
   },
   "timeline": {

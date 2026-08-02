@@ -129,6 +129,97 @@
       "joinMeet": "Open the Meet",
       "hint": "Confirming creates the calendar event with the couple's addresses and the house's inbox — once Google is connected.",
       "diaryTaken": "Taken in your diary"
+    },
+    "pulse": {
+      "title": "The wedding's pulse",
+      "calm": "Everything is moving as planned.",
+      "one": "One decision is awaiting your attention.",
+      "several": "{count} decisions are awaiting your attention.",
+      "progress": "{done} of {total} milestones attended to — {pct} %.",
+      "teamLine": "Late: {milestones} milestones · {payments} payments."
+    },
+    "next": {
+      "title": "Next milestone"
+    },
+    "month": {
+      "title": "This month at the House"
+    },
+    "ceremony": {
+      "title": "The ceremony",
+      "toSettle": "Being settled with the house.",
+      "blockers": "{count} readiness points still open.",
+      "view": "View the ceremony",
+      "empty": "The ceremony details will appear here once they are ready."
+    },
+    "budget": {
+      "title": "The budget",
+      "line": "Committed {committed} · settled {paid}.",
+      "next": "Next: {label}.",
+      "teamLine": "Team: committed {committed} · paid {paid} · remaining {remaining} · {overdue} overdue.",
+      "view": "View the budget",
+      "empty": "The approved budget summary will appear here when published."
+    },
+    "design": {
+      "title": "Creative direction",
+      "line": "{total} boards · {approved} approved",
+      "latest": "lately “{title}”",
+      "awaiting": "{count} awaiting review.",
+      "view": "View the Design Studio",
+      "empty": "The creative direction is being prepared."
+    },
+    "vendors": {
+      "title": "The vendors",
+      "line": "{total} in the wedding's circle — {contracted} contracted · {selected} selected · {inReview} in review · {awaiting} in courtship.",
+      "view": "View the vendors"
+    },
+    "comm": {
+      "title": "Guests & word",
+      "line": "{attending} attending · {pending} awaiting reply · {declined} declined.",
+      "view": "View Wedding Communication",
+      "empty": "The guest list is being composed.",
+      "forms": "{count, plural, one {One questionnaire awaits your attention.} other {# questionnaires await your attention.}}",
+      "viewForms": "View the forms"
+    },
+    "recent": {
+      "title": "Recently prepared",
+      "empty": "The house is at work — the first pieces will appear here.",
+      "viewDoc": "View the documents",
+      "journal": "Journal: {entries}."
+    },
+    "priorities": {
+      "title": "The house's priorities",
+      "open": "Open",
+      "overdueMilestones": "{count, plural, one {milestone overdue} other {milestones overdue}}",
+      "overduePayments": "{count, plural, one {payment overdue} other {payments overdue}}",
+      "ceremonyBlockers": "{count, plural, one {ceremony point open} other {ceremony points open}}",
+      "attentionsAwaiting": "{count, plural, one {decision awaiting the couple} other {decisions awaiting the couple}}",
+      "vendorsInReview": "{count, plural, one {vendor in review} other {vendors in review}}",
+      "boardsAwaiting": "{count, plural, one {board awaiting review} other {boards awaiting review}}",
+      "formsOpen": "{count, plural, one {questionnaire awaiting} other {questionnaires awaiting}}"
+    },
+    "config": {
+      "open": "Arrange the entrance hall",
+      "title": "The hall's arrangement",
+      "up": "Up",
+      "down": "Down",
+      "teamOnly": "Team only",
+      "previewHint": "Preview as the couple with the Client view toggle above.",
+      "save": "Save the arrangement",
+      "close": "Close",
+      "reset": "Back to the house's order",
+      "needsMigration": "Run migration 0030 first.",
+      "sections": {
+        "pulse": "The wedding's pulse",
+        "next_milestone": "Next milestone",
+        "month": "This month at the House",
+        "ceremony": "The ceremony",
+        "budget": "The budget",
+        "design": "Creative direction",
+        "vendors": "The vendors",
+        "communication": "Guests & word",
+        "recent": "Recently prepared",
+        "priorities": "The house's priorities"
+      }
     }
   },
   "timeline": {
