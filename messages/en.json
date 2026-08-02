@@ -796,6 +796,25 @@
       "gmailMissing": "The Gmail box is not wired yet — letters hold; the hub channel speaks.",
       "schedulerDormant": "The scheduler sleeps until the house authorises the launch.",
       "schedulerOn": "The scheduler passes every morning."
+    },
+    "analysis": {
+      "tagDraft": "Draft — the couple does not read this yet",
+      "tagPublished": "Published — the couple reads this",
+      "empty": "No analysis yet. The Publication desk composes a draft each time you publish the budget — or write your own here.",
+      "edit": "Rework the analysis",
+      "write": "Write the analysis",
+      "publish": "Publish to the couple",
+      "saveDraft": "Keep as draft",
+      "remove": "Remove the analysis",
+      "removeConfirm": "Remove the analysis? The couple will no longer read it; the journal keeps the trace.",
+      "cancel": "Never mind",
+      "toolbar": "Layout",
+      "bold": "Bold",
+      "italic": "Italic",
+      "list": "List",
+      "toolbarPlaceholder": "your words",
+      "previewTitle": "As the couple will read it",
+      "clientNothing": "The couple reads nothing here yet — the analysis awaits your word."
     }
   },
   "vendors": {

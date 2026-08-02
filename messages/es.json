@@ -796,6 +796,25 @@
       "gmailMissing": "El buzón Gmail aún no está conectado — las cartas esperan; el hub habla.",
       "schedulerDormant": "El planificador duerme hasta que la casa autorice el lanzamiento.",
       "schedulerOn": "El planificador pasa cada mañana."
+    },
+    "analysis": {
+      "tagDraft": "Borrador — la pareja aún no lee esto",
+      "tagPublished": "Publicada — la pareja lee esto",
+      "empty": "Aún sin análisis. La Publicación compone un borrador con cada publicación del presupuesto — o escriba el suyo aquí.",
+      "edit": "Retrabajar el análisis",
+      "write": "Escribir el análisis",
+      "publish": "Publicar a la pareja",
+      "saveDraft": "Guardar como borrador",
+      "remove": "Retirar el análisis",
+      "removeConfirm": "¿Retirar el análisis? La pareja ya no lo leerá; el diario guarda la huella.",
+      "cancel": "Dejar así",
+      "toolbar": "Composición",
+      "bold": "Negrita",
+      "italic": "Cursiva",
+      "list": "Lista",
+      "toolbarPlaceholder": "sus palabras",
+      "previewTitle": "Tal como la leerá la pareja",
+      "clientNothing": "La pareja no lee nada aquí por ahora — el análisis espera su palabra."
     }
   },
   "vendors": {

@@ -83,6 +83,32 @@ Civilité · prénoms, nom, suffixe · ligne d'invitation · adresse postale · 
 
 ---
 
+### 2.5 La matrice des événements — le cœur opérationnel qui manquait
+
+**La référence est le master guest list de Sophie & Gordon** : 138 invités, filtrable par événement, qui vient / qui ne vient pas / combien / avec quel régime. C'est l'instrument d'un organisateur, et c'est lui qui manque : sans cette vue, la page n'est pas opérationnelle.
+
+**a) La réponse est PAR PERSONNE et PAR ÉVÉNEMENT — jamais un statut global.**
+
+Un invité vient au dîner mais pas au brunch ; l'épouse vient à la cérémonie, le mari arrive au cocktail. Le modèle porte donc, pour **chaque personne × chaque événement auquel elle est conviée** : `invited · confirmed · declined · no reply`. Le statut « global » d'un foyer n'est qu'un agrégat affiché, jamais une donnée saisie. Si le schéma actuel ne porte qu'un statut par foyer, migration (écrite, annoncée, non exécutée).
+
+**b) La vue matrice (« The Grid »)** — un tableau croisé, Team view :
+
+- **Lignes** : les foyers (dépliables en personnes). **Colonnes** : les événements du mariage.
+- **Cellules** : le statut, éditable **d'un clic qui cycle** (invited → confirmed → declined → no reply) ou au clavier — la mécanique du Ledger, appliquée ici.
+- **Pied de chaque colonne, toujours visible** : *confirmed · pending · declined · adultes + enfants · total couverts* — et le **rollup des régimes de la colonne** (vegetarian 12 · nut allergy 2). C'est la réponse permanente à « combien à cet événement ».
+- **En-tête et colonne des noms figés** au défilement ; tri et filtre par colonne ; recherche par nom.
+- Filtres d'un clic : par événement, par statut, *no reply yet*, *changed lately*.
+- **Édition en série** : sélection de lignes → convier / retirer d'un événement, changer un statut, en un geste.
+- Mobile : la matrice bascule en **vue par événement** (une colonne à la fois, sélecteur d'événement) — jamais de tableau croisé compressé à 430 px.
+
+**c) Les allergies et régimes au niveau personne**, pas seulement foyer — c'est la personne qui mange. Le champ foyer existant reste comme note générale ; le détail par personne alimente les rollups et l'export traiteur.
+
+**d) Ce que la matrice nourrit automatiquement** : les comptes du compteur de tête, les pieds de colonnes, les exports (traiteur et lieu par événement), le compte arrêté (§5.2) et son alerte d'écart, les filtres de relance. **Une saisie dans la matrice se voit partout, immédiatement.**
+
+**e) Import et export passent par elle** : l'import (2.1.b) peut peupler les colonnes d'événements si le fichier du couple les porte (« dîner : oui/non ») via le mappage ; chaque export d'événement est exactement une colonne de la matrice avec ses pieds.
+
+---
+
 ## 3. Volet — Accommodation & Travel
 
 - **Accommodation** : blocs négociés (les invités réservent avec un code) et rooming list (la maison attribue), verrou existant conservé — ouverture sur le mot d'Estelle. **La rooming list s'édite en place**, comme la liste.
@@ -162,6 +188,10 @@ Et pour le traiteur, en tête de son export : **le rollup des régimes** — *ve
 - *Dr. Sarah Mitchell and Mr. James Mitchell* sort dans le bon ordre sans intervention ; `Jr.` correctement placé.
 - « and Guest » se met à jour partout quand le nom arrive.
 - *Mademoiselle* introuvable ; *Ms.* en premier.
+- La matrice affiche foyers × événements, statut par personne, éditable au clic et au clavier, pieds de colonnes vivants (comptes + régimes).
+- Un invité confirmé au dîner et décliné au brunch s'affiche tel quel — aucun statut global saisi.
+- La question « combien de confirmés au cocktail, et quels régimes ? » se répond en un regard, sans export.
+- Sur mobile, la vue par événement remplace la matrice — lisible à 430 px.
 - Un export lancé juste après une correction manuelle contient la correction.
 - Les cinq exports : nommés, filtrés, journalisés, inaccessibles en vue client.
 - Lisible à 430 px sans défilement horizontal.
@@ -186,6 +216,7 @@ Et pour le traiteur, en tête de son export : **le rollup des régimes** — *ve
 
 1. Fusion, suppressions, redirection.
 2. Édition en place + corrections en série (2.2) — **c'est la priorité d'Estelle**.
+2 bis. **La matrice des événements (2.5)** — même lot, même priorité : sans elle la page n'est pas opérationnelle. Migration statut-par-personne-par-événement écrite d'abord.
 3. Civilités américaines, suffixe, pré-remplissage (2.3).
 4. L'import avec mappage et revue (2.1.b).
 5. Les cinq exports + contrôles de complétude (5.3) + rollup régimes (5.5).

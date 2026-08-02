@@ -796,6 +796,25 @@
       "gmailMissing": "Gmail は未接続です——お手紙は控え、館内にてお伝えします。",
       "schedulerDormant": "送り係は、当館の御下命まで眠っております。",
       "schedulerOn": "送り係は毎朝ひと巡りいたします。"
+    },
+    "analysis": {
+      "tagDraft": "下書き——御二人はまだお読みになりません",
+      "tagPublished": "公開済み——御二人がお読みになります",
+      "empty": "まだ分析はございません。予算を公開するたび、発行台が下書きを整えます——ご自身の筆でここに記すこともできます。",
+      "edit": "分析に手を入れる",
+      "write": "分析をしたためる",
+      "publish": "御二人へ公開する",
+      "saveDraft": "下書きのまま留める",
+      "remove": "分析を下げる",
+      "removeConfirm": "分析を下げますか？御二人はもう読めなくなります。記録は残ります。",
+      "cancel": "そのままに",
+      "toolbar": "整え",
+      "bold": "太字",
+      "italic": "斜体",
+      "list": "箇条",
+      "toolbarPlaceholder": "お言葉",
+      "previewTitle": "御二人の目に映るままに",
+      "clientNothing": "御二人にはまだ何も映りません——分析はお言葉待ちでございます。"
     }
   },
   "vendors": {

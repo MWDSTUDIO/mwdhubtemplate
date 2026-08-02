@@ -244,7 +244,13 @@ export async function publishSweep(weddingId: string, input: SweepInput) {
       });
       await supabase
         .from("weddings")
-        .update({ budget_analysis: text, budget_analysis_at: new Date().toISOString() })
+        .update({
+        budget_analysis: text,
+        budget_analysis_at: new Date().toISOString(),
+        // The agent proposes; Estelle publishes (0022). Pre-0022 the
+        // unknown column would fail the whole update — try, then fall.
+        budget_analysis_status: "draft"
+      })
         .eq("id", weddingId);
     } catch {
       // stands without it

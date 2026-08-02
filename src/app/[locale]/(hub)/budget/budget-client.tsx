@@ -10,8 +10,11 @@ import {
   saveEnvelopeNote,
   publishEnvelopeNote,
   saveInternalBudgetNote,
-  updateBudgetLine
+  updateBudgetLine,
+  removeBudgetAnalysis,
+  saveBudgetAnalysis
 } from "@/app/actions/budget";
+import { HouseProse } from "@/lib/house-prose";
 import { Dictate } from "@/components/Dictate";
 
 export function BudgetTabs({ scope, mgmt }: { scope: ReactNode; mgmt: ReactNode }) {
@@ -216,9 +219,9 @@ export function BudgetAsk({ weddingId }: { weddingId: string }) {
   return (
     <div className="team-only">
       {answer && (
-        <p className="ia-quote" style={{ marginTop: 14 }} aria-live="polite">
-          &ldquo;{answer}&rdquo;
-        </p>
+        <div className="ia-quote" style={{ marginTop: 10 }}>
+          <HouseProse text={answer} size={15} />
+        </div>
       )}
       <div className="chat-in" style={{ border: "1px solid var(--line)", marginTop: 16, background: "#fff", alignItems: "center", paddingLeft: 8 }}>
         <Dictate title={t("ask")} onText={(x) => { if (inputRef.current) inputRef.current.value += x; }} />
@@ -348,3 +351,134 @@ export function InternalNotes({ weddingId, latest }: { weddingId: string; latest
  * figure, remove it, or open a new one by hand. Clients see the same
  * table, published lines only, untouchable.
  */
+
+/* ══════════ The analysis, under Estelle's word (0022) ══════════ */
+
+/**
+ * The house's analysis is Estelle's text: the agent proposes a draft,
+ * she reworks it with her layout (bold, italics, lists — pasted text
+ * welcome), publishes it herself, or removes it. Rendered prose,
+ * never raw asterisks in front of a couple.
+ */
+export function AnalysisDesk({
+  weddingId,
+  text,
+  status
+}: {
+  weddingId: string;
+  text: string | null;
+  status: "draft" | "published";
+}) {
+  const t = useTranslations("budget.analysis");
+  const router = useRouter();
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(text ?? "");
+  const areaRef = useRef<HTMLTextAreaElement>(null);
+  const [pending, startTransition] = useTransition();
+
+  const wrap = (before: string, after = before) => {
+    const el = areaRef.current;
+    if (!el) return;
+    const { selectionStart: a, selectionEnd: b, value } = el;
+    const sel = value.slice(a, b) || t("toolbarPlaceholder");
+    const next = value.slice(0, a) + before + sel + after + value.slice(b);
+    setDraft(next);
+    requestAnimationFrame(() => {
+      el.focus();
+      el.setSelectionRange(a + before.length, a + before.length + sel.length);
+    });
+  };
+  const prefixLines = () => {
+    const el = areaRef.current;
+    if (!el) return;
+    const { selectionStart: a, selectionEnd: b, value } = el;
+    const start = value.lastIndexOf("\n", a - 1) + 1;
+    const block = value.slice(start, b);
+    const next = value.slice(0, start) + block.split("\n").map((l) => (l.trim() ? `- ${l.replace(/^- /, "")}` : l)).join("\n") + value.slice(b);
+    setDraft(next);
+    el.focus();
+  };
+
+  const save = (publish: boolean) =>
+    startTransition(async () => {
+      await saveBudgetAnalysis(weddingId, draft, publish);
+      setEditing(false);
+      router.refresh();
+    });
+
+  if (!editing) {
+    return (
+      <div>
+        {text ? (
+          <>
+            <div style={{ display: "flex", gap: 10, alignItems: "baseline", flexWrap: "wrap", margin: "6px 0" }}>
+              {status === "draft" ? (
+                <span className="tag int">{t("tagDraft")}</span>
+              ) : (
+                <span className="tag ok">{t("tagPublished")}</span>
+              )}
+            </div>
+            <HouseProse text={text} size={16} />
+          </>
+        ) : (
+          <p style={{ fontSize: 13.5, color: "var(--ink2)", margin: "8px 0" }}>{t("empty")}</p>
+        )}
+        <div style={{ display: "flex", gap: 10, marginTop: 10, flexWrap: "wrap" }}>
+          <button className="addnote" onClick={() => { setDraft(text ?? ""); setEditing(true); }}>
+            {text ? t("edit") : t("write")}
+          </button>
+          {text && status === "draft" && (
+            <button className="addnote" disabled={pending} onClick={() => save(true)}>
+              {t("publish")}
+            </button>
+          )}
+          {text && (
+            <button
+              className="addnote"
+              style={{ color: "var(--bronze)" }}
+              disabled={pending}
+              onClick={() => {
+                if (!window.confirm(t("removeConfirm"))) return;
+                startTransition(async () => {
+                  await removeBudgetAnalysis(weddingId);
+                  router.refresh();
+                });
+              }}
+            >
+              {t("remove")}
+            </button>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <div style={{ display: "flex", gap: 8, margin: "8px 0 6px" }} role="toolbar" aria-label={t("toolbar")}>
+        <button className="addnote" onClick={() => wrap("**")} title={t("bold")} style={{ fontWeight: 600 }}>B</button>
+        <button className="addnote" onClick={() => wrap("*")} title={t("italic")} style={{ fontStyle: "italic" }}>I</button>
+        <button className="addnote" onClick={prefixLines} title={t("list")}>• —</button>
+      </div>
+      <textarea
+        ref={areaRef}
+        value={draft}
+        onChange={(e) => setDraft(e.target.value)}
+        rows={9}
+        style={{ width: "100%", padding: "12px 14px", border: "1px solid var(--champagne)", fontSize: 14, lineHeight: 1.6, fontFamily: "inherit" }}
+        aria-label={t("edit")}
+      />
+      {draft.trim() && (
+        <div style={{ marginTop: 10, padding: "12px 16px", background: "var(--parchment)", border: "1px solid var(--line-soft, rgba(201,178,145,.22))" }}>
+          <div className="eyebrow" style={{ marginBottom: 6 }}>{t("previewTitle")}</div>
+          <HouseProse text={draft} size={15.5} />
+        </div>
+      )}
+      <div style={{ display: "flex", gap: 10, marginTop: 10, flexWrap: "wrap" }}>
+        <button className="btn sm" disabled={pending} onClick={() => save(true)}>{pending ? "…" : t("publish")}</button>
+        <button className="btn ghost sm" disabled={pending} onClick={() => save(false)}>{t("saveDraft")}</button>
+        <button className="btn ghost sm" onClick={() => setEditing(false)}>{t("cancel")}</button>
+      </div>
+    </div>
+  );
+}

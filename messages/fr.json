@@ -796,6 +796,25 @@
       "gmailMissing": "La boîte Gmail n'est pas encore branchée — les lettres patientent ; le hub parle.",
       "schedulerDormant": "Le planificateur dort tant que la maison n'a pas donné le mot de lancement.",
       "schedulerOn": "Le planificateur passe chaque matin."
+    },
+    "analysis": {
+      "tagDraft": "Brouillon — le couple ne lit pas encore ceci",
+      "tagPublished": "Publiée — le couple lit ceci",
+      "empty": "Pas encore d'analyse. La Publication en compose un brouillon à chaque publication du budget — ou écrivez la vôtre ici.",
+      "edit": "Retravailler l'analyse",
+      "write": "Écrire l'analyse",
+      "publish": "Publier au couple",
+      "saveDraft": "Garder en brouillon",
+      "remove": "Retirer l'analyse",
+      "removeConfirm": "Retirer l'analyse ? Le couple ne la lira plus ; le journal garde la trace.",
+      "cancel": "Laisser ainsi",
+      "toolbar": "Mise en page",
+      "bold": "Gras",
+      "italic": "Italique",
+      "list": "Liste",
+      "toolbarPlaceholder": "vos mots",
+      "previewTitle": "Telle que le couple la lira",
+      "clientNothing": "Le couple ne lit rien ici pour l'instant — l'analyse attend votre mot."
     }
   },
   "vendors": {

@@ -796,6 +796,25 @@
       "gmailMissing": "Gmail 信箱尚未接通——信函暂候；馆内渠道照常传达。",
       "schedulerDormant": "调度器静候本馆的启用之令。",
       "schedulerOn": "调度器每日清晨巡视一次。"
+    },
+    "analysis": {
+      "tagDraft": "草稿——伉俪尚未读到",
+      "tagPublished": "已发布——伉俪可读",
+      "empty": "尚无分析。每次发布预算时，发布台会拟一份草稿——您也可在此亲笔撰写。",
+      "edit": "修改分析",
+      "write": "撰写分析",
+      "publish": "发布给伉俪",
+      "saveDraft": "存为草稿",
+      "remove": "撤下分析",
+      "removeConfirm": "撤下这份分析？伉俪将不再读到；日志留痕。",
+      "cancel": "保持原样",
+      "toolbar": "排版",
+      "bold": "加粗",
+      "italic": "斜体",
+      "list": "列表",
+      "toolbarPlaceholder": "您的文字",
+      "previewTitle": "伉俪所见的模样",
+      "clientNothing": "伉俪此处暂无可读——分析正待您的定夺。"
     }
   },
   "vendors": {

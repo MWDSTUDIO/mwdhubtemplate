@@ -15,7 +15,8 @@ import {
   PublishBar,
   BudgetAsk,
   BudgetDocDrop,
-  InternalNotes
+  InternalNotes,
+  AnalysisDesk
 } from "./budget-client";
 import { ScopeStudio, ScopeAnalysisDrop } from "./scope-client";
 import { PaymentsCalendar, RiskBuffer } from "./mgmt-client";
@@ -24,6 +25,7 @@ import { BudgetViews } from "./ledger-client";
 import { ReadingsDesk, type ReadingPayload, type ReadingRow } from "./readings-client";
 import { barModel, pctOfBudget, coherence, envelopeCommitted } from "@/lib/budget-math";
 import { lineEurValues, sumMoney } from "@/lib/money";
+import { HouseProse } from "@/lib/house-prose";
 
 export default async function BudgetPage({
   params
@@ -345,23 +347,56 @@ export default async function BudgetPage({
 
       {/* The house's analysis reads to everyone; Madame answers the
           team alone — the client's questions go to the house itself. */}
-      {(wedding.budget_analysis || session.isTeam) && (
-        <div className="ia">
-          <div className="eyebrow">{t("ask.title")}</div>
-          {session.isTeam && (
-            <p className="team-only" style={{ marginTop: 10, fontSize: 13, color: "var(--ink2)" }}>{t("ask.blurb")}</p>
-          )}
-          {wedding.budget_analysis && (
-            <>
-              <hr className="hair" />
-              <p className="ia-quote" style={{ fontSize: 16.5 }}>
-                &ldquo;{wedding.budget_analysis}&rdquo;
-              </p>
-            </>
-          )}
-          {session.isTeam && <BudgetAsk weddingId={wedding.id} />}
-        </div>
-      )}
+      {(() => {
+        // The analysis reaches the couple only once Estelle publishes
+        // it (0022) — pre-0022 the column is absent and it behaves as
+        // before. The preview shows exactly the couple's reading.
+        const analysisStatus =
+          ((wedding as { budget_analysis_status?: string }).budget_analysis_status ?? "published") as
+            | "draft"
+            | "published";
+        const analysisPublished = Boolean(wedding.budget_analysis) && analysisStatus === "published";
+        if (!analysisPublished && !session.isTeam) return null;
+        return (
+          <div className="ia">
+            <div className="eyebrow">{t("ask.title")}</div>
+            {session.isTeam && (
+              <p className="team-only" style={{ marginTop: 10, fontSize: 13, color: "var(--ink2)" }}>{t("ask.blurb")}</p>
+            )}
+            {!session.isTeam && analysisPublished && (
+              <>
+                <hr className="hair" />
+                <HouseProse text={wedding.budget_analysis!} />
+              </>
+            )}
+            {session.isTeam && (
+              <>
+                <div className="team-only">
+                  <hr className="hair" />
+                  <AnalysisDesk
+                    weddingId={wedding.id}
+                    text={wedding.budget_analysis}
+                    status={analysisStatus}
+                  />
+                </div>
+                <div className="client-preview">
+                  {analysisPublished ? (
+                    <>
+                      <hr className="hair" />
+                      <HouseProse text={wedding.budget_analysis!} />
+                    </>
+                  ) : (
+                    <p style={{ fontSize: 13.5, color: "var(--ink2)", marginTop: 10 }}>{t("analysis.clientNothing")}</p>
+                  )}
+                </div>
+                <div className="team-only">
+                  <BudgetAsk weddingId={wedding.id} />
+                </div>
+              </>
+            )}
+          </div>
+        );
+      })()}
 
       {session.isTeam && (
         <div className="ia team-only" style={{ marginTop: 14 }}>

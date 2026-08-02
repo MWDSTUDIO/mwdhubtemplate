@@ -88,7 +88,13 @@ export async function publishBudget(weddingId: string) {
     });
     await supabase
       .from("weddings")
-      .update({ budget_analysis: text, budget_analysis_at: new Date().toISOString() })
+      .update({
+        budget_analysis: text,
+        budget_analysis_at: new Date().toISOString(),
+        // The agent proposes; Estelle publishes (0022). Pre-0022 the
+        // unknown column would fail the whole update — try, then fall.
+        budget_analysis_status: "draft"
+      })
       .eq("id", weddingId);
   } catch {
     // The analysis is a grace note — publication stands without it.
@@ -859,4 +865,57 @@ export async function sendPaymentNotice(weddingId: string, paymentId: string, no
   await supabase.from("payments").update({ notified_at: new Date().toISOString() }).eq("id", paymentId);
   revalidateRooms("budget");
   return { ok: true as const, emailed };
+}
+
+/* ══════════ The house's analysis, under Estelle's word (0022) ══════ */
+
+/**
+ * Estelle's own pen on the analysis: save as draft while she works,
+ * publish when it is the house's word, in her layout (bold, italics,
+ * lists — rendered, never raw). Journaled either way.
+ */
+export async function saveBudgetAnalysis(
+  weddingId: string,
+  text: string,
+  publish: boolean
+) {
+  const session = await teamSession();
+  const supabase = await createClient();
+  const patch: Record<string, unknown> = {
+    budget_analysis: text.trim() || null,
+    budget_analysis_at: new Date().toISOString(),
+    budget_analysis_status: publish ? "published" : "draft"
+  };
+  let { error } = await supabase.from("weddings").update(patch).eq("id", weddingId);
+  if (error) {
+    // Pre-0022: no status column — the text still lands.
+    delete patch.budget_analysis_status;
+    ({ error } = await supabase.from("weddings").update(patch).eq("id", weddingId));
+  }
+  if (!error && publish) {
+    await logActivity(supabase, weddingId, session.profile.full_name, "analysis_published", {});
+  }
+  revalidateRooms("budget");
+  return { ok: !error };
+}
+
+/** The analysis leaves — her explicit gesture, kept in the journal. */
+export async function removeBudgetAnalysis(weddingId: string) {
+  const session = await teamSession();
+  const supabase = await createClient();
+  let { error } = await supabase
+    .from("weddings")
+    .update({ budget_analysis: null, budget_analysis_at: null, budget_analysis_status: "draft" })
+    .eq("id", weddingId);
+  if (error) {
+    ({ error } = await supabase
+      .from("weddings")
+      .update({ budget_analysis: null, budget_analysis_at: null })
+      .eq("id", weddingId));
+  }
+  if (!error) {
+    await logActivity(supabase, weddingId, session.profile.full_name, "analysis_removed", {});
+  }
+  revalidateRooms("budget");
+  return { ok: !error };
 }
