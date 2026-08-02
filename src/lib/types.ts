@@ -47,6 +47,108 @@ export interface Ceremony {
   officiant: string | null;
   notes: string | null;
   sort: number;
+  /** The ceremony's own life (migration 0028). */
+  status?: CeremonyStatus;
+  duration_min?: number | null;
+  plan_b?: string | null;
+  archived?: boolean;
+  updated_at?: string;
+  /** Readiness marks: check key → required | optional | na (§16). */
+  checklist?: Record<string, "required" | "optional" | "na">;
+  milestone_id?: string | null;
+}
+
+export type CeremonyStatus = "draft" | "ready_for_review" | "approved" | "published" | "completed";
+
+/** A person of the ceremony — referenced, never duplicated (0028). */
+export interface CeremonyParticipant {
+  id: string;
+  wedding_id: string;
+  ceremony_id: string;
+  person_id: string | null;
+  vendor_id: string | null;
+  name: string | null;
+  role: string;
+  note_internal: string | null;
+  client_visible: boolean;
+  sort: number;
+}
+
+export interface CeremonyFlowItem {
+  id: string;
+  wedding_id: string;
+  ceremony_id: string;
+  block_type: string;
+  title: string;
+  description: string | null;
+  participant_id: string | null;
+  duration_min: number | null;
+  note_internal: string | null;
+  note_client: string | null;
+  archived: boolean;
+  sort: number;
+}
+
+export interface CeremonyMusic {
+  id: string;
+  wedding_id: string;
+  ceremony_id: string;
+  slot: string;
+  title: string;
+  artist: string | null;
+  version: string | null;
+  performer: string | null;
+  vendor_id: string | null;
+  duration_min: number | null;
+  document_id: string | null;
+  cue: string | null;
+  flow_id: string | null;
+  note_internal: string | null;
+  status: "proposed" | "approved";
+  archived: boolean;
+  sort: number;
+}
+
+export interface CeremonyReading {
+  id: string;
+  wedding_id: string;
+  ceremony_id: string;
+  title: string;
+  excerpt: string | null;
+  reader_participant_id: string | null;
+  language: string | null;
+  duration_min: number | null;
+  document_id: string | null;
+  note_internal: string | null;
+  note_client: string | null;
+  status: "proposed" | "approved";
+  archived: boolean;
+  sort: number;
+}
+
+export interface CeremonyLogistic {
+  id: string;
+  wedding_id: string;
+  ceremony_id: string;
+  item: string;
+  detail: string | null;
+  qty: number | null;
+  owner: string | null;
+  vendor_id: string | null;
+  budget_line_id: string | null;
+  document_id: string | null;
+  status: "open" | "ready" | "not_required";
+  note_internal: string | null;
+  sort: number;
+}
+
+/** One canonical file, linked — never copied (0028 §11). */
+export interface CeremonyDocumentLink {
+  id: string;
+  wedding_id: string;
+  ceremony_id: string;
+  document_id: string;
+  role: string;
 }
 
 export interface WeddingEvent {
