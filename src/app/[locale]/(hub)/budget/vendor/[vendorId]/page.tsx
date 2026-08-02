@@ -8,7 +8,7 @@ import { decryptProfile, type BankingProfile } from "@/lib/banking";
 import { ibanGroups } from "@/lib/banking-checks";
 import { logActivity } from "@/lib/activity";
 import type { BudgetLine, BudgetLineItem, Payment } from "@/lib/types";
-import { VendorNoteEditor, BankingDesk, CopyLine, QuoteItems } from "./vendor-client";
+import { VendorNoteEditor, BankingDesk, CopyLine, QuoteItems, VendorMeta } from "./vendor-client";
 
 /**
  * The vendor sheet — what the couple pays this house, in full clarity:
@@ -34,7 +34,7 @@ export default async function VendorSheetPage({
   // Everything independent leaves in one burst (vitesse brief §8);
   // only the banking decrypt, which depends on the reveal flags,
   // waits behind it.
-  const [{ data: vendor }, { data: lines }, itemsRes, noteRes, paymentsRes, readingsRes, metaRes] =
+  const [{ data: vendor }, { data: lines }, itemsRes, noteRes, paymentsRes, readingsRes, metaRes, envelopesRes] =
     await Promise.all([
       supabase.from("vendors").select("*").eq("id", vendorId).eq("wedding_id", wedding.id).maybeSingle(),
       supabase.from("budget_lines").select("*").eq("vendor_id", vendorId).order("sort"),
@@ -56,6 +56,9 @@ export default async function VendorSheetPage({
         : Promise.resolve({ data: null }),
       session.isTeam
         ? supabase.from("vendor_banking").select("*").eq("vendor_id", vendorId).maybeSingle<Record<string, unknown>>()
+        : Promise.resolve({ data: null }),
+      session.isTeam
+        ? supabase.from("budget_envelopes").select("id, label").eq("wedding_id", wedding.id).order("sort")
         : Promise.resolve({ data: null })
     ]);
   if (!vendor) notFound();
@@ -148,6 +151,16 @@ export default async function VendorSheetPage({
       <p className="lead" style={{ marginTop: 6 }}>
         {t("lead", { couple: wedding.couple_display_name })}
       </p>
+
+      {session.isTeam && (
+        <VendorMeta
+          weddingId={wedding.id}
+          vendorId={vendorId}
+          category={vendor.category}
+          envelopeId={(vendor as { envelope_id?: string | null }).envelope_id ?? null}
+          envelopes={(envelopesRes.data ?? []) as { id: string; label: string }[]}
+        />
+      )}
 
       <div className="grid3" style={{ marginBottom: 18 }}>
         <div className="card" style={{ marginBottom: 0 }}>

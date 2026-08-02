@@ -373,7 +373,9 @@
       "counselGap": "予定は当家のおすすめから {dir}{gap} pt 離れています——下のひとことがお二人へその理由を伝えます。",
       "headTotal": "ご予算",
       "headCommitted": "契約済み",
-      "headStillToPlace": "残り"
+      "headStillToPlace": "残り",
+      "envNamePh": "区分の名前",
+      "renameHint": "ここにある名はすべて御手の内に——直に書き換え、加え、外せます。区分全体はひと言で保存されます。"
     },
     "master": {
       "unfold": "ひらく（{count}）",
@@ -525,7 +527,17 @@
       "itemsEventPh": "催し——リハーサル、挙式、晩餐……",
       "itemsRemove": "外す",
       "itemsLine": "行に紐づけ",
-      "itemsAuto": "空欄のままなら HT と TTC は自ずと整います——数量 × 単価、そして税——行の約定額も組み直されます。読み取りがこれらの行を満たし、お手もまた同じ自由で直せます。"
+      "itemsAuto": "空欄のままなら HT と TTC は自ずと整います——数量 × 単価、そして税——行の約定額も組み直されます。読み取りがこれらの行を満たし、お手もまた同じ自由で直せます。",
+      "meta": {
+        "title": "お相手の名札",
+        "category": "生業",
+        "envelope": "予算の区分",
+        "noEnvelope": "区分は未定",
+        "keep": "留める",
+        "kept": "留めました。",
+        "needs0019": "生業は留めました。予算の居所はマイグレーション 0019 を待っております。",
+        "hint": "生業はその技を名指し、予算の区分は約定の住まい——新しい行はこれを受け継ぎます。"
+      }
     },
     "risks": {
       "title": "備えと危うさ",
@@ -650,7 +662,9 @@
       "fxRatePlaceholder": "1 {currency} = ? EUR",
       "fxSourcePlaceholder": "出所 — ECB、銀行…",
       "fxNeedsMigration": "レートの保持にはマイグレーション 0017 をお願いいたします。",
-      "fxBadRate": "レートは正の数と、名前のある出所でございます。"
+      "fxBadRate": "レートは正の数と、名前のある出所でございます。",
+      "vendor": "お相手",
+      "noVendor": "お相手の紐づけなし"
     },
     "bar": {
       "aria": "ご予算の現在地",

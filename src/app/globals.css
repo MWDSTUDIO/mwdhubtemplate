@@ -1316,3 +1316,12 @@ main.hub { padding-bottom: calc(90px + env(safe-area-inset-bottom, 0px)); }
     background: linear-gradient(90deg, transparent, var(--surface, #fdfcf7));
   }
 }
+
+/* The envelope's name is a field, and looks like one (scope studio):
+   the house renames its categories in place, nothing hidden. */
+.scope-name {
+  border: 1px solid var(--line);
+  background: #fff;
+  padding: 8px 10px;
+}
+.scope-name:hover { border-color: var(--champagne); }

@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { requireHouseSession } from "@/lib/session";
+import { revalidateRooms } from "@/lib/revalidate";
 import { runAgent } from "@/lib/agents/run";
 
 async function teamSession() {
@@ -16,6 +17,40 @@ export async function addVendor(weddingId: string, name: string, category: strin
   const supabase = await createClient();
   await supabase.from("vendors").insert({ wedding_id: weddingId, name, category });
   revalidatePath("/vendors");
+}
+
+/**
+ * The vendor's own card put under the hand: the métier stays editable
+ * after creation, and the vendor takes a budget home (migration 0019)
+ * — the category its new lines inherit. The métier and the budget
+ * category remain two distinct notions, by Estelle's word.
+ */
+export async function updateVendorMeta(
+  weddingId: string,
+  vendorId: string,
+  input: { category: string; envelopeId: string | null }
+) {
+  await teamSession();
+  const supabase = await createClient();
+  const category = input.category.trim();
+  let envelopeSaved = true;
+  let { error } = await supabase
+    .from("vendors")
+    .update({ ...(category ? { category } : {}), envelope_id: input.envelopeId })
+    .eq("id", vendorId)
+    .eq("wedding_id", weddingId);
+  if (error) {
+    // Before migration 0019 the column is absent — the métier still saves.
+    envelopeSaved = false;
+    ({ error } = await supabase
+      .from("vendors")
+      .update(category ? { category } : {})
+      .eq("id", vendorId)
+      .eq("wedding_id", weddingId));
+  }
+  revalidateRooms("budget");
+  revalidatePath("/vendors");
+  return { ok: !error, envelopeSaved };
 }
 
 export async function setVendorStage(

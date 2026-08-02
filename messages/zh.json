@@ -373,7 +373,9 @@
       "counselGap": "预定与本家建议相差 {dir}{gap} 个百分点——下方的一句话向新人解释缘由。",
       "headTotal": "您的预算",
       "headCommitted": "已承诺",
-      "headStillToPlace": "待安排"
+      "headStillToPlace": "待安排",
+      "envNamePh": "类别名称",
+      "renameHint": "此处每个名称都由您定——直接改写、添加或移除；整个划分一次保存。"
     },
     "master": {
       "unfold": "展开（{count}）",
@@ -525,7 +527,17 @@
       "itemsEventPh": "活动——彩排、仪式、晚宴……",
       "itemsRemove": "移除",
       "itemsLine": "所属条目",
-      "itemsAuto": "留空时，HT 与 TTC 自行算出——数量 × 单价，再计税——该条目的承诺金额亦随之重算。文件读取可填入这些行；您的手同样可以自由修改。"
+      "itemsAuto": "留空时，HT 与 TTC 自行算出——数量 × 单价，再计税——该条目的承诺金额亦随之重算。文件读取可填入这些行；您的手同样可以自由修改。",
+      "meta": {
+        "title": "供应方名片",
+        "category": "行当",
+        "envelope": "预算类别",
+        "noEnvelope": "尚未归类",
+        "keep": "保留",
+        "kept": "已保留。",
+        "needs0019": "行当已保留；预算归属尚待迁移 0019。",
+        "hint": "行当言其技艺；预算类别是其承诺所居之处——新条目随之归类。"
+      }
     },
     "risks": {
       "title": "储备与风险",
@@ -650,7 +662,9 @@
       "fxRatePlaceholder": "1 {currency} 兑 EUR",
       "fxSourcePlaceholder": "来源 — 欧洲央行、银行…",
       "fxNeedsMigration": "请先运行迁移 0017，才能持有汇率。",
-      "fxBadRate": "汇率须为正数，并注明来源。"
+      "fxBadRate": "汇率须为正数，并注明来源。",
+      "vendor": "供应方",
+      "noVendor": "未关联供应方"
     },
     "bar": {
       "aria": "预算现况",

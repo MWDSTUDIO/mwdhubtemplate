@@ -331,6 +331,40 @@ export async function addBudgetLine(
   return { ok: !error, id: created?.id ?? null };
 }
 
+/**
+ * A line names its vendor in place (Estelle's ask, 2026-08-02): the
+ * fiche link appears, the vendor's engagements read by category — and
+ * a line without an envelope inherits the vendor's budget home (0019).
+ * The published figures do not move, so the status stays as it is.
+ */
+export async function setLineVendor(lineId: string, vendorId: string | null) {
+  await teamSession();
+  const supabase = await createClient();
+  const patch: Record<string, unknown> = { vendor_id: vendorId };
+  if (vendorId) {
+    const { data: line } = await supabase
+      .from("budget_lines")
+      .select("envelope_id")
+      .eq("id", lineId)
+      .maybeSingle();
+    if (line && !line.envelope_id) {
+      try {
+        const { data: v } = await supabase
+          .from("vendors")
+          .select("envelope_id")
+          .eq("id", vendorId)
+          .maybeSingle();
+        if (v?.envelope_id) patch.envelope_id = v.envelope_id;
+      } catch {
+        /* pre-0019: no home to inherit */
+      }
+    }
+  }
+  const { error } = await supabase.from("budget_lines").update(patch).eq("id", lineId);
+  revalidateRooms("budget");
+  return { ok: !error };
+}
+
 /** A line changes envelope in place — never delete-and-recreate. */
 export async function setLineEnvelope(lineId: string, envelopeId: string | null) {
   await teamSession();

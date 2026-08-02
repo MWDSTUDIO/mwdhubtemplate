@@ -259,6 +259,8 @@ export function ScopeStudio({
             {totalPct} %
           </span>
         </div>
+        {/* The names are hers — say so, where the scope is weighed. */}
+        <p style={{ fontSize: 12.5, color: "var(--ink2)", margin: "0 0 10px" }}>{t("renameHint")}</p>
 
         {over && (
           <p role="alert" style={{ fontSize: 13.5, color: "var(--bronze)", margin: "6px 0 10px" }}>
@@ -285,9 +287,12 @@ export function ScopeStudio({
             <div key={d.id ?? `new-${i}`} style={{ borderTop: i > 0 ? "1px solid var(--line-soft, oklch(0.7749 0.0521 76.74 / 0.22))" : "none", padding: "14px 0" }}>
               <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
                 <input
+                  className="scope-name"
                   value={d.label}
                   onChange={(e) => patch(i, { label: e.target.value })}
                   aria-label={t("envName")}
+                  placeholder={t("envNamePh")}
+                  title={t("renameHint")}
                   style={{ flex: "1 1 220px", fontSize: 14.5 }}
                 />
                 <label style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 12.5, color: "var(--ink2)" }}>

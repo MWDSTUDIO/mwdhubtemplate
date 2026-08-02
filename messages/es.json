@@ -373,7 +373,9 @@
       "counselGap": "Lo previsto se aparta {dir}{gap} pts del consejo de la casa — una palabra abajo se lo explica a la pareja.",
       "headTotal": "Su presupuesto",
       "headCommitted": "Comprometido",
-      "headStillToPlace": "Aún por colocar"
+      "headStillToPlace": "Aún por colocar",
+      "envNamePh": "El nombre de la categoría",
+      "renameHint": "Cada nombre aquí es suyo — escriba directamente en él, añada, retire; todo el scope se guarda con un solo gesto."
     },
     "master": {
       "unfold": "Desplegar ({count})",
@@ -525,7 +527,17 @@
       "itemsEventPh": "El evento — ensayo, ceremonia, cena…",
       "itemsRemove": "Retirar",
       "itemsLine": "En la línea",
-      "itemsAuto": "HT y TTC se componen solos cuando se dejan vacíos — cantidad × unitario, luego IVA — y el comprometido de la línea se recompone. Una lectura llena estas líneas; su mano las corrige con la misma libertad."
+      "itemsAuto": "HT y TTC se componen solos cuando se dejan vacíos — cantidad × unitario, luego IVA — y el comprometido de la línea se recompone. Una lectura llena estas líneas; su mano las corrige con la misma libertad.",
+      "meta": {
+        "title": "La carta del proveedor",
+        "category": "Oficio",
+        "envelope": "Categoría presupuestaria",
+        "noEnvelope": "Aún sin categoría",
+        "keep": "Conservar",
+        "kept": "Conservado.",
+        "needs0019": "El oficio queda conservado; el hogar presupuestario espera la migración 0019.",
+        "hint": "El oficio nombra el saber hacer; la categoría presupuestaria es donde viven sus compromisos — las nuevas líneas la heredan."
+      }
     },
     "risks": {
       "title": "Reserva y riesgos",
@@ -650,7 +662,9 @@
       "fxRatePlaceholder": "1 {currency} en EUR",
       "fxSourcePlaceholder": "Fuente — BCE, el banco…",
       "fxNeedsMigration": "Ejecute la migración 0017 antes de retener un tipo.",
-      "fxBadRate": "Un tipo es un número positivo y una fuente nombrada."
+      "fxBadRate": "Un tipo es un número positivo y una fuente nombrada.",
+      "vendor": "Proveedor",
+      "noVendor": "Sin proveedor asignado"
     },
     "bar": {
       "aria": "Dónde está el presupuesto",

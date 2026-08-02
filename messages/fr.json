@@ -373,7 +373,9 @@
       "counselGap": "Le prévisionnel s'écarte de {dir}{gap} pts du conseil de la maison — un mot ci-dessous l'explique au couple.",
       "headTotal": "Votre budget",
       "headCommitted": "Engagé",
-      "headStillToPlace": "Encore à placer"
+      "headStillToPlace": "Encore à placer",
+      "envNamePh": "Le nom de la catégorie",
+      "renameHint": "Chaque nom ici est à vous — écrivez directement dedans, ajoutez, retirez ; tout le scope se garde d'un seul geste."
     },
     "master": {
       "unfold": "Déplier ({count})",
@@ -525,7 +527,17 @@
       "itemsEventPh": "L'événement — répétition, cérémonie, dîner…",
       "itemsRemove": "Retirer",
       "itemsLine": "Sur la ligne",
-      "itemsAuto": "HT et TTC se composent seuls quand on les laisse vides — qty × unitaire, puis TVA — et l'engagé de la ligne se recompose. Une lecture remplit ces lignes ; votre main les corrige tout aussi librement."
+      "itemsAuto": "HT et TTC se composent seuls quand on les laisse vides — qty × unitaire, puis TVA — et l'engagé de la ligne se recompose. Une lecture remplit ces lignes ; votre main les corrige tout aussi librement.",
+      "meta": {
+        "title": "La carte du prestataire",
+        "category": "Métier",
+        "envelope": "Catégorie budgétaire",
+        "noEnvelope": "Pas encore de catégorie",
+        "keep": "Garder",
+        "kept": "Gardé.",
+        "needs0019": "Le métier est gardé ; le domicile budgétaire attend la migration 0019.",
+        "hint": "Le métier nomme le savoir-faire ; la catégorie budgétaire est où vivent ses engagements — les nouvelles lignes en héritent."
+      }
     },
     "risks": {
       "title": "Réserve & risques",
@@ -650,7 +662,9 @@
       "fxRatePlaceholder": "1 {currency} en EUR",
       "fxSourcePlaceholder": "Source — BCE, la banque…",
       "fxNeedsMigration": "Lancez la migration 0017 avant de tenir un taux.",
-      "fxBadRate": "Un taux est un nombre positif et une source nommée."
+      "fxBadRate": "Un taux est un nombre positif et une source nommée.",
+      "vendor": "Prestataire",
+      "noVendor": "Aucun prestataire rattaché"
     },
     "bar": {
       "aria": "Où en est le budget",

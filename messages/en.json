@@ -373,7 +373,9 @@
       "counselGap": "The forecast sits {dir}{gap} pts from the house's counsel — a word below explains it to the couple.",
       "headTotal": "Your budget",
       "headCommitted": "Committed",
-      "headStillToPlace": "Still to place"
+      "headStillToPlace": "Still to place",
+      "envNamePh": "The category's name",
+      "renameHint": "Every name here is yours — write straight into it, add one, remove one; the whole scope saves in one word."
     },
     "master": {
       "unfold": "Unfold ({count})",
@@ -525,7 +527,17 @@
       "itemsEventPh": "The event — rehearsal, ceremony, dinner…",
       "itemsRemove": "Remove",
       "itemsLine": "On the line",
-      "itemsAuto": "HT and TTC compose themselves when left blank — qty × unit, then VAT — and the line's committed figure recomposes. A reading fills these lines; your hand corrects them just as freely."
+      "itemsAuto": "HT and TTC compose themselves when left blank — qty × unit, then VAT — and the line's committed figure recomposes. A reading fills these lines; your hand corrects them just as freely.",
+      "meta": {
+        "title": "The vendor's card",
+        "category": "Métier",
+        "envelope": "Budget category",
+        "noEnvelope": "No category yet",
+        "keep": "Keep",
+        "kept": "Kept.",
+        "needs0019": "The métier is kept; the budget home awaits migration 0019.",
+        "hint": "The métier names the craft; the budget category is where this vendor's engagements live — new lines inherit it."
+      }
     },
     "risks": {
       "title": "Risk buffer & contingency",
@@ -650,7 +662,9 @@
       "fxRatePlaceholder": "1 {currency} in EUR",
       "fxSourcePlaceholder": "Source — ECB, the bank…",
       "fxNeedsMigration": "Run migration 0017 before rates can be held.",
-      "fxBadRate": "A rate is a positive number and a named source."
+      "fxBadRate": "A rate is a positive number and a named source.",
+      "vendor": "Vendor",
+      "noVendor": "No vendor attached"
     },
     "bar": {
       "aria": "Where the budget stands",

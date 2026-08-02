@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { useFormatter, useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
-import { refineVendorNote, saveVendorClientNote } from "@/app/actions/vendors";
+import { refineVendorNote, saveVendorClientNote, updateVendorMeta } from "@/app/actions/vendors";
 import {
   readVendorBanking,
   saveVendorBanking,
@@ -861,6 +861,77 @@ function ItemForm({
         {pending ? "…" : tc("save")}
       </button>
       <button className="btn ghost sm" onClick={onCancel}>{tc("cancel")}</button>
+    </div>
+  );
+}
+
+
+/* ══════════ The vendor's card: métier and budget home ══════════ */
+
+/**
+ * Two distinct notions, by Estelle's word (2026-08-02): the métier
+ * names the craft (Floral, Catering…) and stays editable after
+ * creation; the budget category is where this vendor's engagements
+ * live (migration 0019) — the home its new lines inherit.
+ */
+export function VendorMeta({
+  weddingId,
+  vendorId,
+  category,
+  envelopeId,
+  envelopes
+}: {
+  weddingId: string;
+  vendorId: string;
+  category: string;
+  envelopeId: string | null;
+  envelopes: { id: string; label: string }[];
+}) {
+  const t = useTranslations("budget.fiche.meta");
+  const router = useRouter();
+  const [cat, setCat] = useState(category);
+  const [env, setEnv] = useState(envelopeId ?? "");
+  const [word, setWord] = useState<string | null>(null);
+  const [pending, startTransition] = useTransition();
+
+  return (
+    <div className="team-only" style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", margin: "10px 0 4px" }}>
+      <span className="eyebrow" style={{ marginRight: 4 }}>{t("title")}</span>
+      <input
+        value={cat}
+        onChange={(e) => { setCat(e.target.value); setWord(null); }}
+        aria-label={t("category")}
+        style={{ flex: "0 1 160px", fontSize: 13 }}
+      />
+      <select
+        value={env}
+        onChange={(e) => { setEnv(e.target.value); setWord(null); }}
+        aria-label={t("envelope")}
+        style={{ padding: "8px", border: "1px solid var(--line)", background: "#fff", fontSize: 13, maxWidth: 220 }}
+      >
+        <option value="">{t("noEnvelope")}</option>
+        {envelopes.map((e) => (
+          <option key={e.id} value={e.id}>{e.label}</option>
+        ))}
+      </select>
+      <button
+        className="addnote"
+        disabled={pending || !cat.trim()}
+        onClick={() =>
+          startTransition(async () => {
+            const r = await updateVendorMeta(weddingId, vendorId, {
+              category: cat,
+              envelopeId: env || null
+            });
+            setWord(r.ok ? (r.envelopeSaved ? t("kept") : t("needs0019")) : null);
+            router.refresh();
+          })
+        }
+      >
+        {pending ? "…" : t("keep")}
+      </button>
+      {word && <span role="status" style={{ fontSize: 12.5, color: "var(--bronze)" }}>{word}</span>}
+      <span style={{ flexBasis: "100%", fontSize: 12, color: "var(--ink2)" }}>{t("hint")}</span>
     </div>
   );
 }

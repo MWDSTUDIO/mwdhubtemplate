@@ -12,6 +12,7 @@ import {
   deleteBudgetLineWithUndo,
   restoreBudgetLine,
   setLineEnvelope,
+  setLineVendor,
   saveLineItem,
   deleteLineItem
 } from "@/app/actions/budget";
@@ -52,6 +53,7 @@ export function BudgetViews({
   payments,
   envelopes,
   envelopeNotes,
+  vendors,
   nextByLine,
   isTeam
 }: {
@@ -61,6 +63,7 @@ export function BudgetViews({
   payments: Payment[];
   envelopes: BudgetEnvelope[];
   envelopeNotes: EnvelopeNote[];
+  vendors: { id: string; name: string }[];
   nextByLine: Record<string, string>;
   isTeam: boolean;
 }) {
@@ -152,6 +155,7 @@ export function BudgetViews({
           lines={mergedLines}
           items={mergedItems}
           envelopes={envelopes}
+          vendors={vendors}
           nextByLine={nextByLine}
           isTeam={isTeam}
           ghosts={ghosts}
@@ -217,6 +221,7 @@ function Ledger({
   lines,
   items,
   envelopes,
+  vendors,
   nextByLine,
   isTeam,
   ghosts,
@@ -227,6 +232,7 @@ function Ledger({
   lines: BudgetLine[];
   items: BudgetLineItem[];
   envelopes: BudgetEnvelope[];
+  vendors: { id: string; name: string }[];
   nextByLine: Record<string, string>;
   isTeam: boolean;
   ghosts: Ghosts;
@@ -1020,6 +1026,28 @@ function Ledger({
                   <option value="">{t("noEnvelope")}</option>
                   {envelopes.map((e) => (
                     <option key={e.id} value={e.id}>{e.label}</option>
+                  ))}
+                </select>
+              </label>
+            )}
+            {/* A line names its vendor in place — the fiche link appears,
+                and a homeless line inherits the vendor's category. */}
+            {isTeam && (
+              <label style={{ fontSize: 12, color: "var(--ink2)", display: "inline-flex", gap: 6, alignItems: "baseline" }}>
+                {t("vendor")}
+                <select
+                  value={r.vendorId ?? ""}
+                  onChange={(e) =>
+                    startTransition(async () => {
+                      await setLineVendor(r.id, e.target.value || null);
+                      router.refresh();
+                    })
+                  }
+                  style={{ padding: "3px 6px", border: "1px solid var(--line)", background: "#fff", fontSize: 12 }}
+                >
+                  <option value="">{t("noVendor")}</option>
+                  {vendors.map((v) => (
+                    <option key={v.id} value={v.id}>{v.name}</option>
                   ))}
                 </select>
               </label>

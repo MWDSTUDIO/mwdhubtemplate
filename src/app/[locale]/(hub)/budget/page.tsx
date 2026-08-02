@@ -46,7 +46,8 @@ export default async function BudgetPage({
     { data: payments },
     itemsRes,
     risksRes,
-    internalLatest
+    internalLatest,
+    { data: vendorRows }
   ] = await Promise.all([
     supabase.from("budget_envelopes").select("*").eq("wedding_id", wedding.id).order("sort"),
     supabase.from("envelope_notes").select("*").eq("wedding_id", wedding.id),
@@ -69,8 +70,10 @@ export default async function BudgetPage({
           .order("created_at", { ascending: false })
           .limit(1)
           .maybeSingle()
-      : Promise.resolve({ data: null })
+      : Promise.resolve({ data: null }),
+    supabase.from("vendors").select("id, name").eq("wedding_id", wedding.id).order("name")
   ]);
+  const vendorOptions = (vendorRows ?? []) as { id: string; name: string }[];
 
   // The analyst's desk — readings proposed by a dropped document,
   // awaiting Estelle's word (absent until migration 0013).
@@ -285,6 +288,7 @@ export default async function BudgetPage({
         payments={allPayments}
         envelopes={(envelopes ?? []) as BudgetEnvelope[]}
         envelopeNotes={(notes ?? []) as EnvelopeNote[]}
+        vendors={vendorOptions}
         nextByLine={nextByLine}
         isTeam={session.isTeam}
       />

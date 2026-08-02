@@ -143,6 +143,8 @@ export interface Vendor {
   category: string;
   stage: VendorStage;
   client_visible: boolean;
+  /** The vendor's budget home — the category its new lines inherit (0019). */
+  envelope_id?: string | null;
 }
 
 export interface VendorDocument {
