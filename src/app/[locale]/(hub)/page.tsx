@@ -211,7 +211,8 @@ export default async function HomePage({
   const boardsApproved = boards.filter((b) => b.status === "approved");
   const boardsToReview = boards.filter((b) => b.status === "to_review");
   const latestBoard = boardsApproved.at(-1) ?? null;
-  const formsOpen = forms.filter((f) => f.status === "awaiting");
+  // Forms speaks new statuses since 0031; legacy 'awaiting' still counts.
+  const formsOpen = forms.filter((f) => ["awaiting", "shared", "in_progress"].includes(f.status));
   const currentNote = notes.filter((n) => n.composed_text && n.month <= monthKey).at(-1) ?? null;
 
   const money = (n: number) => format.number(n, { style: "currency", currency: "EUR", maximumFractionDigits: 0 });

@@ -669,10 +669,49 @@ export interface FormRow {
   id: string;
   wedding_id: string;
   title: string;
-  status: "completed" | "awaiting" | "to_come";
+  /** Legacy trio joined by the card statuses (migration 0031). */
+  status:
+    | "completed"
+    | "awaiting"
+    | "to_come"
+    | "draft"
+    | "ready"
+    | "shared"
+    | "in_progress"
+    | "submitted"
+    | "updated";
   due_label: string | null;
   schema: { name: string; label: string; type?: "text" | "textarea" }[];
   sort: number;
+  /** Card library fields (0031) — absent before the migration. */
+  internal_title?: string | null;
+  category_id?: string | null;
+  description?: string | null;
+  cover_path?: string | null;
+  cover_focal?: string | null;
+  provider?: string | null;
+  external_url?: string | null;
+  cta_label?: string | null;
+  client_visible?: boolean | null;
+  shared_at?: string | null;
+  due_date?: string | null;
+  submitted_at?: string | null;
+  last_checked_at?: string | null;
+  note_internal?: string | null;
+  note_client?: string | null;
+  created_by?: string | null;
+  created_at?: string | null;
+  updated_at?: string | null;
+  archived?: boolean | null;
+  archived_at?: string | null;
+}
+
+export interface FormCategory {
+  id: string;
+  wedding_id: string;
+  name: string;
+  sort: number;
+  archived: boolean;
 }
 
 export interface AvailabilityProposal {
