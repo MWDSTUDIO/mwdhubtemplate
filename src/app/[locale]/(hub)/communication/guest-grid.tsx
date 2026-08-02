@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useRef, useState, useTransition } from "react";
+import React, { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import type { Guest, GuestPerson, PersonEventStatus, WeddingEvent } from "@/lib/types";
@@ -86,7 +86,20 @@ export function GuestGrid({
     return m;
   }, [statuses]);
 
-  const st = (personId: string, eventId: string) => statusMap.get(`${personId}:${eventId}`) ?? null;
+  // The cell answers the hand at once — the server follows. Optimistic
+  // overrides clear as soon as fresh statuses arrive from the refresh.
+  const [overrides, setOverrides] = useState<Map<string, GridStatus | null>>(new Map());
+  useEffect(() => { setOverrides(new Map()); }, [statuses]);
+  const st = (personId: string, eventId: string): GridStatus | null => {
+    const k = `${personId}:${eventId}`;
+    return overrides.has(k) ? (overrides.get(k) ?? null) : statusMap.get(k) ?? null;
+  };
+  const override = (entries: [string, GridStatus | null][]) =>
+    setOverrides((prev) => {
+      const n = new Map(prev);
+      for (const [k, v] of entries) n.set(k, v);
+      return n;
+    });
 
   const act = (fn: () => Promise<unknown>, note?: string) =>
     startTransition(async () => {
@@ -144,18 +157,21 @@ export function GuestGrid({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [live, byHousehold, search, pendOnly, statusMap, events]);
 
-  /* ── cell gestures ── */
+  /* ── cell gestures — the hand sees its move at once ── */
   const cycleP = (personId: string, eventId: string) => {
     const cur = st(personId, eventId);
-    if (!cur) return act(() => setPersonEventStatus(weddingId, personId, eventId, "pending"), t("toastInvitedOne"));
-    act(() => setPersonEventStatus(weddingId, personId, eventId, CYCLE[cur]));
+    const next: GridStatus = cur ? CYCLE[cur] : "pending";
+    override([[`${personId}:${eventId}`, next]]);
+    act(() => setPersonEventStatus(weddingId, personId, eventId, next), cur ? undefined : t("toastInvitedOne"));
   };
   const cycleHH = (g: Guest, eventId: string) => {
     const ps = byHousehold.get(g.id) ?? [];
     const cur = ps.map((p) => st(p.id, eventId)).filter(Boolean) as GridStatus[];
-    if (!cur.length) return act(() => setHouseholdEventStatus(weddingId, g.id, eventId, "pending"), t("toastInvited"));
-    const next = cur.every((s) => s === cur[0]) ? CYCLE[cur[0]] : "attending";
-    act(() => setHouseholdEventStatus(weddingId, g.id, eventId, next));
+    const next: GridStatus = !cur.length
+      ? "pending"
+      : cur.every((s) => s === cur[0]) ? CYCLE[cur[0]] : "attending";
+    override(ps.map((p) => [`${p.id}:${eventId}`, next]));
+    act(() => setHouseholdEventStatus(weddingId, g.id, eventId, next), cur.length ? undefined : t("toastInvited"));
   };
 
   /* Arrow keys walk the matrix, Enter presses — the Ledger's keyboard. */
@@ -356,7 +372,6 @@ export function GuestGrid({
                           <button
                             className="cellbtn"
                             data-r={gi * 100} data-c={ei}
-                            disabled={pending}
                             onClick={() => cycleHH(g, ev.id)}
                             title={cur.length ? t("aggregateHint") : t("inviteHint")}
                             aria-label={`${householdLabel(g)} — ${ev.name} — ${cur.length ? label : t("status_none")}`}
@@ -401,7 +416,6 @@ export function GuestGrid({
                             <button
                               className="cellbtn"
                               data-r={gi * 100 + pi + 1} data-c={ei}
-                              disabled={pending}
                               onClick={() => cycleP(p.id, ev.id)}
                               title={s ? t("cycleHint") : t("inviteOneHint")}
                               aria-label={`${personName(p, g, pi)} — ${ev.name} — ${s ? t(`status_${s}`) : t("status_none")}`}
