@@ -41,7 +41,7 @@
     "vendors": "Prestataires",
     "budget": "Budget",
     "guests": "Invités",
-    "communication": "Communication",
+    "communication": "Wedding Communication",
     "documents": "Documents",
     "messages": "Messages",
     "forms": "Formulaires",
@@ -930,7 +930,11 @@
     "correspondence": {
       "title": "Correspondance aux invités",
       "byWord": "Par les mots",
-      "sent": "Envoyé"
+      "sent": "Envoyé",
+      "emptyTeam": "Aucune ligne de correspondance encore — save the date, invitation suite, mot pratique. Elles paraîtront ici, sobrement : quoi · quand · parti ou à venir.",
+      "sentOn": "Parti le {date}",
+      "toCome": "À venir",
+      "toConfirm": "à confirmer"
     },
     "hospitality": {
       "title": "Hospitalité & logistique des invités",

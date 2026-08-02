@@ -41,7 +41,7 @@
     "vendors": "Vendors",
     "budget": "Budget",
     "guests": "Guests",
-    "communication": "Communication",
+    "communication": "Wedding Communication",
     "documents": "Documents",
     "messages": "Messages",
     "forms": "Forms",
@@ -930,7 +930,11 @@
     "correspondence": {
       "title": "Guest correspondence",
       "byWord": "By word",
-      "sent": "Sent"
+      "sent": "Sent",
+      "emptyTeam": "No correspondence lines yet — save the date, invitation suite, practical word. They will appear here, plainly: what · when · sent or to come.",
+      "sentOn": "Sent {date}",
+      "toCome": "To come",
+      "toConfirm": "to confirm"
     },
     "hospitality": {
       "title": "Hospitality & guest logistics",

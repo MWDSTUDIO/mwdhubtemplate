@@ -41,7 +41,7 @@
     "vendors": "パートナー",
     "budget": "ご予算",
     "guests": "ゲスト",
-    "communication": "ご案内状",
+    "communication": "ウェディング・コミュニケーション",
     "documents": "書類",
     "messages": "メッセージ",
     "forms": "フォーム",
@@ -930,7 +930,11 @@
     "correspondence": {
       "title": "ゲストへのお便り",
       "byWord": "言の葉で",
-      "sent": "お送り済み"
+      "sent": "お送り済み",
+      "emptyTeam": "まだ書簡の行はございません——セーブ・ザ・デート、招待状、実務のお知らせ。ここに簡素に並びます：何を · いつ · 発送済みかこれからか。",
+      "sentOn": "{date} 発送",
+      "toCome": "これから",
+      "toConfirm": "要確認"
     },
     "hospitality": {
       "title": "おもてなしとゲストの段取り",

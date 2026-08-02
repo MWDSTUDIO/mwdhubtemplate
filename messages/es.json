@@ -41,7 +41,7 @@
     "vendors": "Proveedores",
     "budget": "Presupuesto",
     "guests": "Invitados",
-    "communication": "Comunicación",
+    "communication": "Wedding Communication",
     "documents": "Documentos",
     "messages": "Mensajes",
     "forms": "Formularios",
@@ -930,7 +930,11 @@
     "correspondence": {
       "title": "Correspondencia a los invitados",
       "byWord": "Por la palabra",
-      "sent": "Enviado"
+      "sent": "Enviado",
+      "emptyTeam": "Aún sin líneas de correspondencia — save the date, invitación, nota práctica. Aparecerán aquí, sobriamente: qué · cuándo · enviado o por venir.",
+      "sentOn": "Enviado el {date}",
+      "toCome": "Por venir",
+      "toConfirm": "por confirmar"
     },
     "hospitality": {
       "title": "Hospitalidad y logística de invitados",

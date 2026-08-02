@@ -1,10 +1,17 @@
 import { getTranslations, setRequestLocale, getFormatter } from "next-intl/server";
 import { requireHouseSession } from "@/lib/session";
 import { createClient } from "@/lib/supabase/server";
-import type { Board, Correspondence, HospitalityItem, HotelBlock } from "@/lib/types";
+import type { Correspondence, Guest, GuestEvent, HotelBlock, WeddingEvent } from "@/lib/types";
 import { HotelDesk, OpenRoomingButton } from "./communication-client";
+import { AddGuestForm, GuestList, StationerReview } from "./guests-client";
 
-export default async function CommunicationPage({
+/**
+ * Wedding Communication — one page for the whole conversation with
+ * the guests (brief, lot A): the general correspondence held light,
+ * the guest list held better than the couple could, accommodation
+ * and travel. Estelle's hand corrects everything, at any hour.
+ */
+export default async function WeddingCommunicationPage({
   params
 }: {
   params: Promise<{ locale: string }>;
@@ -13,6 +20,8 @@ export default async function CommunicationPage({
   setRequestLocale(locale);
   const session = await requireHouseSession();
   const t = await getTranslations("communication");
+  const tg = await getTranslations("guests");
+  const tc = await getTranslations("common");
   const format = await getFormatter();
   const { wedding } = session;
   if (!wedding) return null;
@@ -20,21 +29,47 @@ export default async function CommunicationPage({
   const supabase = await createClient();
   const [
     { data: correspondence },
-    { data: hospitality },
     { data: blocks },
     { data: roomingState },
-    { data: stationeryBoard }
+    { data: events },
+    { data: guests },
+    { data: guestEvents }
   ] = await Promise.all([
-    supabase.from("correspondence").select("*").eq("wedding_id", wedding.id).order("sent_at", { ascending: true, nullsFirst: false }),
-    supabase.from("hospitality_items").select("*").eq("wedding_id", wedding.id).order("sort"),
+    supabase
+      .from("correspondence")
+      .select("*")
+      .eq("wedding_id", wedding.id)
+      .order("sent_at", { ascending: true, nullsFirst: false }),
     supabase.from("hotel_blocks").select("*").eq("wedding_id", wedding.id),
     supabase.from("rooming_list_state").select("*").eq("wedding_id", wedding.id).maybeSingle(),
-    supabase.from("boards").select("*").eq("wedding_id", wedding.id).eq("type", "stationery").maybeSingle<Board>()
+    supabase.from("wedding_events").select("*").eq("wedding_id", wedding.id).order("sort"),
+    supabase.from("guests").select("*").eq("wedding_id", wedding.id).order("created_at"),
+    supabase.from("guest_events").select("*").eq("wedding_id", wedding.id)
   ]);
 
+  const allEvents = (events ?? []) as WeddingEvent[];
+  const allGuests = (guests ?? []) as Guest[];
+  const links = (guestEvents ?? []) as GuestEvent[];
+  const letters = (correspondence ?? []) as Correspondence[];
   const opened = roomingState?.opened ?? false;
+
+  const countFor = (eventId: string) => ({
+    confirmed: links.filter((l) => l.event_id === eventId && l.rsvp === "confirmed").length,
+    invited: links.filter((l) => l.event_id === eventId).length
+  });
+  const heroEvents = allEvents.filter((e) =>
+    ["welcome", "dinner", "farewell"].includes(e.name.toLowerCase().split(" ")[0])
+  );
+  const latestFlag = allGuests.map((g) => g.stationer_flag).filter(Boolean).at(-1) ?? null;
+
   const date = (iso: string | null) =>
     iso ? format.dateTime(new Date(iso), { month: "short", day: "numeric", year: "numeric" }) : "—";
+
+  // The general volet stands alone or it lies (brief §1): with no
+  // correspondence at all, the couple is shown nothing — no shell.
+  const staleLine = (c: Correspondence) =>
+    c.status !== "sent" && !c.scheduled_label;
+  const generalForClient = letters.length > 0;
 
   return (
     <section className="sheet">
@@ -42,60 +77,73 @@ export default async function CommunicationPage({
       <h1 className="title">{t("headline")}</h1>
       <p className="lead">{t("lead")}</p>
 
-      <div className="grid2">
+      {/* ── I. General communication — light, or absent ────────────── */}
+      {(generalForClient || session.isTeam) && (
         <div className="card">
-          <div className="eyebrow">{t("suite.title")}</div>
-          <div className="serif" style={{ fontSize: 22, margin: "8px 0" }}>{t("suite.onPaper")}</div>
-          <p style={{ fontSize: 13.5, color: "var(--ink2)" }}>{t("suite.blurb")}</p>
-          <hr className="hair" />
-          <span className={`tag ${stationeryBoard?.status === "approved" ? "ok" : "wait"}`}>
-            {stationeryBoard?.status === "approved" ? t("suite.approved") : t("suite.inProof")}
-          </span>
-        </div>
-        <div className="card">
-          <div className="eyebrow">{t("correspondence.title")}</div>
-          <div className="serif" style={{ fontSize: 22, margin: "8px 0" }}>{t("correspondence.byWord")}</div>
+          <div className="eyebrow" style={{ marginBottom: 8 }}>{t("correspondence.title")}</div>
+          {letters.length === 0 && session.isTeam && (
+            <p style={{ fontSize: 13, color: "var(--ink2)" }}>{t("correspondence.emptyTeam")}</p>
+          )}
           <ul className="steps" style={{ marginTop: 6 }}>
-            {((correspondence ?? []) as Correspondence[]).map((c) => (
+            {letters.map((c) => (
               <li key={c.id}>
                 <span className="d">
-                  {c.status === "sent" ? t("correspondence.sent") : c.scheduled_label ?? "—"}
+                  {c.status === "sent"
+                    ? c.sent_at
+                      ? t("correspondence.sentOn", { date: date(c.sent_at) })
+                      : t("correspondence.sent")
+                    : c.scheduled_label ?? (session.isTeam ? t("correspondence.toConfirm") : t("correspondence.toCome"))}
                 </span>
-                <span>{c.title}</span>
+                <span>
+                  {c.title}
+                  {session.isTeam && staleLine(c) && (
+                    <em className="team-only" style={{ marginLeft: 8, fontSize: 12, color: "var(--bronze)" }}>
+                      {t("correspondence.toConfirm")}
+                    </em>
+                  )}
+                </span>
               </li>
             ))}
           </ul>
         </div>
-      </div>
+      )}
 
-      <div className="card">
-        <div className="eyebrow" style={{ marginBottom: 14 }}>{t("hospitality.title")}</div>
-        <div style={{ overflowX: "auto" }}>
-          <table className="sheet-table">
-            <thead>
-              <tr>
-                <th>{t("hospitality.attention")}</th>
-                <th>{t("hospitality.scope")}</th>
-                <th>{t("hospitality.status")}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {((hospitality ?? []) as HospitalityItem[]).map((item) => (
-                <tr key={item.id}>
-                  <td>{item.label}</td>
-                  <td>{item.scope}</td>
-                  <td>
-                    <span className={`tag${item.status === "awaiting_rsvps" ? " wait" : ""}`}>
-                      {t(`hospitality.statuses.${item.status}`)}
-                    </span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+      {/* ── II. Guest communication — the list, the house's craft ──── */}
+      {heroEvents.length > 0 && (
+        <div className="grid3" style={{ marginBottom: 18 }}>
+          {heroEvents.map((event) => {
+            const c = countFor(event.id);
+            return (
+              <div className="card" style={{ marginBottom: 0 }} key={event.id}>
+                <div className="eyebrow">{event.name}</div>
+                <div className="serif num" style={{ fontSize: 34 }}>{c.confirmed}</div>
+                <span style={{ fontSize: 12, color: "var(--ink2)" }}>
+                  {tg("confirmedOf", { total: c.invited })}
+                </span>
+              </div>
+            );
+          })}
         </div>
-      </div>
+      )}
 
+      <AddGuestForm
+        weddingId={wedding.id}
+        events={allEvents}
+        languages={wedding.languages}
+        aiSuggest={session.isTeam}
+      />
+
+      <GuestList
+        weddingId={wedding.id}
+        guests={allGuests}
+        events={allEvents}
+        links={links}
+        canManage={!session.isCoordinator}
+      />
+
+      {session.isTeam && <StationerReview weddingId={wedding.id} latestFlag={latestFlag} />}
+
+      {/* ── III. Accommodation & Travel ────────────────────────────── */}
       <div className="card">
         <div className="eyebrow" style={{ marginBottom: 6 }}>{t("accommodation.title")}</div>
         <p style={{ fontSize: 13, color: "var(--ink2)", marginBottom: 16 }}>{t("accommodation.blurb")}</p>
@@ -145,9 +193,11 @@ export default async function CommunicationPage({
       {session.isTeam && <HotelDesk weddingId={wedding.id} sample={t("hotelDesk.sample")} />}
 
       {session.isTeam && (
-        <div className="ia team-only">
-          <div className="eyebrow">{t("desk.title")}</div>
-          <p style={{ marginTop: 8, fontSize: 13.5 }}>{t("desk.blurb")}</p>
+        <div className="ia team-only" style={{ marginTop: 14 }}>
+          <div className="eyebrow">
+            {tg("travelPlanning.title")} <span className="tag int">{tc("internal")}</span>
+          </div>
+          <p style={{ marginTop: 8, fontSize: 13.5 }}>{tg("travelPlanning.blurb")}</p>
         </div>
       )}
     </section>

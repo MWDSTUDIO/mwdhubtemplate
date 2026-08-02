@@ -41,7 +41,7 @@
     "vendors": "合作方",
     "budget": "预算",
     "guests": "宾客",
-    "communication": "婚礼函件",
+    "communication": "婚礼往来",
     "documents": "文件",
     "messages": "信函往来",
     "forms": "表单",
@@ -930,7 +930,11 @@
     "correspondence": {
       "title": "致宾客的信",
       "byWord": "付诸言辞",
-      "sent": "已寄出"
+      "sent": "已寄出",
+      "emptyTeam": "尚无往来函件——请柬前告、请柬套装、实用告知。它们将朴素地列于此：何物 · 何时 · 已寄或将寄。",
+      "sentOn": "已于 {date} 寄出",
+      "toCome": "将寄",
+      "toConfirm": "待确认"
     },
     "hospitality": {
       "title": "款待与宾客行程",

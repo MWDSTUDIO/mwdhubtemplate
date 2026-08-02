@@ -66,7 +66,7 @@ export async function addGuest(input: GuestFields) {
       }))
     );
   }
-  revalidatePath("/guests");
+  revalidatePath("/communication");
   return { ok: true as const };
 }
 
@@ -103,7 +103,7 @@ export async function updateGuest(guestId: string, input: GuestFields) {
       toAdd.map((event_id) => ({ guest_id: guestId, event_id, wedding_id: input.weddingId }))
     );
   }
-  revalidatePath("/guests");
+  revalidatePath("/communication");
   return { ok: true as const };
 }
 
@@ -111,7 +111,7 @@ export async function deleteGuest(guestId: string) {
   await requireHouseSession();
   const supabase = await createClient();
   await supabase.from("guests").delete().eq("id", guestId);
-  revalidatePath("/guests");
+  revalidatePath("/communication");
   return { ok: true as const };
 }
 
@@ -130,7 +130,7 @@ export async function setHouseholdRsvp(
   // events or not) — then every event it is invited to follows.
   const { error } = await supabase.from("guests").update({ rsvp }).eq("id", guestId);
   const perEvent = await supabase.from("guest_events").update({ rsvp }).eq("guest_id", guestId);
-  revalidatePath("/guests");
+  revalidatePath("/communication");
   // Before migration 0010 guests.rsvp is absent: the press still lands
   // when the household is linked to at least one event.
   return { ok: !error || !perEvent.error };
@@ -148,7 +148,7 @@ export async function setRsvp(
     .update({ rsvp })
     .eq("guest_id", guestId)
     .eq("event_id", eventId);
-  revalidatePath("/guests");
+  revalidatePath("/communication");
 }
 
 /**
@@ -184,6 +184,6 @@ export async function stationerReview(weddingId: string) {
   for (const flag of parsed.flags ?? []) {
     await supabase.from("guests").update({ stationer_flag: flag.remark }).eq("id", flag.id);
   }
-  revalidatePath("/guests");
+  revalidatePath("/communication");
   return { ok: true as const, note: parsed.note, count: parsed.flags?.length ?? 0 };
 }

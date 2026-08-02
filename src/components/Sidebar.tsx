@@ -36,7 +36,6 @@ const GROUPS: { key: string | null; items: Item[] }[] = [
     items: [
       { href: "/vendors", key: "vendors" },
       { href: "/budget", key: "budget" },
-      { href: "/guests", key: "guests" },
       { href: "/communication", key: "communication" }
     ]
   },
