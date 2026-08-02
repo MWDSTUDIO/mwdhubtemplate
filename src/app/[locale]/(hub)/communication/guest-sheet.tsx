@@ -24,11 +24,13 @@ import {
 
 type Field =
   | "title" | "first_names" | "surname" | "suffix" | "invitation_line"
-  | "address" | "party_adults" | "party_children" | "dietary";
+  | "address" | "city" | "postal_code" | "country" | "phone" | "email"
+  | "party_adults" | "party_children" | "dietary";
 
 const FIELD_ORDER: Field[] = [
   "title", "first_names", "surname", "suffix", "invitation_line",
-  "address", "party_adults", "party_children", "dietary"
+  "address", "city", "postal_code", "country", "phone", "email",
+  "party_adults", "party_children", "dietary"
 ];
 
 type UndoEntry =
@@ -260,6 +262,11 @@ export function GuestSheet({
               <th>{t("col_suffix")}</th>
               <th>{t("col_invitation_line")}</th>
               <th>{t("col_address")}</th>
+              <th>{t("col_city")}</th>
+              <th>{t("col_postal_code")}</th>
+              <th>{t("col_country")}</th>
+              <th>{t("col_phone")}</th>
+              <th>{t("col_email")}</th>
               <th className="num">{t("col_party_adults")}</th>
               <th className="num">{t("col_party_children")}</th>
               <th>{t("col_dietary")}</th>
@@ -294,6 +301,11 @@ export function GuestSheet({
                   {cell(g, "suffix", { width: 50 })}
                   {cell(g, "invitation_line", { serif: true, width: 200 })}
                   {cell(g, "address", { width: 160 })}
+                  {cell(g, "city", { width: 90 })}
+                  {cell(g, "postal_code", { width: 60 })}
+                  {cell(g, "country", { width: 90 })}
+                  {cell(g, "phone", { width: 110 })}
+                  {cell(g, "email", { width: 150 })}
                   {cell(g, "party_adults", { num: true, width: 40 })}
                   {cell(g, "party_children", { num: true, width: 40 })}
                   {cell(g, "dietary", { width: 110 })}

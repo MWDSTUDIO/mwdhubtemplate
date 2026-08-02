@@ -305,6 +305,12 @@ export interface Guest {
   party_children: number | null;
   /** The household's own word — set by hand or by phone (migration 0010). */
   rsvp?: Rsvp | null;
+  /** The household's full address book (migration 0023). */
+  city?: string | null;
+  postal_code?: string | null;
+  country?: string | null;
+  phone?: string | null;
+  email?: string | null;
   /** American stationery fields (migration 0021). */
   suffix?: string | null;
   and_guest?: boolean;

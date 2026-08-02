@@ -192,7 +192,8 @@ export async function stationerReview(weddingId: string) {
 
 const HOUSE_FIELDS = new Set([
   "title", "first_names", "surname", "suffix", "invitation_line",
-  "address", "locale", "travel", "dietary", "party_adults",
+  "address", "city", "postal_code", "country", "phone", "email",
+  "locale", "travel", "dietary", "party_adults",
   "party_children", "and_guest"
 ]);
 
