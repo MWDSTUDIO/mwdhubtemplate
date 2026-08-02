@@ -102,16 +102,16 @@ export default async function CeremonyPage({
       .order("created_at", { ascending: false })
       .limit(60);
     for (const c of (ceremonies ?? []) as Ceremony[]) {
-      if ((c.status ?? "published") !== "published" && c.status) {
-        const v = (versions ?? []).find((x) => (x.summary as { ceremonyId?: string } | null)?.ceremonyId === c.id);
-        const snap = (v?.snapshot as { ceremony?: Record<string, unknown> } | null)?.ceremony;
-        if (snap) {
-          const moved: string[] = [];
-          for (const k of ["kind", "title", "ceremony_date", "start_time", "venue", "officiant", "notes"] as const) {
-            if ((snap[k] ?? null) !== (c[k] ?? null)) moved.push(k);
-          }
-          if (moved.length) changedByCeremony.set(c.id, moved);
+      // Whatever the current state, once a version was shown to the
+      // couple, any drift from it is named (§22).
+      const v = (versions ?? []).find((x) => (x.summary as { ceremonyId?: string } | null)?.ceremonyId === c.id);
+      const snap = (v?.snapshot as { ceremony?: Record<string, unknown> } | null)?.ceremony;
+      if (snap) {
+        const moved: string[] = [];
+        for (const k of ["kind", "title", "ceremony_date", "start_time", "venue", "officiant", "notes"] as const) {
+          if ((snap[k] ?? null) !== (c[k] ?? null)) moved.push(k);
         }
+        if (moved.length) changedByCeremony.set(c.id, moved);
       }
     }
   }
