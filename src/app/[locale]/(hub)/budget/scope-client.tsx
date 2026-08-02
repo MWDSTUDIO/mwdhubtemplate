@@ -164,74 +164,14 @@ export function ScopeStudio({
   }
 
   if (!isTeam) {
-    // The couple's reading — never a cold ledger. Three figures at the
-    // head of the page, then each envelope as a small house page:
-    // the counsel, the decision, the real (brief §4).
-    const committedAll = envelopes.reduce((s, e) => s + committedFor(e.id), 0) + beyondCommitted;
-    const stillToPlace = Math.max(0, total - committedAll);
     return (
-      <div className="card">
-        <div className="eyebrow" style={{ marginBottom: 14 }}>{t("clientTitle")}</div>
-        {total > 0 && (
-          <div className="scope-head">
-            <div>
-              <span className="scope-head-label">{t("headTotal")}</span>
-              <span className="serif num scope-head-figure">{money(total)}</span>
-            </div>
-            <div>
-              <span className="scope-head-label">{t("headCommitted")}</span>
-              <span className="serif num scope-head-figure">{money(committedAll)}</span>
-            </div>
-            <div>
-              <span className="scope-head-label">{t("headStillToPlace")}</span>
-              <span className="serif num scope-head-figure">{money(stillToPlace)}</span>
-            </div>
-          </div>
-        )}
-        {envelopes.filter((e) => !e.archived).map((env) => {
-          const note = noteFor(env.id);
-          const forecastAmt = total > 0 && env.percent != null ? (env.percent / 100) * total : null;
-          const recAmt =
-            total > 0 && env.recommended_pct != null ? (Number(env.recommended_pct) / 100) * total : null;
-          const committed = committedFor(env.id);
-          const left = forecastAmt != null ? forecastAmt - committed : null;
-          return (
-            <div key={env.id} className="scope-envcard">
-              <div className="serif" style={{ fontSize: 17 }}>{env.label}</div>
-              {note?.status === "published" && note.body && (
-                <div className="envnote" style={{ marginTop: 4 }}>&ldquo;{note.body}&rdquo; — Estelle</div>
-              )}
-              <div className="scope-levels">
-                <div>
-                  <span className="scope-level-label">{t("recommended")}</span>
-                  <span className="num">
-                    {env.recommended_pct != null ? `${env.recommended_pct} %` : "—"}
-                    {recAmt != null && <span className="scope-level-amount">{money(recAmt)}</span>}
-                  </span>
-                </div>
-                <div>
-                  <span className="scope-level-label">{t("forecast")}</span>
-                  <span className="num">
-                    {env.percent != null ? `${env.percent} %` : "—"}
-                    {forecastAmt != null && <span className="scope-level-amount">{money(forecastAmt)}</span>}
-                  </span>
-                </div>
-                <div>
-                  <span className="scope-level-label">{t("committedLevel")}</span>
-                  <span className="num">
-                    {committed > 0 ? money(committed) : <em style={{ color: "var(--ink2)" }}>{t("notYetPlaced")}</em>}
-                  </span>
-                </div>
-              </div>
-              {committed > 0 && left != null && left > 0.5 && (
-                <p style={{ fontSize: 12.5, color: "var(--ink2)", margin: "6px 0 0" }}>
-                  {t("stillToPlace", { amount: money(left) })}
-                </p>
-              )}
-            </div>
-          );
-        })}
-      </div>
+      <CoupleScope
+        total={total}
+        envelopes={envelopes}
+        committedByEnvelope={committedByEnvelope}
+        beyondCommitted={beyondCommitted}
+        notes={notes}
+      />
     );
   }
 
@@ -259,6 +199,18 @@ export function ScopeStudio({
   }
 
   return (
+    <>
+      {/* Estelle's "Client view" shows exactly the couple's reading —
+          the studio hides, the composition stands in its place. */}
+      <div className="client-preview">
+        <CoupleScope
+          total={total}
+          envelopes={envelopes}
+          committedByEnvelope={committedByEnvelope}
+          beyondCommitted={beyondCommitted}
+          notes={notes}
+        />
+      </div>
     <div className="team-only">
       {total === 0 && (
         <p role="status" style={{ fontSize: 13, color: "var(--bronze)", margin: "0 0 12px" }}>
@@ -570,6 +522,102 @@ export function ScopeStudio({
           </p>
         )}
       </div>
+    </div>
+    </>
+  );
+}
+
+/**
+ * The couple's reading of the scope — never a cold ledger. Three
+ * figures at the head, then each envelope as a small house page:
+ * the counsel, the decision, the real (brief §4). One component,
+ * two doors: the couple's own page, and Estelle's Client view.
+ */
+function CoupleScope({
+  total,
+  envelopes,
+  committedByEnvelope,
+  beyondCommitted,
+  notes
+}: {
+  total: number;
+  envelopes: BudgetEnvelope[];
+  committedByEnvelope: Record<string, number>;
+  beyondCommitted: number;
+  notes: EnvelopeNote[];
+}) {
+  const t = useTranslations("budget.scopeStudio");
+  const format = useFormatter();
+  const money = (n: number) =>
+    format.number(n, { style: "currency", currency: "EUR", maximumFractionDigits: 0 });
+  const committedFor = (id?: string) => (id ? committedByEnvelope[id] ?? 0 : 0);
+  const noteFor = (id?: string) => notes.find((n) => n.envelope_id === id) ?? null;
+
+  const living = envelopes.filter((e) => !e.archived);
+  const committedAll = living.reduce((s, e) => s + committedFor(e.id), 0) + beyondCommitted;
+  const stillToPlace = Math.max(0, total - committedAll);
+  return (
+    <div className="card">
+      <div className="eyebrow" style={{ marginBottom: 14 }}>{t("clientTitle")}</div>
+      {total > 0 && (
+        <div className="scope-head">
+          <div>
+            <span className="scope-head-label">{t("headTotal")}</span>
+            <span className="serif num scope-head-figure">{money(total)}</span>
+          </div>
+          <div>
+            <span className="scope-head-label">{t("headCommitted")}</span>
+            <span className="serif num scope-head-figure">{money(committedAll)}</span>
+          </div>
+          <div>
+            <span className="scope-head-label">{t("headStillToPlace")}</span>
+            <span className="serif num scope-head-figure">{money(stillToPlace)}</span>
+          </div>
+        </div>
+      )}
+      {living.map((env) => {
+        const note = noteFor(env.id);
+        const forecastAmt = total > 0 && env.percent != null ? (env.percent / 100) * total : null;
+        const recAmt =
+          total > 0 && env.recommended_pct != null ? (Number(env.recommended_pct) / 100) * total : null;
+        const committed = committedFor(env.id);
+        const left = forecastAmt != null ? forecastAmt - committed : null;
+        return (
+          <div key={env.id} className="scope-envcard">
+            <div className="serif" style={{ fontSize: 17 }}>{env.label}</div>
+            {note?.status === "published" && note.body && (
+              <div className="envnote" style={{ marginTop: 4 }}>&ldquo;{note.body}&rdquo; — Estelle</div>
+            )}
+            <div className="scope-levels">
+              <div>
+                <span className="scope-level-label">{t("recommended")}</span>
+                <span className="num">
+                  {env.recommended_pct != null ? `${env.recommended_pct} %` : "—"}
+                  {recAmt != null && <span className="scope-level-amount">{money(recAmt)}</span>}
+                </span>
+              </div>
+              <div>
+                <span className="scope-level-label">{t("forecast")}</span>
+                <span className="num">
+                  {env.percent != null ? `${env.percent} %` : "—"}
+                  {forecastAmt != null && <span className="scope-level-amount">{money(forecastAmt)}</span>}
+                </span>
+              </div>
+              <div>
+                <span className="scope-level-label">{t("committedLevel")}</span>
+                <span className="num">
+                  {committed > 0 ? money(committed) : <em style={{ color: "var(--ink2)" }}>{t("notYetPlaced")}</em>}
+                </span>
+              </div>
+            </div>
+            {committed > 0 && left != null && left > 0.5 && (
+              <p style={{ fontSize: 12.5, color: "var(--ink2)", margin: "6px 0 0" }}>
+                {t("stillToPlace", { amount: money(left) })}
+              </p>
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 }
