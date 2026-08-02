@@ -35,9 +35,52 @@ function guestRow(input: GuestFields) {
   };
 }
 
+
+/* ── C3 · the pen: after the date, couple edits become proposals ── */
+async function penHolds(
+  isTeam: boolean,
+  weddingId: string,
+  supabase: Awaited<ReturnType<typeof createClient>>
+): Promise<boolean> {
+  if (isTeam) return false;
+  try {
+    const { data } = await supabase
+      .from("weddings")
+      .select("pen_taken_from")
+      .eq("id", weddingId)
+      .single();
+    const d = (data as { pen_taken_from?: string | null } | null)?.pen_taken_from;
+    return !!d && new Date(d + "T00:00:00") <= new Date();
+  } catch {
+    return false;
+  }
+}
+
+async function propose(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  weddingId: string,
+  kind: "add" | "update" | "delete" | "rsvp",
+  householdId: string | null,
+  payload: Record<string, unknown>,
+  author: string
+) {
+  await supabase.from("guest_change_proposals").insert({
+    wedding_id: weddingId,
+    household_id: householdId,
+    kind,
+    payload,
+    created_by: author
+  });
+  revalidatePath("/communication");
+  return { ok: true as const, proposed: true as const };
+}
+
 export async function addGuest(input: GuestFields) {
-  await requireHouseSession();
+  const session = await requireHouseSession();
   const supabase = await createClient();
+  if (await penHolds(session.isTeam, input.weddingId, supabase)) {
+    return propose(supabase, input.weddingId, "add", null, guestRow(input), session.profile.full_name);
+  }
   let { data: guest, error } = await supabase
     .from("guests")
     .insert({ wedding_id: input.weddingId, ...guestRow(input) })
@@ -72,8 +115,11 @@ export async function addGuest(input: GuestFields) {
 
 /** Rework a household — every field, and the events it is invited to. */
 export async function updateGuest(guestId: string, input: GuestFields) {
-  await requireHouseSession();
+  const session = await requireHouseSession();
   const supabase = await createClient();
+  if (await penHolds(session.isTeam, input.weddingId, supabase)) {
+    return propose(supabase, input.weddingId, "update", guestId, guestRow(input), session.profile.full_name);
+  }
   let { error } = await supabase.from("guests").update(guestRow(input)).eq("id", guestId);
   if (error) {
     const { party_adults, party_children, ...bare } = guestRow(input);
@@ -108,8 +154,12 @@ export async function updateGuest(guestId: string, input: GuestFields) {
 }
 
 export async function deleteGuest(guestId: string) {
-  await requireHouseSession();
+  const session = await requireHouseSession();
   const supabase = await createClient();
+  const { data: row } = await supabase.from("guests").select("wedding_id").eq("id", guestId).single();
+  if (row && (await penHolds(session.isTeam, row.wedding_id, supabase))) {
+    return propose(supabase, row.wedding_id, "delete", guestId, {}, session.profile.full_name);
+  }
   await supabase.from("guests").delete().eq("id", guestId);
   revalidatePath("/communication");
   return { ok: true as const };
@@ -124,8 +174,12 @@ export async function setHouseholdRsvp(
   guestId: string,
   rsvp: "pending" | "confirmed" | "declined"
 ) {
-  await requireHouseSession();
+  const session = await requireHouseSession();
   const supabase = await createClient();
+  const { data: hh } = await supabase.from("guests").select("wedding_id").eq("id", guestId).single();
+  if (hh && (await penHolds(session.isTeam, hh.wedding_id, supabase))) {
+    return propose(supabase, hh.wedding_id, "rsvp", guestId, { rsvp }, session.profile.full_name);
+  }
   // The household's own word first (a phone call to the house counts,
   // events or not) — then every event it is invited to follows.
   const { error } = await supabase.from("guests").update({ rsvp }).eq("id", guestId);

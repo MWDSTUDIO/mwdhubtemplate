@@ -2,8 +2,9 @@ import { getTranslations, setRequestLocale, getFormatter } from "next-intl/serve
 import { requireHouseSession } from "@/lib/session";
 import { createClient } from "@/lib/supabase/server";
 import type {
-  Correspondence, Guest, GuestEvent, GuestPerson, HotelBlock,
-  PersonEventStatus, WeddingEvent
+  Correspondence, EventCountGiven, Guest, GuestChangeProposal, GuestEvent,
+  GuestPerson, HotelBlock, Milestone, PersonEventStatus, Property,
+  RoomAssignment, RoomBlock, WeddingEvent
 } from "@/lib/types";
 import { HotelDesk, OpenRoomingButton } from "./communication-client";
 import { AddGuestForm, GuestList } from "./guests-client";
@@ -39,7 +40,13 @@ export default async function WeddingCommunicationPage({
     { data: guests },
     { data: guestEvents },
     { data: gridPersons, error: personsError },
-    { data: gridStatuses }
+    { data: gridStatuses },
+    { data: milestones },
+    { data: countsGiven, error: lotCError },
+    { data: proposals },
+    { data: propertiesData },
+    { data: roomBlocksData },
+    { data: roomAssignmentsData }
   ] = await Promise.all([
     supabase
       .from("correspondence")
@@ -54,7 +61,14 @@ export default async function WeddingCommunicationPage({
     // Pre-0024 these tables are absent — the sheet keeps working, the
     // grid simply shows its patience.
     supabase.from("guest_persons").select("*").eq("wedding_id", wedding.id),
-    supabase.from("person_event_status").select("*").eq("wedding_id", wedding.id)
+    supabase.from("person_event_status").select("*").eq("wedding_id", wedding.id),
+    supabase.from("milestones").select("*").eq("wedding_id", wedding.id).order("sort"),
+    // Pre-0025 these are absent — the lot-C instruments wait quietly.
+    supabase.from("event_counts_given").select("*").eq("wedding_id", wedding.id).order("created_at", { ascending: false }),
+    supabase.from("guest_change_proposals").select("*").eq("wedding_id", wedding.id).eq("status", "proposed").order("created_at"),
+    supabase.from("properties").select("*").eq("wedding_id", wedding.id).order("sort"),
+    supabase.from("room_blocks").select("*").eq("wedding_id", wedding.id).order("sort"),
+    supabase.from("room_assignments").select("*").eq("wedding_id", wedding.id).order("created_at")
   ]);
 
   const allEvents = ((events ?? []) as WeddingEvent[]).filter((e) => !e.archived);
@@ -76,6 +90,11 @@ export default async function WeddingCommunicationPage({
   // at all, the couple is shown nothing — no shell.
   const staleLine = (c: Correspondence) => c.status !== "sent" && !c.scheduled_label;
   const generalForClient = letters.length > 0;
+  // One fact, one place: a line linked to a Timeline milestone reads
+  // sent the moment the milestone is done (0025).
+  const milestoneDone = new Map(((milestones ?? []) as Milestone[]).map((m) => [m.id, m.done]));
+  const readsSent = (c: Correspondence) =>
+    c.milestone_id ? milestoneDone.get(c.milestone_id) === true : c.status === "sent";
 
   const correspondenceCard = (forTeam: boolean) =>
     (generalForClient || forTeam) && (
@@ -88,7 +107,7 @@ export default async function WeddingCommunicationPage({
           {letters.map((c) => (
             <li key={c.id}>
               <span className="d">
-                {c.status === "sent"
+                {readsSent(c)
                   ? c.sent_at
                     ? t("correspondence.sentOn", { date: date(c.sent_at) })
                     : t("correspondence.sent")
@@ -96,7 +115,7 @@ export default async function WeddingCommunicationPage({
               </span>
               <span>
                 {c.title}
-                {forTeam && staleLine(c) && (
+                {forTeam && staleLine(c) && !readsSent(c) && (
                   <em className="team-only" style={{ marginLeft: 8, fontSize: 12, color: "var(--bronze)" }}>
                     {t("correspondence.toConfirm")}
                   </em>
@@ -105,6 +124,12 @@ export default async function WeddingCommunicationPage({
             </li>
           ))}
         </ul>
+        {(wedding as unknown as { comm_note?: string | null; comm_note_status?: string }).comm_note &&
+          (wedding as unknown as { comm_note_status?: string }).comm_note_status === "published" && (
+            <p style={{ fontSize: 14, margin: "10px 0 0", borderTop: "1px solid rgba(201,178,145,.28)", paddingTop: 10 }}>
+              {(wedding as unknown as { comm_note?: string }).comm_note}
+            </p>
+          )}
       </div>
     );
 
@@ -169,6 +194,23 @@ export default async function WeddingCommunicationPage({
 
   const weddingLine = `${wedding.couple_display_name} · ${date(wedding.date_start)} · ${wedding.destination}`;
 
+  const w = wedding as unknown as { pen_taken_from?: string | null; comm_note?: string | null; comm_note_status?: string };
+  const lotC = lotCError
+    ? null
+    : {
+        letters,
+        milestones: (milestones ?? []) as Milestone[],
+        commNote: w.comm_note ?? null,
+        commNoteStatus: w.comm_note_status ?? "draft",
+        penFrom: w.pen_taken_from ?? null,
+        weddingDate: wedding.date_start,
+        proposals: (proposals ?? []) as GuestChangeProposal[],
+        countsGiven: (countsGiven ?? []) as EventCountGiven[],
+        properties: (propertiesData ?? []) as Property[],
+        roomBlocks: (roomBlocksData ?? []) as RoomBlock[],
+        roomAssignments: (roomAssignmentsData ?? []) as RoomAssignment[]
+      };
+
   /* ── the couple's page: quiet, published state only ── */
   const coupleView = (canManage: boolean) => (
     <>
@@ -210,6 +252,7 @@ export default async function WeddingCommunicationPage({
             latestFlag={latestFlag}
             correspondence={correspondenceCard(true)}
             accommodation={accommodationSection}
+            lotC={lotC}
           />
           {/* The couple's reading, faithful — a hidden branch is a
               broken preview (the scope lesson). */}

@@ -1,15 +1,20 @@
 "use client";
 
 import React, { useMemo, useState, useTransition } from "react";
-import { useTranslations } from "next-intl";
+import { useFormatter, useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
-import type { Guest, GuestEvent, GuestPerson, PersonEventStatus, WeddingEvent } from "@/lib/types";
+import type {
+  Correspondence, EventCountGiven, Guest, GuestChangeProposal, GuestEvent,
+  GuestPerson, Milestone, PersonEventStatus, Property, RoomAssignment,
+  RoomBlock, WeddingEvent
+} from "@/lib/types";
 import { saveHousehold, type HouseholdDrawerFields } from "@/app/actions/guests";
 import { GuestSheet } from "./guest-sheet";
 import { GuestGrid } from "./guest-grid";
 import { StationerReview } from "./guests-client";
 import { ExportsTab } from "./exports-tab";
 import { ImportWizard } from "./import-wizard";
+import { CountsDesk, PenDesk, PropertiesDesk, RegisterDesk } from "./lot-c";
 
 /**
  * Wedding Communication, the module (final prompt §A1) — one working
@@ -38,7 +43,8 @@ export function CommunicationTabs({
   roomsHeld,
   latestFlag,
   correspondence,
-  accommodation
+  accommodation,
+  lotC
 }: {
   weddingId: string;
   weddingLine: string;
@@ -51,6 +57,20 @@ export function CommunicationTabs({
   latestFlag: string | null;
   correspondence: React.ReactNode;
   accommodation: React.ReactNode;
+  /** Lot C data — null pre-0025: the instruments simply do not show. */
+  lotC: null | {
+    letters: Correspondence[];
+    milestones: Milestone[];
+    commNote: string | null;
+    commNoteStatus: string;
+    penFrom: string | null;
+    weddingDate: string | null;
+    proposals: GuestChangeProposal[];
+    countsGiven: EventCountGiven[];
+    properties: Property[];
+    roomBlocks: RoomBlock[];
+    roomAssignments: RoomAssignment[];
+  };
 }) {
   const t = useTranslations("communication.module");
   const tg = useTranslations("guests.grid");
@@ -120,6 +140,31 @@ export function CommunicationTabs({
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [events, statusMap, byHousehold]
   );
+  const format = useFormatter();
+  const coversMap = useMemo(() => {
+    const m: Record<string, number> = {};
+    for (const ev of events) m[ev.id] = feet(ev.id).covers;
+    return m;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [events, statusMap, byHousehold, live]);
+  // C2 · a recorded count that the moving list has left behind.
+  const discrepancies = (lotC?.countsGiven ?? [])
+    .map((c) => {
+      const now = coversMap[c.event_id] ?? 0;
+      if (now === c.figure) return null;
+      const ev = events.find((e) => e.id === c.event_id);
+      return {
+        id: c.id,
+        text: t("alertDiscrepancy", {
+          event: ev?.name ?? "—",
+          recipient: c.recipient,
+          date: format.dateTime(new Date(c.given_on + "T12:00:00"), { month: "long", day: "numeric" }),
+          figure: c.figure,
+          now
+        })
+      };
+    })
+    .filter(Boolean) as { id: string; text: string }[];
 
   /* ── guest list filtering (chips live at module level so the
         Overview's alerts can open the list already filtered) ── */
@@ -191,7 +236,19 @@ export function CommunicationTabs({
 
       {/* ── OVERVIEW ── */}
       <section hidden={tab !== "overview"}>
-        {correspondence}
+        {lotC ? (
+          <RegisterDesk
+            weddingId={weddingId}
+            letters={lotC.letters}
+            milestones={lotC.milestones}
+            commNote={lotC.commNote}
+            commNoteStatus={lotC.commNoteStatus}
+            onSaved={onSaved}
+            toast={toast}
+          />
+        ) : (
+          correspondence
+        )}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 14, marginBottom: 26 }}>
           {card(t("cardGuests"), persons.length, t("cardGuestsSub"))}
           {card(t("cardHouseholds"), live.length, "")}
@@ -224,10 +281,19 @@ export function CommunicationTabs({
 
         <h2 className="serif" style={{ fontSize: 24, fontWeight: 500, margin: "0 0 12px" }}>{t("attentionTitle")}</h2>
         <div className="tcard" style={{ marginBottom: 26 }}>
-          {pendingHH + noAddr + noEmail + wished === 0 ? (
+          {pendingHH + noAddr + noEmail + wished + discrepancies.length + (lotC?.proposals.length ?? 0) === 0 ? (
             <div className="alertrow"><span style={{ color: "var(--ink2)", fontStyle: "italic" }}>{t("attentionNothing")}</span></div>
           ) : (
             <>
+              {discrepancies.map((d) => (
+                <div className="alertrow" key={d.id}>
+                  <span style={{ color: "var(--bronze)", fontWeight: 500 }}>{d.text}</span>
+                  <button onClick={() => setTab("exp")} style={{ border: 0, background: "none", color: "var(--hunter)", fontSize: 12, letterSpacing: ".14em", textTransform: "uppercase", fontWeight: 500, textDecoration: "underline", textUnderlineOffset: 3, cursor: "pointer" }}>{t("openCounts")}</button>
+                </div>
+              ))}
+              {(lotC?.proposals.length ?? 0) > 0 && (
+                <div className="alertrow"><span>{t("alertProposals", { n: lotC?.proposals.length ?? 0 })}</span></div>
+              )}
               {pendingHH > 0 && alertRow(t("alertPending", { n: pendingHH }), () => goAlert("list", "pending"))}
               {noAddr > 0 && alertRow(t("alertNoAddr", { n: noAddr }), () => goAlert("list", "noaddr"))}
               {noEmail > 0 && alertRow(t("alertNoEmail", { n: noEmail }), () => goAlert("list", "noemail"))}
@@ -235,6 +301,18 @@ export function CommunicationTabs({
             </>
           )}
         </div>
+
+        {lotC && (
+          <PenDesk
+            weddingId={weddingId}
+            penFrom={lotC.penFrom}
+            weddingDate={lotC.weddingDate}
+            proposals={lotC.proposals}
+            households={households}
+            onSaved={onSaved}
+            toast={toast}
+          />
+        )}
       </section>
 
       {/* ── GUEST LIST ── */}
@@ -283,7 +361,20 @@ export function CommunicationTabs({
       </section>
 
       {/* ── ACCOMMODATION ── */}
-      <section hidden={tab !== "acc"}>{accommodation}</section>
+      <section hidden={tab !== "acc"}>
+        {lotC && (
+          <PropertiesDesk
+            weddingId={weddingId}
+            properties={lotC.properties}
+            blocks={lotC.roomBlocks}
+            assignments={lotC.roomAssignments}
+            households={households}
+            onSaved={onSaved}
+            toast={toast}
+          />
+        )}
+        {accommodation}
+      </section>
 
       {/* ── EXPORTS ── */}
       <section hidden={tab !== "exp"}>
@@ -293,7 +384,18 @@ export function CommunicationTabs({
           persons={persons}
           statuses={statuses}
           toast={toast}
+          deltaReady={!!lotC}
         />
+        {lotC && (
+          <CountsDesk
+            weddingId={weddingId}
+            events={events}
+            counts={lotC.countsGiven}
+            currentCovers={coversMap}
+            onSaved={onSaved}
+            toast={toast}
+          />
+        )}
       </section>
 
       {/* ── drawer + scrim + toast ── */}

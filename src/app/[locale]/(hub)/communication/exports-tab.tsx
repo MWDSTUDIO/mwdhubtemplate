@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import type { Guest, GuestPerson, PersonEventStatus, WeddingEvent } from "@/lib/types";
 
@@ -26,13 +26,16 @@ export function ExportsTab({
   households,
   persons,
   statuses,
-  toast
+  toast,
+  deltaReady
 }: {
   events: WeddingEvent[];
   households: Guest[];
   persons: GuestPerson[];
   statuses: PersonEventStatus[];
   toast?: (m: string) => void;
+  /** 0025 run: snapshots exist, the delta can be offered. */
+  deltaReady?: boolean;
 }) {
   const t = useTranslations("communication.exports");
   const [format, setFormat] = useState<"xlsx" | "csv">("xlsx");
@@ -40,6 +43,15 @@ export function ExportsTab({
   const [customFields, setCustomFields] = useState<Set<string>>(new Set(["line", "email", "city", "adults", "children"]));
   const [customEv, setCustomEv] = useState("");
   const [customWished, setCustomWished] = useState(false);
+  // C1 · when did a file of each kind last leave the house?
+  const [lastLeft, setLastLeft] = useState<Record<string, string>>({});
+  useEffect(() => {
+    if (!deltaReady) return;
+    fetch("/api/exports?kind=raw&meta=1")
+      .then((r) => (r.ok ? r.json() : { last: {} }))
+      .then((d) => setLastLeft(d.last ?? {}))
+      .catch(() => {});
+  }, [deltaReady]);
 
   const live = useMemo(() => households.filter((g) => !g.archived), [households]);
   const st = useMemo(() => {
@@ -82,7 +94,9 @@ export function ExportsTab({
     const q = new URLSearchParams({ kind, format, ...params });
     window.location.href = `/api/exports?${q.toString()}`;
     toast?.(t("toastLeft"));
+    setLastLeft((prev) => ({ ...prev, [`${kind}${params.event ? ":" + params.event : ""}`]: new Date().toISOString() }));
   };
+  const lastFor = (kind: string, event?: string) => lastLeft[`${kind}${event ? ":" + event : ""}`];
 
   const warn = (names: string[], key: string) =>
     names.length > 0 && (
@@ -105,8 +119,18 @@ export function ExportsTab({
       {warning}
       <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
         <button className="btn sm" onClick={() => download(kind, count, params)}>{t("download")}</button>
+        {kind !== "template" && lastFor(kind, params.event) && (
+          <button className="btn ghost sm" onClick={() => download(kind, count, { ...params, delta: "1" })} title={t("deltaHint")}>
+            {t("downloadDelta")}
+          </button>
+        )}
         <span style={{ fontSize: 12.5, color: "var(--ink2)", fontVariantNumeric: "tabular-nums" }}>{t("rowCount", { n: count })}</span>
       </div>
+      {kind !== "template" && lastFor(kind, params.event) && (
+        <p style={{ fontSize: 12, color: "var(--ink2)", margin: 0 }}>
+          {t("lastLeft", { date: new Date(lastFor(kind, params.event) as string).toLocaleDateString(undefined, { month: "short", day: "numeric" }) })}
+        </p>
+      )}
     </div>
   );
 

@@ -451,6 +451,8 @@ export interface Correspondence {
   status: "draft" | "scheduled" | "sent";
   scheduled_label: string | null;
   sent_at: string | null;
+  /** Linked Timeline milestone — done means sent (migration 0025). */
+  milestone_id?: string | null;
 }
 
 export interface HospitalityItem {
@@ -476,5 +478,80 @@ export interface DocumentRow {
   mime?: string | null;
   /** 'house' — placed by the house · 'client' — transmitted by the couple (0012). */
   source?: string | null;
+  created_at?: string;
+}
+
+/* ── Lot C — the great house (migration 0025) ── */
+
+/** The figure given to a recipient, dated — the recorded count (C2). */
+export interface EventCountGiven {
+  id: string;
+  wedding_id: string;
+  event_id: string;
+  recipient: string;
+  figure: number;
+  given_on: string;
+  created_by: string;
+  created_at?: string;
+}
+
+/** A couple's edit awaiting the house's word once the pen is taken (C3). */
+export interface GuestChangeProposal {
+  id: string;
+  wedding_id: string;
+  household_id: string | null;
+  kind: "add" | "update" | "delete" | "rsvp";
+  payload: Record<string, unknown>;
+  status: "proposed" | "applied" | "dismissed";
+  created_by: string;
+  created_at: string;
+  decided_at?: string | null;
+}
+
+/** A house that sleeps guests (C4). */
+export interface Property {
+  id: string;
+  wedding_id: string;
+  name: string;
+  property_type: "hotel" | "villa" | "residence";
+  contact_name: string | null;
+  contact_phone: string | null;
+  contact_email: string | null;
+  check_in: string | null;
+  check_out: string | null;
+  notes: string | null;
+  sort: number;
+}
+
+export interface RoomBlock {
+  id: string;
+  wedding_id: string;
+  property_id: string;
+  name: string;
+  date_start: string | null;
+  date_end: string | null;
+  booking_deadline: string | null;
+  booking_code: string | null;
+  booking_link: string | null;
+  rate: number | null;
+  rate_currency: string;
+  allocated: number;
+  sort: number;
+}
+
+export type AssignmentStatus =
+  | "not_requested" | "requested" | "reserved" | "confirmed" | "paid" | "cancelled";
+
+export interface RoomAssignment {
+  id: string;
+  wedding_id: string;
+  block_id: string;
+  household_id: string;
+  room_type: string | null;
+  room_number: string | null;
+  date_start: string | null;
+  date_end: string | null;
+  status: AssignmentStatus;
+  confirmation_no: string | null;
   created_at?: string;
 }
