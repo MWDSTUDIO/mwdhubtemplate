@@ -125,7 +125,11 @@ export async function POST(request: Request) {
       vendor_category?: string | null; label?: string; summary?: string;
     } | null = null;
     let itemsLost = false;
+    // A missing key is a configuration fact, not a difficult document —
+    // it is said in so many words, never disguised (house rule: honest).
+    const keyMissing = !process.env.ANTHROPIC_API_KEY;
     try {
+      if (keyMissing) throw new Error("ANTHROPIC_API_KEY is not configured");
       // The full reading, on the most capable model, with room for a
       // long quote read whole (C2 — no line cap, ever).
       const first = await runAgentFull({
@@ -139,6 +143,7 @@ export async function POST(request: Request) {
       // The fallback reads without the line detail — and SAYS SO (C3):
       // a silent loss is a lie by omission.
       try {
+        if (keyMissing) throw new Error("ANTHROPIC_API_KEY is not configured");
         const second = await runAgentFull({
           weddingId, agent: "budget", maxTokens: 2500, documents, prompt: slimPrompt,
           model: HOUSE_MODEL, extraSystem: ANALYST_SYSTEM
@@ -162,9 +167,12 @@ export async function POST(request: Request) {
         await supabase.from("documents").insert({ wedding_id: weddingId, label: file.name, internal: true });
       }
       return NextResponse.json({
-        text:
-          "The document is filed in the register, but its reading resisted just now — " +
-          "it may be long or densely set. Drop it once more, or tell Madame what it holds and she will enter it by hand."
+        text: keyMissing
+          ? "The document is filed in the register, but the house's reading key is not set: " +
+            "add ANTHROPIC_API_KEY to the environment (Netlify and .env.local) and drop the paper once more — " +
+            "no reading can run without it."
+          : "The document is filed in the register, but its reading resisted just now — " +
+            "it may be long or densely set. Drop it once more, or tell Madame what it holds and she will enter it by hand."
       });
     }
 

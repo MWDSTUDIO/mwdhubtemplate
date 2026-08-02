@@ -8,7 +8,7 @@ import { decryptProfile, type BankingProfile } from "@/lib/banking";
 import { ibanGroups } from "@/lib/banking-checks";
 import { logActivity } from "@/lib/activity";
 import type { BudgetLine, BudgetLineItem, Payment } from "@/lib/types";
-import { VendorNoteEditor, BankingDesk, CopyLine, QuoteItems, VendorMeta } from "./vendor-client";
+import { VendorNoteEditor, BankingDesk, CopyLine, QuoteItems, VendorMeta, FicheDocDrop } from "./vendor-client";
 
 /**
  * The vendor sheet — what the couple pays this house, in full clarity:
@@ -34,7 +34,7 @@ export default async function VendorSheetPage({
   // Everything independent leaves in one burst (vitesse brief §8);
   // only the banking decrypt, which depends on the reveal flags,
   // waits behind it.
-  const [{ data: vendor }, { data: lines }, itemsRes, noteRes, paymentsRes, readingsRes, metaRes, envelopesRes] =
+  const [{ data: vendor }, { data: lines }, itemsRes, noteRes, paymentsRes, readingsRes, metaRes, envelopesRes, papersRes] =
     await Promise.all([
       supabase.from("vendors").select("*").eq("id", vendorId).eq("wedding_id", wedding.id).maybeSingle(),
       supabase.from("budget_lines").select("*").eq("vendor_id", vendorId).order("sort"),
@@ -59,6 +59,12 @@ export default async function VendorSheetPage({
         : Promise.resolve({ data: null }),
       session.isTeam
         ? supabase.from("budget_envelopes").select("id, label").eq("wedding_id", wedding.id).order("sort")
+        : Promise.resolve({ data: null }),
+      session.isTeam
+        ? supabase
+            .from("vendor_documents")
+            .select("id, type, label, storage_path")
+            .eq("vendor_id", vendorId)
         : Promise.resolve({ data: null })
     ]);
   if (!vendor) notFound();
@@ -130,6 +136,21 @@ export default async function VendorSheetPage({
 
   const money = (n: number | null | undefined, currency = "EUR") =>
     n == null ? "—" : format.number(n, { style: "currency", currency, maximumFractionDigits: 0 });
+
+  // The vendor's papers, with a one-hour signed door to each original.
+  const papers: { id: string; type: string; label: string; url: string | null }[] = [];
+  if (session.isTeam) {
+    for (const d of papersRes.data ?? []) {
+      let url: string | null = null;
+      if (d.storage_path?.startsWith("internal/")) {
+        const { data: signed } = await supabase.storage
+          .from("internal")
+          .createSignedUrl(d.storage_path.slice("internal/".length), 3600);
+        url = signed?.signedUrl ?? null;
+      }
+      papers.push({ id: d.id, type: d.type, label: d.label, url });
+    }
+  }
 
   const committed = vendorLines.reduce((s, l) => s + (l.committed ?? 0), 0);
   const paidTotal = vendorLines.reduce((s, l) => s + (l.paid ?? 0), 0);
@@ -212,6 +233,34 @@ export default async function VendorSheetPage({
         items={items}
         isTeam={session.isTeam}
       />
+
+      {/* The vendor's papers — dropped here, on the vendor itself:
+          a contract, a proposal, an invoice; the analyst reads whole
+          and the reading awaits Estelle's word in the Budget. */}
+      {session.isTeam && (
+        <div className="card team-only">
+          <div className="eyebrow">{t("papers.title")}</div>
+          {papers.length === 0 && (
+            <p style={{ fontSize: 13, color: "var(--ink2)", marginTop: 8 }}>{t("papers.empty")}</p>
+          )}
+          {papers.length > 0 && (
+            <ul style={{ margin: "8px 0 0", padding: 0, listStyle: "none" }}>
+              {papers.map((d) => (
+                <li key={d.id} style={{ display: "flex", gap: 10, alignItems: "baseline", padding: "5px 0", flexWrap: "wrap" }}>
+                  <span className="tag">{t(`papers.type_${d.type}`)}</span>
+                  <span style={{ flex: "1 1 200px" }}>{d.label}</span>
+                  {d.url && (
+                    <a className="addnote" href={d.url} target="_blank" rel="noreferrer">
+                      {t("papers.open")}
+                    </a>
+                  )}
+                </li>
+              ))}
+            </ul>
+          )}
+          <FicheDocDrop weddingId={wedding.id} vendorId={vendorId} />
+        </div>
+      )}
 
 
       {vendorPayments.length > 0 && (

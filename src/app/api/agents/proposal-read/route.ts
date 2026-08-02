@@ -20,6 +20,12 @@ export async function POST(request: Request) {
     if (!file || !READABLE.has(file.type)) {
       return NextResponse.json({ error: "unreadable file" }, { status: 400 });
     }
+    if (!process.env.ANTHROPIC_API_KEY) {
+      return NextResponse.json(
+        { error: "The house's reading key is not set (ANTHROPIC_API_KEY) — no reading can run without it." },
+        { status: 503 }
+      );
+    }
     const base64 = Buffer.from(await file.arrayBuffer()).toString("base64");
 
     // A neutral context: this may be a brand-new couple with no wedding row yet.

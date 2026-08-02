@@ -537,6 +537,17 @@
         "kept": "Gardé.",
         "needs0019": "Le métier est gardé ; le domicile budgétaire attend la migration 0019.",
         "hint": "Le métier nomme le savoir-faire ; la catégorie budgétaire est où vivent ses engagements — les nouvelles lignes en héritent."
+      },
+      "papers": {
+        "title": "Les papiers du prestataire",
+        "empty": "Aucun papier classé encore — déposez un devis, un contrat ou une facture ; la maison le lit en entier et la lecture attend votre mot au Budget.",
+        "drop": "Déposer un papier — devis, contrat, facture",
+        "reading": "La maison lit — chaque page, chaque ligne. Un long document prend son temps.",
+        "failed": "La lecture n'est pas passée — réessayez.",
+        "open": "Ouvrir",
+        "type_proposal": "Devis",
+        "type_contract": "Contrat",
+        "type_invoice": "Facture"
       }
     },
     "risks": {

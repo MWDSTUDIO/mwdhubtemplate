@@ -935,3 +935,61 @@ export function VendorMeta({
     </div>
   );
 }
+
+/* ══════════ The vendor's papers, dropped where the vendor lives ══════ */
+
+/**
+ * A contract, a proposal, an invoice — dropped on the vendor's own
+ * sheet (Estelle's ask: adding papers from the Vendors side was a
+ * detour). Same reading door as everywhere: the analyst reads whole,
+ * the reading lands as a proposal awaiting her word, the paper files
+ * itself under this vendor.
+ */
+export function FicheDocDrop({ weddingId, vendorId }: { weddingId: string; vendorId: string }) {
+  const t = useTranslations("budget.fiche.papers");
+  const [word, setWord] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const router = useRouter();
+
+  async function handle(file: File) {
+    if (busy) return;
+    setBusy(true);
+    setWord(t("reading"));
+    try {
+      const form = new FormData();
+      form.append("weddingId", weddingId);
+      form.append("vendorId", vendorId);
+      form.append("file", file);
+      const r = await fetch("/api/agents/document", { method: "POST", body: form });
+      const d = await r.json();
+      setWord(d.text ?? t("failed"));
+      router.refresh();
+    } catch {
+      setWord(t("failed"));
+    }
+    setBusy(false);
+  }
+
+  return (
+    <div style={{ marginTop: 10 }}>
+      <label className="btn ghost sm" style={{ cursor: "pointer" }}>
+        {busy ? "…" : t("drop")}
+        <input
+          type="file"
+          hidden
+          accept=".pdf,.png,.jpg,.jpeg,.webp"
+          onChange={(e) => {
+            const f = e.target.files?.[0];
+            if (f) void handle(f);
+            e.target.value = "";
+          }}
+        />
+      </label>
+      {word && (
+        <p className="ia-quote" style={{ marginTop: 10, fontSize: 13.5 }} aria-live="polite">
+          {word}
+        </p>
+      )}
+    </div>
+  );
+}

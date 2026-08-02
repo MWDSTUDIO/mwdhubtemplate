@@ -537,6 +537,17 @@
         "kept": "Kept.",
         "needs0019": "The métier is kept; the budget home awaits migration 0019.",
         "hint": "The métier names the craft; the budget category is where this vendor's engagements live — new lines inherit it."
+      },
+      "papers": {
+        "title": "The vendor's papers",
+        "empty": "No paper filed yet — drop a proposal, a contract or an invoice; the house reads it whole and the reading awaits your word in the Budget.",
+        "drop": "Drop a paper — proposal, contract, invoice",
+        "reading": "The house is reading — every page, every line. A long document takes its time.",
+        "failed": "The reading did not go through — try once more.",
+        "open": "Open",
+        "type_proposal": "Proposal",
+        "type_contract": "Contract",
+        "type_invoice": "Invoice"
       }
     },
     "risks": {

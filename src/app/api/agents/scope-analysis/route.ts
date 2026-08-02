@@ -21,6 +21,18 @@ export async function POST(request: Request) {
     const weddingId = String(form.get("weddingId"));
     const file = form.get("file") as File | null;
     if (!file || !weddingId) return NextResponse.json({ error: "missing file" }, { status: 400 });
+    if (!process.env.ANTHROPIC_API_KEY) {
+      // Said plainly, never disguised as a difficult document.
+      return NextResponse.json({
+        rows: [],
+        clientNote: "",
+        warnings: [],
+        tips: [],
+        text:
+          "The house's reading key is not set: add ANTHROPIC_API_KEY to the environment " +
+          "(Netlify and .env.local) — no reading can run without it."
+      });
+    }
 
     const buffer = Buffer.from(await file.arrayBuffer());
     const mediaType = READABLE.has(file.type) ? file.type : null;

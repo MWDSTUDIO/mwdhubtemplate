@@ -537,6 +537,17 @@
         "kept": "Conservado.",
         "needs0019": "El oficio queda conservado; el hogar presupuestario espera la migración 0019.",
         "hint": "El oficio nombra el saber hacer; la categoría presupuestaria es donde viven sus compromisos — las nuevas líneas la heredan."
+      },
+      "papers": {
+        "title": "Los papeles del proveedor",
+        "empty": "Ningún papel archivado aún — deposite un presupuesto, un contrato o una factura; la casa lo lee entero y la lectura espera su palabra en el Budget.",
+        "drop": "Depositar un papel — presupuesto, contrato, factura",
+        "reading": "La casa está leyendo — cada página, cada línea. Un documento largo toma su tiempo.",
+        "failed": "La lectura no pasó — inténtelo de nuevo.",
+        "open": "Abrir",
+        "type_proposal": "Presupuesto",
+        "type_contract": "Contrato",
+        "type_invoice": "Factura"
       }
     },
     "risks": {
