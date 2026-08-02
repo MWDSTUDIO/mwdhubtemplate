@@ -1,10 +1,14 @@
 import { getTranslations, setRequestLocale } from "next-intl/server";
-import { Link } from "@/i18n/navigation";
 import { requireHouseSession } from "@/lib/session";
 import { createClient } from "@/lib/supabase/server";
-import type { Vendor, VendorDocument } from "@/lib/types";
-import { AddVendor, DocChip, OutreachComposer, StageSelect, VendorDocDrop } from "./vendors-client";
+import type { Vendor, VendorContact, VendorDocument, VendorRegistry } from "@/lib/types";
+import { AddVendor, OutreachComposer, VendorDocDrop, VendorsTable, type VendorRow } from "./vendors-client";
 
+/**
+ * Vendors — who they are, where the relationship stands, what papers
+ * they carry (PRD Vendors). One vendor record, one document record;
+ * the figures stay Budget's and appear here read-only.
+ */
 export default async function VendorsPage({
   params
 }: {
@@ -18,23 +22,50 @@ export default async function VendorsPage({
   if (!wedding) return null;
 
   const supabase = await createClient();
-  const [{ data: vendors }, { data: docs }] = await Promise.all([
+  const [{ data: vendors }, { data: docs }, { data: lines }, registryRes, contactsRes] = await Promise.all([
     supabase.from("vendors").select("*").eq("wedding_id", wedding.id).order("created_at"),
-    supabase.from("vendor_documents").select("*").eq("wedding_id", wedding.id)
+    supabase.from("vendor_documents").select("*").eq("wedding_id", wedding.id),
+    session.isTeam
+      ? supabase.from("budget_lines").select("vendor_id, committed, paid, parent_line_id").eq("wedding_id", wedding.id)
+      : Promise.resolve({ data: [] }),
+    // Pre-0026 these tables are absent — the page keeps its manners.
+    session.isTeam ? supabase.from("vendor_registry").select("*") : Promise.resolve({ data: [], error: null }),
+    session.isTeam ? supabase.from("vendor_contacts").select("*") : Promise.resolve({ data: [], error: null })
   ]);
 
   const allVendors = (vendors ?? []) as Vendor[];
-  const docsFor = (id: string) =>
-    ((docs ?? []) as VendorDocument[]).filter((d) => d.vendor_id === id);
+  const allDocs = (docs ?? []) as VendorDocument[];
+  const registry = ((registryRes as { data: unknown }).data ?? []) as VendorRegistry[];
+  const contacts = ((contactsRes as { data: unknown }).data ?? []) as VendorContact[];
 
-  const stageTag = (stage: Vendor["stage"]) =>
-    stage === "contracted" ? (
-      <span className="tag ok">{t("stages.contracted")}</span>
-    ) : stage === "proposal" ? (
-      <span className="tag wait">{t("stages.proposalReceived")}</span>
-    ) : (
-      <span className="tag">{t(`stages.${stage}`)}</span>
-    );
+  // Read-only financial summary, computed here, server-side, from
+  // Budget's own rows — never edited from Vendors.
+  const finance = new Map<string, { committed: number; paid: number }>();
+  for (const l of (lines ?? []) as { vendor_id: string | null; committed: number | null; paid: number | null }[]) {
+    if (!l.vendor_id) continue;
+    const f = finance.get(l.vendor_id) ?? { committed: 0, paid: 0 };
+    f.committed += Number(l.committed ?? 0);
+    f.paid += Number(l.paid ?? 0);
+    finance.set(l.vendor_id, f);
+  }
+
+  const mainContact = (v: Vendor) => {
+    const reg = registry.find((r) => r.id === v.registry_id);
+    const c = contacts
+      .filter((x) => x.registry_id === v.registry_id)
+      .sort((a, b) => (a.contact_role === "main" ? -1 : 1) - (b.contact_role === "main" ? -1 : 1))[0];
+    return c ? c.name : reg?.email ?? null;
+  };
+
+  const rows: VendorRow[] = allVendors.map((v) => ({
+    vendor: v,
+    contact: mainContact(v),
+    docs: allDocs.filter((d) => d.vendor_id === v.id && !d.archived).length,
+    committed: finance.get(v.id)?.committed ?? null,
+    paid: finance.get(v.id)?.paid ?? null,
+    openActions: 0,
+    lastActivity: v.last_activity_at ?? null
+  }));
 
   return (
     <section className="sheet">
@@ -43,77 +74,25 @@ export default async function VendorsPage({
       <p className="lead">{t("lead")}</p>
 
       <div className="card">
-        <div style={{ overflowX: "auto" }}>
-          <table className="sheet-table">
-            <thead>
-              <tr>
-                <th>{t("vendor")}</th>
-                <th>{t("category")}</th>
-                <th>{t("status")}</th>
-                <th>{t("documents")}</th>
-                {session.isTeam && <th className="team-only">{t("pipeline")}</th>}
-              </tr>
-            </thead>
-            <tbody>
-              {allVendors.map((vendor) => (
-                <tr key={vendor.id}>
-                  <td>
-                    {/* The name opens the vendor's own sheet — the card,
-                        the quote's lines, the papers, the departure. */}
-                    <Link
-                      href={`/budget/vendor/${vendor.id}`}
-                      style={{ textDecoration: "underline", textUnderlineOffset: 3, textDecorationColor: "var(--champagne)" }}
-                    >
-                      {vendor.name}
-                    </Link>
-                  </td>
-                  <td>{vendor.category}</td>
-                  <td>{stageTag(vendor.stage)}</td>
-                  <td>
-                    {docsFor(vendor.id).length === 0 ? (
-                      <span style={{ fontSize: 12, color: "var(--ink2)" }}>—</span>
-                    ) : (
-                      docsFor(vendor.id).map((doc) =>
-                        session.isTeam ? (
-                          <DocChip
-                            key={doc.id}
-                            docId={doc.id}
-                            typeLabel={t(`docTypes.${doc.type}`)}
-                            label={doc.label}
-                            clientVisible={doc.client_visible}
-                          />
-                        ) : (
-                          <span key={doc.id} className="doc">
-                            {t(`docTypes.${doc.type}`)} <em>{doc.label}</em>
-                          </span>
-                        )
-                      )
-                    )}
-                  </td>
-                  {session.isTeam && (
-                    <td className="team-only">
-                      <StageSelect vendor={vendor} />
-                    </td>
-                  )}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        {session.isTeam && <AddVendor weddingId={wedding.id} />}
+        <VendorsTable
+          weddingId={wedding.id}
+          rows={rows}
+          registrySnapshot={registry.map((r) => ({ id: r.id, legal_name: r.legal_name, trading_name: r.trading_name, email: r.email }))}
+          isTeam={session.isTeam}
+        />
+        {session.isTeam && (
+          <div id="vendor-add">
+            <AddVendor weddingId={wedding.id} />
+          </div>
+        )}
       </div>
 
       {session.isTeam && (
-        <div className="ia team-only">
-          <div className="eyebrow">{t("reading.title")}</div>
-          <p style={{ marginTop: 8, fontSize: 13.5 }}>{t("reading.blurb")}</p>
-        </div>
-      )}
-
-      {session.isTeam && (
         <>
-          <VendorDocDrop weddingId={wedding.id} vendors={allVendors} />
-          <OutreachComposer weddingId={wedding.id} vendors={allVendors} />
+          <div id="vendor-drop">
+            <VendorDocDrop weddingId={wedding.id} vendors={allVendors.filter((v) => !v.archived)} />
+          </div>
+          <OutreachComposer weddingId={wedding.id} vendors={allVendors.filter((v) => !v.archived)} />
         </>
       )}
     </section>

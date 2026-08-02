@@ -2,13 +2,20 @@
 
 import { useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
-import { useRouter } from "@/i18n/navigation";
+import { Link, useRouter } from "@/i18n/navigation";
+import dynamic from "next/dynamic";
 import type { Vendor } from "@/lib/types";
-import { addVendor, deleteVendorDocument, draftOutreach, sendOutreach, setVendorStage } from "@/app/actions/vendors";
+import {
+  addVendorFull, deleteVendorDocument, draftOutreach, findVendorDuplicates,
+  sendOutreach, setVendorStage
+} from "@/app/actions/vendors";
 import { publishVendorDocToCouple } from "@/app/actions/documents";
 import { Dictate } from "@/components/Dictate";
 
-const STAGES = ["scouted", "contacted", "proposal", "contracted"] as const;
+const STAGES = [
+  "scouted", "contacted", "proposal_requested", "proposal_received",
+  "in_review", "shortlisted", "selected", "contracted", "completed", "archived"
+] as const;
 const TEMPLATES = ["availability", "proposal", "negotiation", "confirmation"] as const;
 
 export function StageSelect({ vendor }: { vendor: Vendor }) {
@@ -24,6 +31,7 @@ export function StageSelect({ vendor }: { vendor: Vendor }) {
       style={{ padding: "6px 8px", border: "1px solid var(--line)", background: "#fff", fontSize: 12 }}
       aria-label={t("label")}
     >
+      {vendor.stage === "proposal" && <option value="proposal">{t("proposal")}</option>}
       {STAGES.map((s) => (
         <option key={s} value={s}>
           {t(s)}
@@ -37,29 +45,69 @@ export function AddVendor({ weddingId }: { weddingId: string }) {
   const t = useTranslations("vendors.add");
   const [name, setName] = useState("");
   const [category, setCategory] = useState("");
+  const [email, setEmail] = useState("");
+  const [dupes, setDupes] = useState<null | { id: string; legal_name: string; trading_name: string | null; category: string; city: string | null; country: string | null }[]>(null);
   const [pending, startTransition] = useTransition();
+  const router = useRouter();
+
+  const create = (registryId?: string | null) =>
+    startTransition(async () => {
+      await addVendorFull(weddingId, { name: name.trim(), category: category.trim(), email: email.trim() || undefined }, registryId ?? null);
+      setName(""); setCategory(""); setEmail(""); setDupes(null);
+      router.refresh();
+    });
+
+  const check = () =>
+    startTransition(async () => {
+      const r = await findVendorDuplicates({ name: name.trim(), email: email.trim() || undefined });
+      if (r.matches.length) setDupes(r.matches);
+      else create();
+    });
+
   return (
-    <div className="assist team-only" style={{ marginTop: 16 }}>
-      <input value={name} onChange={(e) => setName(e.target.value)} placeholder={t("name")} />
-      <input
-        value={category}
-        onChange={(e) => setCategory(e.target.value)}
-        placeholder={t("category")}
-        style={{ flex: "0 1 180px", minWidth: 140 }}
-      />
-      <button
-        className="btn ghost"
-        disabled={pending || !name.trim() || !category.trim()}
-        onClick={() =>
-          startTransition(async () => {
-            await addVendor(weddingId, name.trim(), category.trim());
-            setName("");
-            setCategory("");
-          })
-        }
-      >
-        {t("go")}
-      </button>
+    <div className="team-only" style={{ marginTop: 16 }}>
+      <div className="assist">
+        <input value={name} onChange={(e) => setName(e.target.value)} placeholder={t("name")} />
+        <input
+          value={category}
+          onChange={(e) => setCategory(e.target.value)}
+          placeholder={t("category")}
+          style={{ flex: "0 1 160px", minWidth: 130 }}
+        />
+        <input
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder={t("email")}
+          style={{ flex: "0 1 200px", minWidth: 150 }}
+        />
+        <button
+          className="btn ghost"
+          disabled={pending || !name.trim() || !category.trim()}
+          onClick={check}
+        >
+          {pending ? "…" : t("go")}
+        </button>
+      </div>
+      {/* Possible existing vendor found — never a silent duplicate. */}
+      {dupes && (
+        <div role="alertdialog" aria-label={t("dupTitle")} style={{ marginTop: 10, padding: "12px 14px", border: "1px solid var(--bronze)", background: "var(--parchment)" }}>
+          <p style={{ margin: "0 0 8px", fontSize: 13.5, color: "var(--bronze)", fontWeight: 500 }}>{t("dupTitle")}</p>
+          {dupes.map((d) => (
+            <div key={d.id} style={{ display: "flex", gap: 12, alignItems: "baseline", flexWrap: "wrap", padding: "5px 0" }}>
+              <span style={{ fontSize: 13.5 }}>
+                {d.trading_name || d.legal_name}
+                <span style={{ color: "var(--ink2)", fontSize: 12.5 }}> · {d.category}{d.city ? ` · ${d.city}` : ""}{d.country ? `, ${d.country}` : ""}</span>
+              </span>
+              <button className="addnote" disabled={pending} onClick={() => create(d.id)}>{t("dupLink")}</button>
+            </div>
+          ))}
+          <div style={{ display: "flex", gap: 10, marginTop: 8 }}>
+            <button className="btn ghost sm" disabled={pending} onClick={() => create(null)}>{t("dupCreateAnyway")}</button>
+            <button className="addnote" onClick={() => setDupes(null)}>{t("dupCancel")}</button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -302,3 +350,181 @@ export function DocChip({
     </span>
   );
 }
+
+/* ══════════ The vendors table under its action bar (PRD §4) ═══════ */
+
+export interface VendorRow {
+  vendor: Vendor;
+  contact: string | null;
+  docs: number;
+  committed: number | null;
+  paid: number | null;
+  openActions: number;
+  lastActivity: string | null;
+}
+
+export function VendorsBar({
+  onToggleFilters,
+  filtersOn,
+  onImport,
+  exportBase
+}: {
+  onToggleFilters: () => void;
+  filtersOn: boolean;
+  onImport: () => void;
+  exportBase: string;
+}) {
+  const t = useTranslations("vendors.bar");
+  return (
+    <div className="toolrow team-only" style={{ border: "1px solid var(--line)", borderBottom: 0, background: "var(--white, #fffdf9)" }}>
+      <a className="btn ghost sm" href="#vendor-add" style={{ textDecoration: "none" }}>{t("add")}</a>
+      <button className="btn ghost sm" onClick={onImport}>{t("import")}</button>
+      <a className="btn ghost sm" href="#vendor-drop" style={{ textDecoration: "none" }}>{t("upload")}</a>
+      <details style={{ position: "relative" }}>
+        <summary className="btn ghost sm" style={{ listStyle: "none", cursor: "pointer" }}>{t("export")}</summary>
+        <div style={{ position: "absolute", zIndex: 20, background: "var(--white, #fffdf9)", border: "1px solid var(--line)", padding: 8, display: "grid", gap: 6, minWidth: 220 }}>
+          {(["wedding", "all", "contacts", "history"] as const).map((k) => (
+            <a key={k} className="addnote" href={`${exportBase}&kind=${k}`} style={{ textDecoration: "none" }}>
+              {t(`kind_${k}`)}
+            </a>
+          ))}
+          <a className="addnote" href={`${exportBase.replace("format=xlsx", "format=csv")}&kind=wedding`} style={{ textDecoration: "none" }}>
+            {t("asCsv")}
+          </a>
+        </div>
+      </details>
+      <button className="chip" aria-pressed={filtersOn} onClick={onToggleFilters}>{t("filters")}</button>
+    </div>
+  );
+}
+
+export function VendorsTable({
+  weddingId,
+  rows,
+  registrySnapshot,
+  isTeam
+}: {
+  weddingId: string;
+  rows: VendorRow[];
+  registrySnapshot: { id: string; legal_name: string; trading_name: string | null; email: string | null }[];
+  isTeam: boolean;
+}) {
+  const currency = (n: number) =>
+    new Intl.NumberFormat(undefined, { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(n);
+  const t = useTranslations("vendors");
+  const [filtersOn, setFiltersOn] = useState(false);
+  const [q, setQ] = useState("");
+  const [cat, setCat] = useState("");
+  const [stage, setStage] = useState("");
+  const [showArchived, setShowArchived] = useState(false);
+  const [importing, setImporting] = useState(false);
+
+  const cats = [...new Set(rows.map((r) => r.vendor.category).filter(Boolean))].sort();
+  const shown = rows.filter((r) => {
+    if (!showArchived && r.vendor.archived) return false;
+    if (q && !r.vendor.name.toLowerCase().includes(q.toLowerCase())) return false;
+    if (cat && r.vendor.category !== cat) return false;
+    if (stage && r.vendor.stage !== stage) return false;
+    return true;
+  });
+
+  const stageTag = (s: Vendor["stage"]) =>
+    s === "contracted" || s === "completed" ? (
+      <span className="tag ok">{t(`stages.${s === "contracted" ? "contracted" : "completed"}`)}</span>
+    ) : s === "proposal" || s === "proposal_received" ? (
+      <span className="tag wait">{t("stages.proposalReceived")}</span>
+    ) : (
+      <span className="tag">{t(`stages.${s}`)}</span>
+    );
+
+  return (
+    <>
+      {isTeam && (
+        <VendorsBar
+          filtersOn={filtersOn}
+          onToggleFilters={() => setFiltersOn(!filtersOn)}
+          onImport={() => setImporting(true)}
+          exportBase="/api/vendor-exports?format=xlsx"
+        />
+      )}
+      {isTeam && filtersOn && (
+        <div className="toolrow team-only" style={{ border: "1px solid var(--line)", borderBottom: 0, background: "var(--parchment)" }}>
+          <input type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder={t("bar.search")} aria-label={t("bar.search")} style={{ minWidth: 170 }} />
+          <select value={cat} onChange={(e) => setCat(e.target.value)} aria-label={t("category")} style={{ padding: "5px 7px", border: "1px solid var(--line)", background: "#fff", fontSize: 12.5 }}>
+            <option value="">{t("bar.everyCategory")}</option>
+            {cats.map((c) => <option key={c} value={c}>{c}</option>)}
+          </select>
+          <select value={stage} onChange={(e) => setStage(e.target.value)} aria-label={t("pipeline")} style={{ padding: "5px 7px", border: "1px solid var(--line)", background: "#fff", fontSize: 12.5 }}>
+            <option value="">{t("bar.everyStage")}</option>
+            {STAGES.map((x) => <option key={x} value={x}>{t(`stages.${x}`)}</option>)}
+          </select>
+          <label style={{ display: "inline-flex", gap: 6, alignItems: "center", fontSize: 12.5 }}>
+            <input type="checkbox" checked={showArchived} onChange={(e) => setShowArchived(e.target.checked)} />
+            {t("bar.showArchived")}
+          </label>
+          <span style={{ flex: 1 }} />
+          <span style={{ fontSize: 12.5, color: "var(--ink2)" }}>{t("bar.shown", { n: shown.length })}</span>
+        </div>
+      )}
+      <div style={{ overflowX: "auto", border: isTeam ? "1px solid var(--line)" : undefined }}>
+        <table className="sheet-table">
+          <thead>
+            <tr>
+              <th>{t("vendor")}</th>
+              <th>{t("category")}</th>
+              <th>{t("status")}</th>
+              {isTeam && <th className="team-only">{t("cols.contact")}</th>}
+              <th>{t("documents")}</th>
+              {isTeam && <th className="team-only num">{t("cols.finance")}</th>}
+              {isTeam && <th className="team-only">{t("cols.lastActivity")}</th>}
+              {isTeam && <th className="team-only">{t("pipeline")}</th>}
+            </tr>
+          </thead>
+          <tbody>
+            {shown.map(({ vendor, contact, docs, committed, paid, lastActivity }) => (
+              <tr key={vendor.id} style={vendor.archived ? { opacity: 0.55 } : undefined}>
+                <td>
+                  <Link
+                    href={isTeam ? `/vendors/${vendor.id}` : `/budget/vendor/${vendor.id}`}
+                    style={{ textDecoration: "underline", textUnderlineOffset: 3, textDecorationColor: "var(--champagne)" }}
+                  >
+                    {vendor.name}
+                  </Link>
+                  {vendor.archived && <span className="tag int" style={{ marginLeft: 8 }}>{t("bar.archivedTag")}</span>}
+                </td>
+                <td>{vendor.category}</td>
+                <td>{stageTag(vendor.stage)}</td>
+                {isTeam && <td className="team-only" style={{ fontSize: 12.5 }}>{contact ?? <span style={{ color: "var(--line)" }}>—</span>}</td>}
+                <td style={{ fontSize: 12.5 }}>
+                  {docs === 0 ? <span style={{ color: "var(--ink2)" }}>—</span> : t("cols.docsCount", { n: docs })}
+                </td>
+                {isTeam && (
+                  <td className="team-only num" style={{ fontSize: 12.5, fontVariantNumeric: "tabular-nums" }}>
+                    {committed != null && committed > 0
+                      ? t("cols.finSummary", { committed: currency(committed), paid: currency(paid ?? 0) })
+                      : <span style={{ color: "var(--line)" }}>—</span>}
+                  </td>
+                )}
+                {isTeam && (
+                  <td className="team-only" style={{ fontSize: 12, color: "var(--ink2)" }}>
+                    {lastActivity ? lastActivity.slice(0, 10) : "—"}
+                  </td>
+                )}
+                {isTeam && (
+                  <td className="team-only">
+                    <StageSelect vendor={vendor} />
+                  </td>
+                )}
+              </tr>
+            ))}
+            {shown.length === 0 && (
+              <tr><td colSpan={isTeam ? 8 : 4} style={{ fontStyle: "italic", color: "var(--ink2)" }}>{t("bar.empty")}</td></tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+      {importing && <VendorImportLazy weddingId={weddingId} registry={registrySnapshot} onClose={() => setImporting(false)} />}
+    </>
+  );
+}
+const VendorImportLazy = dynamic(() => import("./vendor-import").then((m) => m.VendorImport), { ssr: false });

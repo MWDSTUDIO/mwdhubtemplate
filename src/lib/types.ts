@@ -147,7 +147,10 @@ export interface SubBoard {
   content: Record<string, unknown>;
 }
 
-export type VendorStage = "scouted" | "contacted" | "proposal" | "contracted";
+export type VendorStage =
+  | "scouted" | "contacted" | "proposal" | "proposal_requested"
+  | "proposal_received" | "in_review" | "shortlisted" | "selected"
+  | "contracted" | "completed" | "archived";
 
 export interface Vendor {
   id: string;
@@ -158,17 +161,76 @@ export interface Vendor {
   client_visible: boolean;
   /** The vendor's budget home — the category its new lines inherit (0019). */
   envelope_id?: string | null;
+  /** The wedding relationship file (migration 0026). */
+  registry_id?: string | null;
+  role?: string | null;
+  lead_planner?: string | null;
+  contacted_on?: string | null;
+  proposal_requested_on?: string | null;
+  proposal_received_on?: string | null;
+  selected_on?: string | null;
+  contracted_on?: string | null;
+  completed?: boolean;
+  archived?: boolean;
+  notes_internal?: string | null;
+  last_activity_at?: string;
+}
+
+/** The permanent profile a vendor keeps across weddings (0026). */
+export interface VendorRegistry {
+  id: string;
+  legal_name: string;
+  trading_name: string | null;
+  category: string;
+  country: string | null;
+  city: string | null;
+  languages: string[];
+  website: string | null;
+  instagram: string | null;
+  portfolio_url: string | null;
+  email: string | null;
+  phone: string | null;
+  whatsapp: string | null;
+  timezone: string | null;
+  vat_number: string | null;
+  rating: number | null;
+  tags: string[];
+  notes_internal: string | null;
+}
+
+export type VendorContactRole = "main" | "sales" | "production" | "accounts" | "emergency" | "other";
+
+export interface VendorContact {
+  id: string;
+  registry_id: string;
+  contact_role: VendorContactRole;
+  name: string;
+  email: string | null;
+  phone: string | null;
+  whatsapp: string | null;
+  notes: string | null;
+  sort: number;
+}
+
+export interface VendorNote {
+  id: string;
+  wedding_id: string;
+  vendor_id: string;
+  author: string;
+  body: string;
+  created_at: string;
 }
 
 export interface VendorDocument {
   id: string;
   vendor_id: string;
   wedding_id: string;
-  type: "proposal" | "contract" | "invoice";
+  type: "proposal" | "contract" | "invoice" | "insurance" | "licence" | "bank_details" | "portfolio" | "other";
   label: string;
   storage_path: string | null;
   extraction: Record<string, unknown> | null;
   client_visible: boolean;
+  archived?: boolean;
 }
 
 export interface BudgetEnvelope {
