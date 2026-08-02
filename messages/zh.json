@@ -549,7 +549,10 @@
         "type_proposal": "报价",
         "type_contract": "合同",
         "type_invoice": "发票"
-      }
+      },
+      "itemsCategory": "该项自有的类别——未设则随其条目",
+      "itemsFollows": "随条目",
+      "itemsCat0020": "该项已保留；其自有类别尚待迁移 0020。"
     },
     "risks": {
       "title": "储备与风险",
@@ -688,7 +691,9 @@
       "splitAmountPh": "金额",
       "splitGo": "分拨",
       "splitCancel": "保持原样",
-      "splitTooMuch": "至多 {amount}——该行的承诺额。"
+      "splitTooMuch": "至多 {amount}——该行的承诺额。",
+      "lineCategory": "类别",
+      "itemCounted": "→ 计入{label}"
     },
     "bar": {
       "aria": "预算现况",

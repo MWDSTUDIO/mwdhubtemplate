@@ -22,7 +22,7 @@ import { PaymentsCalendar, RiskBuffer } from "./mgmt-client";
 import { RemindersDesk } from "./reminders-client";
 import { BudgetViews } from "./ledger-client";
 import { ReadingsDesk, type ReadingPayload, type ReadingRow } from "./readings-client";
-import { barModel, pctOfBudget, coherence } from "@/lib/budget-math";
+import { barModel, pctOfBudget, coherence, envelopeCommitted } from "@/lib/budget-math";
 import { lineEurValues, sumMoney } from "@/lib/money";
 
 export default async function BudgetPage({
@@ -119,19 +119,24 @@ export default async function BudgetPage({
   const remaining = committed - paid;
   const total = wedding.budget_total ?? 0;
 
-  const committedByEnvelope: Record<string, number> = {};
-  for (const { l, v } of eurLines) {
-    if (l.envelope_id && v.converted) {
-      committedByEnvelope[l.envelope_id] = (committedByEnvelope[l.envelope_id] ?? 0) + v.committedEur;
-    }
-  }
-  // The homeless committed (axe 2): counted once, shown everywhere the
-  // envelopes speak — the bar and the scope may never disagree again.
-  const beyondCommitted = sumMoney(
-    eurLines
-      .filter(({ l, v }) => !l.parent_line_id && !l.envelope_id && v.converted)
-      .map(({ v }) => v.committedEur)
+  // One computation for every surface (0020): lines in their category,
+  // a post carrying its own category moving its TTC there.
+  const envTotals = envelopeCommitted(
+    eurLines.map(({ l, v }) => ({
+      id: l.id,
+      envelope_id: l.envelope_id ?? null,
+      parent_line_id: l.parent_line_id ?? null,
+      committedEur: v.committedEur,
+      converted: v.converted
+    })),
+    items.map((it) => ({
+      budget_line_id: it.budget_line_id,
+      envelope_id: (it as { envelope_id?: string | null }).envelope_id ?? null,
+      ttc: Number(it.total_ttc ?? it.total_ht ?? 0)
+    }))
   );
+  const committedByEnvelope = envTotals.byEnvelope;
+  const beyondCommitted = envTotals.beyond;
 
   const nextByLine: Record<string, string> = {};
   for (const p of allPayments) {

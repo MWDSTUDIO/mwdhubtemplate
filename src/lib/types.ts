@@ -208,6 +208,8 @@ export interface BudgetLineItem {
   wedding_id: string;
   budget_line_id: string;
   event_label: string | null;
+  /** The post's own category (0020) — null follows the line. */
+  envelope_id?: string | null;
   label: string;
   qty: number | null;
   unit_price: number | null;

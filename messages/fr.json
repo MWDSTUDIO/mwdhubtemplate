@@ -549,7 +549,10 @@
         "type_proposal": "Devis",
         "type_contract": "Contrat",
         "type_invoice": "Facture"
-      }
+      },
+      "itemsCategory": "La catégorie propre du poste — suit la ligne sauf réglage",
+      "itemsFollows": "Suit la ligne",
+      "itemsCat0020": "Le poste est gardé ; sa catégorie propre attend la migration 0020."
     },
     "risks": {
       "title": "Réserve & risques",
@@ -688,7 +691,9 @@
       "splitAmountPh": "Montant",
       "splitGo": "Ventiler",
       "splitCancel": "Laisser ainsi",
-      "splitTooMuch": "Au plus {amount} — l'engagé de la ligne."
+      "splitTooMuch": "Au plus {amount} — l'engagé de la ligne.",
+      "lineCategory": "Catégorie",
+      "itemCounted": "→ compte dans {label}"
     },
     "bar": {
       "aria": "Où en est le budget",

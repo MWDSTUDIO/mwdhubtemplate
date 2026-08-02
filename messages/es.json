@@ -549,7 +549,10 @@
         "type_proposal": "Presupuesto",
         "type_contract": "Contrato",
         "type_invoice": "Factura"
-      }
+      },
+      "itemsCategory": "La categoría propia de la partida — sigue la línea salvo ajuste",
+      "itemsFollows": "Sigue la línea",
+      "itemsCat0020": "La partida queda guardada; su categoría propia espera la migración 0020."
     },
     "risks": {
       "title": "Reserva y riesgos",
@@ -688,7 +691,9 @@
       "splitAmountPh": "Importe",
       "splitGo": "Repartir",
       "splitCancel": "Dejar así",
-      "splitTooMuch": "Como máximo {amount} — lo comprometido de la línea."
+      "splitTooMuch": "Como máximo {amount} — lo comprometido de la línea.",
+      "lineCategory": "Categoría",
+      "itemCounted": "→ cuenta en {label}"
     },
     "bar": {
       "aria": "Dónde está el presupuesto",

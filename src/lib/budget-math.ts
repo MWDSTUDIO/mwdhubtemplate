@@ -77,3 +77,71 @@ export function coherence(figures: BudgetFigures, envelopeSum: number) {
     envelopeGap: envelopeSum - figures.committed
   };
 }
+
+/* ══════════ Per-envelope committed, item overrides included (0020) ══ */
+
+export interface EnvLineInput {
+  id: string;
+  envelope_id: string | null;
+  parent_line_id?: string | null;
+  /** EUR value per the fx rules (lineEurValues). */
+  committedEur: number;
+  converted: boolean;
+}
+
+export interface EnvItemInput {
+  budget_line_id: string;
+  /** Null — the default — follows the line's category (0020). */
+  envelope_id?: string | null;
+  ttc: number;
+}
+
+/**
+ * One computation for every surface (scope, distribution, House Book):
+ * lines count in their category; a post carrying its own category
+ * (0020) moves its TTC there, the line keeping the rest. When the
+ * moved posts exceed the line's committed (a divergence the ledger
+ * already names), they scale down so the identity
+ * Σ envelopes + beyond = Σ committed holds without exception.
+ * Unconverted foreign lines stand apart entirely, overrides included.
+ */
+export function envelopeCommitted(
+  lines: EnvLineInput[],
+  items: EnvItemInput[]
+): { byEnvelope: Record<string, number>; beyond: number } {
+  const byEnvelope: Record<string, number> = {};
+  let beyond = 0;
+  const overridesByLine = new Map<string, EnvItemInput[]>();
+  for (const it of items) {
+    if (it.envelope_id) {
+      overridesByLine.set(it.budget_line_id, [
+        ...(overridesByLine.get(it.budget_line_id) ?? []),
+        it
+      ]);
+    }
+  }
+
+  for (const l of lines) {
+    if (!l.converted) continue;
+    const isBeyondSource = !l.envelope_id && !l.parent_line_id;
+    if (!l.envelope_id && !isBeyondSource) continue; // homeless child: as before
+    const overrides = (overridesByLine.get(l.id) ?? []).filter(
+      (it) => it.envelope_id !== l.envelope_id
+    );
+    const avail = Math.max(0, l.committedEur);
+    const movedTotal = overrides.reduce((s, it) => s + Math.max(0, it.ttc), 0);
+    const scale = movedTotal > avail && movedTotal > 0 ? avail / movedTotal : 1;
+    let rest = l.committedEur;
+    for (const it of overrides) {
+      const amt = Math.max(0, it.ttc) * scale;
+      byEnvelope[it.envelope_id!] = (byEnvelope[it.envelope_id!] ?? 0) + amt;
+      rest -= amt;
+    }
+    if (l.envelope_id) {
+      byEnvelope[l.envelope_id] = (byEnvelope[l.envelope_id] ?? 0) + rest;
+    } else {
+      beyond += rest;
+    }
+  }
+  return { byEnvelope, beyond };
+}

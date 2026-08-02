@@ -549,7 +549,10 @@
         "type_proposal": "見積",
         "type_contract": "契約",
         "type_invoice": "請求"
-      }
+      },
+      "itemsCategory": "この項目自身の区分——定めなければ行に従います",
+      "itemsFollows": "行に従う",
+      "itemsCat0020": "項目は留めました。固有の区分はマイグレーション 0020 を待っております。"
     },
     "risks": {
       "title": "備えと危うさ",
@@ -688,7 +691,9 @@
       "splitAmountPh": "金額",
       "splitGo": "振り分ける",
       "splitCancel": "そのままに",
-      "splitTooMuch": "多くとも {amount}——この行の約定額まで。"
+      "splitTooMuch": "多くとも {amount}——この行の約定額まで。",
+      "lineCategory": "区分",
+      "itemCounted": "→ {label} に計上"
     },
     "bar": {
       "aria": "ご予算の現在地",

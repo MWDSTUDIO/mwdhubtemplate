@@ -612,6 +612,8 @@ interface ItemDraft {
   vat: string;
   ttc: string;
   lineId: string;
+  /** "" = the post follows its line's category (0020). */
+  env: string;
 }
 
 const numOrNull = (s: string): number | null => {
@@ -630,12 +632,14 @@ export function QuoteItems({
   weddingId,
   lines,
   items,
-  isTeam
+  isTeam,
+  envelopes
 }: {
   weddingId: string;
   lines: { id: string; label: string }[];
   items: BudgetLineItem[];
   isTeam: boolean;
+  envelopes: { id: string; label: string }[];
 }) {
   const t = useTranslations("budget.fiche");
   const tc = useTranslations("common");
@@ -644,6 +648,7 @@ export function QuoteItems({
   const [editingId, setEditingId] = useState<string | null>(null);
   const [addingIn, setAddingIn] = useState<string | null>(null); // event label
   const [newEvent, setNewEvent] = useState<string | null>(null); // null = closed
+  const [word, setWord] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
   const money = (n: number | null | undefined) =>
@@ -657,7 +662,7 @@ export function QuoteItems({
 
   const save = (draft: ItemDraft, eventLabel: string, id?: string) =>
     startTransition(async () => {
-      await saveLineItem({
+      const r = await saveLineItem({
         id,
         weddingId,
         budgetLineId: draft.lineId,
@@ -667,8 +672,10 @@ export function QuoteItems({
         unitPrice: numOrNull(draft.unit),
         vatPct: numOrNull(draft.vat),
         totalHt: numOrNull(draft.ht),
-        totalTtc: numOrNull(draft.ttc)
+        totalTtc: numOrNull(draft.ttc),
+        envelopeId: draft.env || null
       });
+      setWord("envelopeSaved" in r && r.envelopeSaved === false ? t("itemsCat0020") : null);
       setEditingId(null);
       setAddingIn(null);
       setNewEvent(null);
@@ -719,6 +726,7 @@ export function QuoteItems({
                       <td colSpan={7}>
                         <ItemForm
                           lines={lines}
+                          envelopes={envelopes}
                           initial={{
                             label: it.label,
                             qty: it.qty != null ? String(it.qty) : "",
@@ -726,7 +734,8 @@ export function QuoteItems({
                             ht: it.total_ht != null ? String(it.total_ht) : "",
                             vat: it.vat_pct != null ? String(it.vat_pct) : "",
                             ttc: it.total_ttc != null ? String(it.total_ttc) : "",
-                            lineId: it.budget_line_id
+                            lineId: it.budget_line_id,
+                            env: it.envelope_id ?? ""
                           }}
                           pending={pending}
                           onSave={(d) => save(d, it.event_label ?? "", it.id)}
@@ -736,7 +745,14 @@ export function QuoteItems({
                     </tr>
                   ) : (
                     <tr key={it.id}>
-                      <td>{it.label}</td>
+                      <td>
+                        {it.label}
+                        {isTeam && it.envelope_id && (
+                          <em className="team-only" style={{ color: "var(--bronze)", marginLeft: 6, fontSize: 11.5 }}>
+                            → {envelopes.find((e2) => e2.id === it.envelope_id)?.label ?? ""}
+                          </em>
+                        )}
+                      </td>
                       <td className="num">{it.qty ?? ""}</td>
                       <td className="num">{it.unit_price != null ? money(it.unit_price) : ""}</td>
                       <td className="num">{it.total_ht != null ? money(it.total_ht) : ""}</td>
@@ -770,6 +786,7 @@ export function QuoteItems({
             <div className="team-only" style={{ marginTop: 8 }}>
               <ItemForm
                 lines={lines}
+                envelopes={envelopes}
                 pending={pending}
                 onSave={(d) => save(d, event === t("noEvent") ? "" : event)}
                 onCancel={() => setAddingIn(null)}
@@ -802,6 +819,7 @@ export function QuoteItems({
               />
               <ItemForm
                 lines={lines}
+                envelopes={envelopes}
                 pending={pending}
                 onSave={(d) => save(d, newEvent)}
                 onCancel={() => setNewEvent(null)}
@@ -809,6 +827,7 @@ export function QuoteItems({
             </>
           )}
           <p style={{ fontSize: 12.5, color: "var(--ink2)", margin: "8px 0 0" }}>{t("itemsAuto")}</p>
+          {word && <p role="status" style={{ fontSize: 12.5, color: "var(--bronze)", margin: "6px 0 0" }}>{word}</p>}
         </div>
       )}
     </>
@@ -817,12 +836,14 @@ export function QuoteItems({
 
 function ItemForm({
   lines,
+  envelopes,
   initial,
   pending,
   onSave,
   onCancel
 }: {
   lines: { id: string; label: string }[];
+  envelopes: { id: string; label: string }[];
   initial?: ItemDraft;
   pending: boolean;
   onSave: (d: ItemDraft) => void;
@@ -831,7 +852,7 @@ function ItemForm({
   const t = useTranslations("budget.fiche");
   const tc = useTranslations("common");
   const [d, setD] = useState<ItemDraft>(
-    initial ?? { label: "", qty: "", unit: "", ht: "", vat: "20", ttc: "", lineId: lines[0]?.id ?? "" }
+    initial ?? { label: "", qty: "", unit: "", ht: "", vat: "20", ttc: "", lineId: lines[0]?.id ?? "", env: "" }
   );
   const patch = (p: Partial<ItemDraft>) => setD((v) => ({ ...v, ...p }));
 
@@ -857,6 +878,20 @@ function ItemForm({
       <input value={d.ht} onChange={(e) => patch({ ht: e.target.value })} placeholder={htAuto != null ? String(htAuto) : "HT"} style={{ flex: "0 0 90px", textAlign: "right" }} aria-label="HT" />
       <input value={d.vat} onChange={(e) => patch({ vat: e.target.value })} placeholder={t("vat")} style={{ flex: "0 0 56px", textAlign: "right" }} aria-label={t("vat")} />
       <input value={d.ttc} onChange={(e) => patch({ ttc: e.target.value })} placeholder={ttcAuto != null ? String(ttcAuto) : "TTC"} style={{ flex: "0 0 90px", textAlign: "right" }} aria-label="TTC" />
+      {envelopes.length > 0 && (
+        <select
+          value={d.env}
+          onChange={(e) => patch({ env: e.target.value })}
+          aria-label={t("itemsCategory")}
+          title={t("itemsCategory")}
+          style={{ padding: "8px", border: "1px solid var(--line)", background: "#fff", fontSize: 12.5, maxWidth: 180 }}
+        >
+          <option value="">{t("itemsFollows")}</option>
+          {envelopes.map((e2) => (
+            <option key={e2.id} value={e2.id}>{e2.label}</option>
+          ))}
+        </select>
+      )}
       <button className="btn ghost sm" disabled={pending || !d.label.trim() || !d.lineId} onClick={() => onSave(d)}>
         {pending ? "…" : tc("save")}
       </button>

@@ -232,6 +232,7 @@ export default async function VendorSheetPage({
         lines={vendorLines.map((l) => ({ id: l.id, label: l.label }))}
         items={items}
         isTeam={session.isTeam}
+        envelopes={(envelopesRes.data ?? []) as { id: string; label: string }[]}
       />
 
       {/* The vendor's papers — dropped here, on the vendor itself:

@@ -18,7 +18,7 @@ const { outputText: code } = ts.transpileModule(src, {
 const tmp = mkdtempSync(path.join(os.tmpdir(), "budgetmath-"));
 const mod = path.join(tmp, "budget-math.mjs");
 writeFileSync(mod, code);
-const { barModel, pctOfBudget, coherence } = await import(pathToFileURL(mod).href);
+const { barModel, pctOfBudget, coherence, envelopeCommitted } = await import(pathToFileURL(mod).href);
 
 test("Camille & Alexander: paid is 22 % of budget, never 70 (§1)", () => {
   // total 720,000 · committed 221,427 · paid 156,100
@@ -87,4 +87,63 @@ test("paid never exceeds committed on the bar", () => {
   const m = barModel({ total: 100000, committed: 50000, paid: 80000 });
   assert.equal(m.paid, 50000);
   assert.equal(m.stillToPay, 0);
+});
+
+test("envelopeCommitted: lines count in their category, homeless parents beyond", () => {
+  const r = envelopeCommitted(
+    [
+      { id: "a", envelope_id: "E1", committedEur: 100, converted: true },
+      { id: "b", envelope_id: null, committedEur: 40, converted: true },
+      { id: "c", envelope_id: "E1", committedEur: 0, converted: false }
+    ],
+    []
+  );
+  assert.deepEqual(r.byEnvelope, { E1: 100 });
+  assert.equal(r.beyond, 40);
+});
+
+test("envelopeCommitted: an overridden post moves its TTC, the line keeps the rest", () => {
+  const r = envelopeCommitted(
+    [{ id: "a", envelope_id: "VENUE", committedEur: 100000, converted: true }],
+    [
+      { budget_line_id: "a", envelope_id: "MUSIC", ttc: 8000 },
+      { budget_line_id: "a", envelope_id: null, ttc: 50000 }
+    ]
+  );
+  assert.equal(r.byEnvelope.MUSIC, 8000);
+  assert.equal(r.byEnvelope.VENUE, 92000);
+  assert.equal(r.beyond, 0);
+});
+
+test("envelopeCommitted: the identity holds even when moved posts exceed the committed", () => {
+  const r = envelopeCommitted(
+    [{ id: "a", envelope_id: "VENUE", committedEur: 100, converted: true }],
+    [
+      { budget_line_id: "a", envelope_id: "M1", ttc: 100 },
+      { budget_line_id: "a", envelope_id: "M2", ttc: 100 }
+    ]
+  );
+  assert.equal(Math.round(r.byEnvelope.M1), 50);
+  assert.equal(Math.round(r.byEnvelope.M2), 50);
+  assert.equal(Math.round(r.byEnvelope.VENUE ?? 0), 0);
+  const sum = Object.values(r.byEnvelope).reduce((s, v) => s + v, 0) + r.beyond;
+  assert.equal(Math.round(sum), 100);
+});
+
+test("envelopeCommitted: a homeless line's overridden post finds its category, the rest stays beyond", () => {
+  const r = envelopeCommitted(
+    [{ id: "a", envelope_id: null, committedEur: 128000, converted: true }],
+    [{ budget_line_id: "a", envelope_id: "CAT", ttc: 25000 }]
+  );
+  assert.equal(r.byEnvelope.CAT, 25000);
+  assert.equal(r.beyond, 103000);
+});
+
+test("envelopeCommitted: unconverted lines stand apart, overrides included", () => {
+  const r = envelopeCommitted(
+    [{ id: "a", envelope_id: "E1", committedEur: 0, converted: false }],
+    [{ budget_line_id: "a", envelope_id: "E2", ttc: 500 }]
+  );
+  assert.deepEqual(r.byEnvelope, {});
+  assert.equal(r.beyond, 0);
 });

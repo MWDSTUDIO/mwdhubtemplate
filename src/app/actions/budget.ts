@@ -553,6 +553,9 @@ export async function saveLineItem(input: {
   vatPct: number | null;
   totalHt: number | null;
   totalTtc: number | null;
+  /** The post's own category (0020) — undefined leaves it untouched,
+      null makes it follow its line again. */
+  envelopeId?: string | null;
   /** Client-minted id for optimistic creation. */
   createId?: string;
 }) {
@@ -566,7 +569,7 @@ export async function saveLineItem(input: {
   if (ttc == null && ht != null) {
     ttc = Math.round(ht * (1 + (input.vatPct ?? 0) / 100) * 100) / 100;
   }
-  const row = {
+  const row: Record<string, unknown> = {
     event_label: input.eventLabel.trim() || null,
     label: input.label.trim() || "—",
     qty: input.qty,
@@ -575,16 +578,24 @@ export async function saveLineItem(input: {
     total_ht: ht,
     total_ttc: ttc
   };
+  if (input.envelopeId !== undefined) row.envelope_id = input.envelopeId;
+  let envelopeSaved = true;
   let error;
   let id: string | null = input.id ?? null;
   if (input.id) {
     ({ error } = await supabase.from("budget_line_items").update(row).eq("id", input.id));
+    if (error && input.envelopeId !== undefined) {
+      // Before migration 0020 the column is absent — the rest saves.
+      envelopeSaved = false;
+      delete row.envelope_id;
+      ({ error } = await supabase.from("budget_line_items").update(row).eq("id", input.id));
+    }
   } else {
     const { count } = await supabase
       .from("budget_line_items")
       .select("id", { count: "exact", head: true })
       .eq("budget_line_id", input.budgetLineId);
-    const { data: created, error: insErr } = await supabase
+    let { data: created, error: insErr } = await supabase
       .from("budget_line_items")
       .insert({
         ...(input.createId ? { id: input.createId } : {}),
@@ -595,12 +606,27 @@ export async function saveLineItem(input: {
       })
       .select("id")
       .single();
+    if (insErr && input.envelopeId !== undefined) {
+      envelopeSaved = false;
+      delete row.envelope_id;
+      ({ data: created, error: insErr } = await supabase
+        .from("budget_line_items")
+        .insert({
+          ...(input.createId ? { id: input.createId } : {}),
+          wedding_id: input.weddingId,
+          budget_line_id: input.budgetLineId,
+          sort: (count ?? 0) + 1,
+          ...row
+        })
+        .select("id")
+        .single());
+    }
     error = insErr;
     id = created?.id ?? null;
   }
   if (!error) await rollupLine(input.budgetLineId);
   revalidateRooms("budget");
-  return { ok: !error, id };
+  return { ok: !error, id , envelopeSaved };
 }
 
 export async function deleteLineItem(id: string, budgetLineId: string) {

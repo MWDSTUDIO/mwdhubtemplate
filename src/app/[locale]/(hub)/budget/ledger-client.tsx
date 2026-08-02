@@ -4,6 +4,7 @@ import React, { useEffect, useMemo, useRef, useState, useTransition } from "reac
 import { useFormatter, useTranslations } from "next-intl";
 import { Link, useRouter } from "@/i18n/navigation";
 import type { BudgetEnvelope, BudgetLine, BudgetLineItem, EnvelopeNote, Payment } from "@/lib/types";
+import { envelopeCommitted } from "@/lib/budget-math";
 import {
   updateBudgetLine,
   setLineFxRate,
@@ -1305,6 +1306,20 @@ function HouseBook({
     const byEnv = new Map<string | null, BudgetLine[]>();
     for (const e of envelopes) byEnv.set(e.id, []);
     for (const p of parents) byEnv.set(p.envelope_id ?? null, [...(byEnv.get(p.envelope_id ?? null) ?? []), p]);
+    const envTotals = envelopeCommitted(
+      lines.map((l) => ({
+        id: l.id,
+        envelope_id: l.envelope_id ?? null,
+        parent_line_id: l.parent_line_id ?? null,
+        committedEur: Number(l.committed ?? 0),
+        converted: true
+      })),
+      items.map((it) => ({
+        budget_line_id: it.budget_line_id,
+        envelope_id: (it as { envelope_id?: string | null }).envelope_id ?? null,
+        ttc: Number(it.total_ttc ?? it.total_ht ?? 0)
+      }))
+    );
     return [...byEnv.entries()]
       .filter(([envId, ps]) => envId !== null || ps.length > 0)
       .map(([envId, ps]) => {
@@ -1312,11 +1327,15 @@ function HouseBook({
         const note = envelopeNotes.find((n) => n.envelope_id === envId && n.status === "published") ?? null;
         const kids = (p: BudgetLine) => lines.filter((l) => l.parent_line_id === p.id);
         const all = ps.flatMap((p) => [p, ...kids(p)]);
-        const committed = all.reduce((s, l) => s + Number(l.committed ?? 0), 0);
+        // Committed through the shared computation (0020): a post
+        // carrying its own category counts there, not here.
+        const committed = env
+          ? envTotals.byEnvelope[env.id] ?? 0
+          : envTotals.beyond;
         const paid = all.reduce((s, l) => s + Number(l.paid ?? 0), 0);
         return { env, note, parents: ps, committed, paid };
       });
-  }, [lines, envelopes, envelopeNotes]);
+  }, [lines, items, envelopes, envelopeNotes]);
 
   const totalCommitted = groups.reduce((s, g) => s + g.committed, 0);
   const placed = [...groups].filter((g) => g.committed > 0).sort((a, b) => b.committed - a.committed);
@@ -1413,6 +1432,11 @@ function HouseBook({
                                 <span title={isTeam ? ((it as { source_document_id?: string | null }).source_document_id ? t("provenanceRead") : t("provenanceManual")) : undefined}>
                                   {it.event_label ? <em style={{ color: "var(--bronze)" }}>{it.event_label} · </em> : null}
                                   {it.label}
+                                  {isTeam && (it as { envelope_id?: string | null }).envelope_id && (it as { envelope_id?: string | null }).envelope_id !== (g.env?.id ?? null) && (
+                                    <em className="team-only" style={{ color: "var(--bronze)", marginLeft: 6, fontSize: 11.5 }}>
+                                      {t("itemCounted", { label: envelopes.find((e) => e.id === (it as { envelope_id?: string | null }).envelope_id)?.label ?? "" })}
+                                    </em>
+                                  )}
                                 </span>
                                 <span className="num">{money(format, it.total_ttc ?? it.total_ht)}</span>
                               </div>
@@ -1424,16 +1448,17 @@ function HouseBook({
                             {t("noDetailRead")}
                           </p>
                         )}
-                        {isTeam && !g.env && (
-                          <label className="team-only" style={{ display: "inline-flex", gap: 6, alignItems: "baseline", fontSize: 12.5, color: "var(--bronze)", margin: "0 0 8px" }}>
-                            {t("placeInto")}
+                        {isTeam && (
+                          <label className="team-only" style={{ display: "inline-flex", gap: 6, alignItems: "baseline", fontSize: 12.5, color: g.env ? "var(--ink2)" : "var(--bronze)", margin: "0 0 8px" }}>
+                            {g.env ? t("lineCategory") : t("placeInto")}
                             <select
-                              defaultValue=""
+                              key={`${p.id}-${p.envelope_id ?? ""}`}
+                              defaultValue={p.envelope_id ?? ""}
                               onChange={(e) => {
                                 const v = e.target.value;
-                                if (!v) return;
+                                if ((v || null) === (p.envelope_id ?? null)) return;
                                 startTransition(async () => {
-                                  await setLineEnvelope(p.id, v);
+                                  await setLineEnvelope(p.id, v || null);
                                   router.refresh();
                                 });
                               }}

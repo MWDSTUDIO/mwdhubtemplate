@@ -549,7 +549,10 @@
         "type_proposal": "Proposal",
         "type_contract": "Contract",
         "type_invoice": "Invoice"
-      }
+      },
+      "itemsCategory": "The post's own category — follows the line unless set",
+      "itemsFollows": "Follows the line",
+      "itemsCat0020": "The post is kept; its own category awaits migration 0020."
     },
     "risks": {
       "title": "Risk buffer & contingency",
@@ -688,7 +691,9 @@
       "splitAmountPh": "Amount",
       "splitGo": "Split",
       "splitCancel": "Never mind",
-      "splitTooMuch": "At most {amount} — the line's committed."
+      "splitTooMuch": "At most {amount} — the line's committed.",
+      "lineCategory": "Category",
+      "itemCounted": "→ counts in {label}"
     },
     "bar": {
       "aria": "Where the budget stands",
