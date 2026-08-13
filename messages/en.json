@@ -1493,6 +1493,28 @@
       "integrate": "Integrate",
       "counts": "{create} to create · {skip} skipped",
       "done": "Integrated — {created} created · {linked} linked · {skipped} skipped."
+    },
+    "client": {
+      "eyebrow": "Your vendor",
+      "website": "Website",
+      "instagram": "Instagram",
+      "portfolio": "Portfolio",
+      "finTitle": "Your financial summary",
+      "papersTitle": "Shared with you",
+      "open": "Open",
+      "messagesBlurb": "A question about this vendor? Write to the house — we answer with pleasure.",
+      "feedbackTitle": "Your word on this vendor",
+      "feedbackBlurb": "Tell the house how {name} felt to you — your word stays between us.",
+      "feedbackOpen": "Rate this vendor",
+      "feedbackEdit": "Refine your word",
+      "feedbackSend": "Send to the house",
+      "feedbackCancel": "Cancel",
+      "feedbackPlaceholder": "A few words, if you wish…",
+      "feedbackThanks": "Received — thank you for your word.",
+      "feedbackFailed": "Your word did not land — try again in a moment.",
+      "stars": "{n} stars",
+      "teamFeedbackTitle": "The couple's word",
+      "noComment": "(no comment)"
     }
   },
   "guests": {

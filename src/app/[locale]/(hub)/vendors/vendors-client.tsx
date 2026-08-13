@@ -485,7 +485,7 @@ export function VendorsTable({
               <tr key={vendor.id} style={vendor.archived ? { opacity: 0.55 } : undefined}>
                 <td>
                   <Link
-                    href={isTeam ? `/vendors/${vendor.id}` : `/budget/vendor/${vendor.id}`}
+                    href={`/vendors/${vendor.id}`}
                     style={{ textDecoration: "underline", textUnderlineOffset: 3, textDecorationColor: "var(--champagne)" }}
                   >
                     {vendor.name}

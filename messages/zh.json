@@ -1493,6 +1493,28 @@
       "integrate": "整合",
       "counts": "创建 {create} · 搁置 {skip}",
       "done": "已整合 — 创建 {created} · 关联 {linked} · 搁置 {skipped}。"
+    },
+    "client": {
+      "eyebrow": "您的供应商",
+      "website": "网站",
+      "instagram": "Instagram",
+      "portfolio": "作品集",
+      "finTitle": "您的财务概要",
+      "papersTitle": "与您共享",
+      "open": "打开",
+      "messagesBlurb": "对这家供应商有疑问？欢迎致信本馆——我们乐意解答。",
+      "feedbackTitle": "您对这家供应商的评价",
+      "feedbackBlurb": "告诉本馆您对 {name} 的感受——您的评价仅限于我们之间。",
+      "feedbackOpen": "评价此供应商",
+      "feedbackEdit": "修改评价",
+      "feedbackSend": "发送给本馆",
+      "feedbackCancel": "取消",
+      "feedbackPlaceholder": "如愿意，可写几句……",
+      "feedbackThanks": "已收到——感谢您的评价。",
+      "feedbackFailed": "评价未能提交——请稍后重试。",
+      "stars": "{n} 星",
+      "teamFeedbackTitle": "新人的评价",
+      "noComment": "（无评语）"
     }
   },
   "guests": {

@@ -3,16 +3,38 @@ import { redirect } from "next/navigation";
 import { Link } from "@/i18n/navigation";
 import { requireHouseSession } from "@/lib/session";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import type {
   Payment, Vendor, VendorContact, VendorDocument, VendorNote, VendorRegistry
 } from "@/lib/types";
-import { ContactsDesk, DocumentsDesk, NotesDesk, ProfileForm, RelationshipActions } from "./profile-client";
+import { ContactsDesk, DocumentsDesk, NotesDesk, ProfileForm, RelationshipActions, VendorFeedbackDesk } from "./profile-client";
 import { MomentLinks } from "@/components/moments-desk";
 
+/** The curated subset the couple may read — never the whole registry. */
+interface ClientPresentation {
+  name: string;
+  category: string;
+  city: string | null;
+  country: string | null;
+  website: string | null;
+  instagram: string | null;
+  portfolio: string | null;
+}
+
+interface ClientFinance {
+  committed: number;
+  paid: number;
+  next: { amount: number; due: string } | null;
+}
+
 /**
- * The vendor profile (PRD §5) — one canonical record: identity,
- * relationship, contacts, papers, notes, wedding history, and a
- * read-only financial summary that belongs to Budget.
+ * The vendor profile — two worlds on one canonical record (PRD
+ * Vendors Client View). The team keeps its operational workspace;
+ * the couple receives a finished presentation: identity, a read-only
+ * financial summary, the papers deliberately shown to them, their own
+ * word on the vendor, and the door to Messages. Nothing internal
+ * crosses: the couple's data is assembled server-side from a curated
+ * allow-list, never from the registry's full row.
  */
 export default async function VendorProfilePage({
   params
@@ -22,19 +44,174 @@ export default async function VendorProfilePage({
   const { locale, vendorId } = await params;
   setRequestLocale(locale);
   const session = await requireHouseSession();
-  if (!session.isTeam) redirect(`/${locale}/vendors`);
   const t = await getTranslations("vendors.profile");
+  const tc = await getTranslations("vendors.client");
+  const td = await getTranslations("vendors.docTypes");
   const format = await getFormatter();
   const { wedding } = session;
   if (!wedding) return null;
 
   const supabase = await createClient();
+  // Read under the caller's own RLS: the couple only ever receives a
+  // vendor marked visible to them — anything else does not exist.
   const { data: vendor } = await supabase
     .from("vendors").select("*").eq("id", vendorId).eq("wedding_id", wedding.id).single();
   if (!vendor) redirect(`/${locale}/vendors`);
   const v = vendor as Vendor;
+  const eur = (n: number) => format.number(n, { style: "currency", currency: "EUR", maximumFractionDigits: 0 });
 
-  const [regRes, contactsRes, notesRes, { data: docs }, { data: lines }, { data: payments }, historyRes] =
+  /* ── the couple's curated assembly — allow-listed fields only ── */
+  const admin = createAdminClient();
+  const clientPresentation = async (): Promise<ClientPresentation> => {
+    let reg: Partial<VendorRegistry> | null = null;
+    if (v.registry_id) {
+      const { data } = await admin
+        .from("vendor_registry")
+        .select("trading_name, city, country, website, instagram, portfolio_url")
+        .eq("id", v.registry_id)
+        .maybeSingle();
+      reg = (data ?? null) as Partial<VendorRegistry> | null;
+    }
+    return {
+      name: reg?.trading_name || v.name,
+      category: v.category,
+      city: reg?.city ?? null,
+      country: reg?.country ?? null,
+      website: reg?.website ?? null,
+      instagram: reg?.instagram ?? null,
+      portfolio: reg?.portfolio_url ?? null
+    };
+  };
+  const clientFinance = async (): Promise<ClientFinance> => {
+    const { data: lineRows } = await admin
+      .from("budget_lines").select("id, committed, paid").eq("vendor_id", vendorId);
+    const committed = (lineRows ?? []).reduce((s, l) => s + Number(l.committed ?? 0), 0);
+    const paid = (lineRows ?? []).reduce((s, l) => s + Number(l.paid ?? 0), 0);
+    const ids = (lineRows ?? []).map((l) => l.id);
+    let next: ClientFinance["next"] = null;
+    if (ids.length) {
+      const { data: pays } = await admin
+        .from("payments").select("amount, due_date, paid_at").in("budget_line_id", ids);
+      const upcoming = ((pays ?? []) as Payment[])
+        .filter((p) => !p.paid_at && p.due_date)
+        .sort((a, b) => (a.due_date! < b.due_date! ? -1 : 1))[0];
+      if (upcoming) next = { amount: Number(upcoming.amount), due: upcoming.due_date! };
+    }
+    return { committed, paid, next };
+  };
+
+  /** The finished client-facing sheet — presentation, consultation, feedback. */
+  const ClientSheet = async () => {
+    const [pres, fin, docsRes, fbRes] = await Promise.all([
+      clientPresentation(),
+      clientFinance(),
+      // The caller's own RLS trims papers to client-visible; for the
+      // team's preview we apply the same filter by hand.
+      supabase.from("vendor_documents").select("id, type, label, storage_path, client_visible, archived").eq("vendor_id", vendorId),
+      supabase.from("vendor_feedback").select("rating, comment").eq("vendor_id", vendorId).eq("author_id", session.userId).maybeSingle()
+    ]);
+    const visibleDocs = ((docsRes.data ?? []) as VendorDocument[]).filter(
+      (d) => d.client_visible && !d.archived && d.storage_path
+    );
+    const own = (fbRes.data ?? null) as { rating: number; comment: string | null } | null;
+    const place = [pres.city, pres.country].filter(Boolean).join(", ");
+    const links: [string, string][] = [];
+    if (pres.website) links.push([tc("website"), pres.website]);
+    if (pres.instagram) links.push([tc("instagram"), pres.instagram.startsWith("http") ? pres.instagram : `https://instagram.com/${pres.instagram.replace(/^@/, "")}`]);
+    if (pres.portfolio) links.push([tc("portfolio"), pres.portfolio]);
+    return (
+      <>
+        <div className="eyebrow">{tc("eyebrow")}</div>
+        <h1 className="title">{pres.name}</h1>
+        <p className="lead" style={{ marginBottom: 20 }}>
+          {pres.category}
+          {place ? ` · ${place}` : ""}
+        </p>
+        {links.length > 0 && (
+          <p style={{ display: "flex", gap: 14, flexWrap: "wrap", margin: "0 0 18px" }}>
+            {links.map(([label, href]) => (
+              <a key={label} className="addnote" href={href} target="_blank" rel="noopener noreferrer">{label}</a>
+            ))}
+          </p>
+        )}
+        <div className="grid2" style={{ alignItems: "start" }}>
+          <div>
+            {/* ── the financial summary — read only, no doors to the desk ── */}
+            <div className="card">
+              <div className="eyebrow" style={{ marginBottom: 8 }}>{tc("finTitle")}</div>
+              <table className="sheet-table" style={{ fontSize: 13.5 }}>
+                <tbody>
+                  <tr><td>{t("finCommitted")}</td><td className="num">{eur(fin.committed)}</td></tr>
+                  <tr><td>{t("finPaid")}</td><td className="num">{eur(fin.paid)}</td></tr>
+                  <tr><td>{t("finRemaining")}</td><td className="num">{eur(Math.max(0, fin.committed - fin.paid))}</td></tr>
+                  <tr>
+                    <td>{t("finNext")}</td>
+                    <td className="num">
+                      {fin.next
+                        ? `${eur(fin.next.amount)} · ${format.dateTime(new Date(fin.next.due), { day: "numeric", month: "short", year: "numeric" })}`
+                        : "—"}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            {/* ── the couple's own word — never the house's rating ── */}
+            <VendorFeedbackDesk
+              weddingId={wedding.id}
+              vendorId={v.id}
+              vendorName={pres.name}
+              existing={own}
+            />
+          </div>
+          <div>
+            {/* ── the papers deliberately shown — title and its door ── */}
+            {visibleDocs.length > 0 && (
+              <div className="card">
+                <div className="eyebrow" style={{ marginBottom: 8 }}>{tc("papersTitle")}</div>
+                <ul style={{ margin: 0, padding: 0, listStyle: "none" }}>
+                  {visibleDocs.map((d) => (
+                    <li key={d.id} style={{ display: "flex", gap: 10, alignItems: "baseline", padding: "6px 0", flexWrap: "wrap" }}>
+                      <span className="tag">{td(d.type)}</span>
+                      <span style={{ flex: "1 1 180px" }}>{d.label}</span>
+                      <a
+                        className="btn ghost sm"
+                        href={`/api/vendor-documents/${d.id}/download?preview=1`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{ textDecoration: "none" }}
+                      >
+                        {tc("open")}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {/* ── the conversation stays in its own room ── */}
+            <div className="card">
+              <div className="eyebrow" style={{ marginBottom: 6 }}>{t("messagesTitle")}</div>
+              <p style={{ fontSize: 13, color: "var(--ink2)", margin: "0 0 10px" }}>{tc("messagesBlurb")}</p>
+              <Link className="btn ghost sm" href="/messages" style={{ textDecoration: "none" }}>
+                {t("openMessages")}
+              </Link>
+            </div>
+          </div>
+        </div>
+      </>
+    );
+  };
+
+  /* ── the couple's page: the finished sheet, nothing else ── */
+  if (!session.isTeam) {
+    return (
+      <section className="sheet">
+        <ClientSheet />
+      </section>
+    );
+  }
+
+  /* ── the team's page: the untouched workspace + the client preview ── */
+  const [regRes, contactsRes, notesRes, { data: docs }, { data: lines }, { data: payments }, historyRes, feedbackRes] =
     await Promise.all([
       v.registry_id
         ? supabase.from("vendor_registry").select("*").eq("id", v.registry_id).maybeSingle()
@@ -58,13 +235,15 @@ export default async function VendorProfilePage({
             .select("id, wedding_id, stage, weddings(couple_display_name, date_start)")
             .eq("registry_id", v.registry_id)
             .neq("id", vendorId)
-        : Promise.resolve({ data: [] })
+        : Promise.resolve({ data: [] }),
+      supabase.from("vendor_feedback").select("rating, comment, created_at").eq("vendor_id", vendorId)
     ]);
 
   const registry = ((regRes as { data: unknown }).data ?? null) as VendorRegistry | null;
   const contacts = ((contactsRes as { data: unknown }).data ?? []) as VendorContact[];
   const notes = ((notesRes as { data: unknown }).data ?? []) as VendorNote[];
   const papers = ((docs ?? []) as VendorDocument[]);
+  const coupleWords = ((feedbackRes as { data: unknown }).data ?? []) as { rating: number; comment: string | null; created_at: string }[];
   const history = ((historyRes as { data: unknown }).data ?? []) as {
     id: string; stage: string; weddings: { couple_display_name: string; date_start: string | null } | null;
   }[];
@@ -75,7 +254,6 @@ export default async function VendorProfilePage({
   const next = ((payments ?? []) as Payment[])
     .filter((p) => !p.paid_at && p.due_date)
     .sort((a, b) => (a.due_date! < b.due_date! ? -1 : 1))[0];
-  const eur = (n: number) => format.number(n, { style: "currency", currency: "EUR", maximumFractionDigits: 0 });
 
   // Papers open through /api/vendor-documents/[id]/download — access
   // judged on every click, the Documents room's own mechanism. No URL
@@ -83,72 +261,94 @@ export default async function VendorProfilePage({
 
   return (
     <section className="sheet">
-      <div className="eyebrow">{t("eyebrow")}</div>
-      <h1 className="title">{v.name}</h1>
-      <p className="lead" style={{ marginBottom: 20 }}>
-        {v.category}
-        {registry?.city ? ` · ${registry.city}` : ""}{registry?.country ? `, ${registry.country}` : ""}
-      </p>
-
-      <RelationshipActions weddingId={wedding.id} vendor={v} />
-
-      <div style={{ margin: "10px 0 16px" }}>
-        <MomentLinks weddingId={wedding.id} module="vendor" recordId={v.id} />
+      {/* What the couple receives — shown under the Client view toggle. */}
+      <div className="client-preview">
+        <ClientSheet />
       </div>
 
-      <div className="grid2" style={{ alignItems: "start" }}>
-        <div>
-          <ProfileForm weddingId={wedding.id} vendor={v} registry={registry} />
-          {registry && <ContactsDesk registryId={registry.id} contacts={contacts} />}
-          <NotesDesk weddingId={wedding.id} vendorId={v.id} notes={notes} />
+      <div className="team-only">
+        <div className="eyebrow">{t("eyebrow")}</div>
+        <h1 className="title">{v.name}</h1>
+        <p className="lead" style={{ marginBottom: 20 }}>
+          {v.category}
+          {registry?.city ? ` · ${registry.city}` : ""}{registry?.country ? `, ${registry.country}` : ""}
+        </p>
+
+        <RelationshipActions weddingId={wedding.id} vendor={v} />
+
+        <div style={{ margin: "10px 0 16px" }}>
+          <MomentLinks weddingId={wedding.id} module="vendor" recordId={v.id} />
         </div>
-        <div>
-          {/* ── the financial summary — Budget's figures, read only ── */}
-          <div className="card">
-            <div className="eyebrow" style={{ marginBottom: 8 }}>{t("finTitle")}</div>
-            <table className="sheet-table" style={{ fontSize: 13.5 }}>
-              <tbody>
-                <tr><td>{t("finCommitted")}</td><td className="num">{eur(committed)}</td></tr>
-                <tr><td>{t("finPaid")}</td><td className="num">{eur(paid)}</td></tr>
-                <tr><td>{t("finRemaining")}</td><td className="num">{eur(Math.max(0, committed - paid))}</td></tr>
-                <tr>
-                  <td>{t("finNext")}</td>
-                  <td className="num">
-                    {next ? `${eur(Number(next.amount))} · ${next.due_date}` : "—"}
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-            <p style={{ fontSize: 12, color: "var(--ink2)", margin: "8px 0 10px" }}>{t("finNote")}</p>
-            <Link className="btn ghost sm" href={`/budget/vendor/${v.id}`} style={{ textDecoration: "none" }}>
-              {t("openInBudget")}
-            </Link>
+
+        <div className="grid2" style={{ alignItems: "start" }}>
+          <div>
+            <ProfileForm weddingId={wedding.id} vendor={v} registry={registry} />
+            {registry && <ContactsDesk registryId={registry.id} contacts={contacts} />}
+            <NotesDesk weddingId={wedding.id} vendorId={v.id} notes={notes} />
           </div>
-
-          <DocumentsDesk weddingId={wedding.id} vendorId={v.id} docs={papers} />
-
-          {/* ── other weddings, same house profile ── */}
-          {history.length > 0 && (
+          <div>
+            {/* ── the financial summary — Budget's figures, read only ── */}
             <div className="card">
-              <div className="eyebrow" style={{ marginBottom: 8 }}>{t("historyTitle")}</div>
-              <ul className="steps">
-                {history.map((h) => (
-                  <li key={h.id}>
-                    <span className="d">{h.weddings?.date_start?.slice(0, 4) ?? "—"}</span>
-                    <span>{h.weddings?.couple_display_name ?? "—"} · {t(`stageWord`, { stage: h.stage })}</span>
-                  </li>
-                ))}
-              </ul>
+              <div className="eyebrow" style={{ marginBottom: 8 }}>{t("finTitle")}</div>
+              <table className="sheet-table" style={{ fontSize: 13.5 }}>
+                <tbody>
+                  <tr><td>{t("finCommitted")}</td><td className="num">{eur(committed)}</td></tr>
+                  <tr><td>{t("finPaid")}</td><td className="num">{eur(paid)}</td></tr>
+                  <tr><td>{t("finRemaining")}</td><td className="num">{eur(Math.max(0, committed - paid))}</td></tr>
+                  <tr>
+                    <td>{t("finNext")}</td>
+                    <td className="num">
+                      {next ? `${eur(Number(next.amount))} · ${next.due_date}` : "—"}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+              <p style={{ fontSize: 12, color: "var(--ink2)", margin: "8px 0 10px" }}>{t("finNote")}</p>
+              <Link className="btn ghost sm" href={`/budget/vendor/${v.id}`} style={{ textDecoration: "none" }}>
+                {t("openInBudget")}
+              </Link>
             </div>
-          )}
 
-          {/* ── messages live in their own room ── */}
-          <div className="card">
-            <div className="eyebrow" style={{ marginBottom: 6 }}>{t("messagesTitle")}</div>
-            <p style={{ fontSize: 13, color: "var(--ink2)", margin: "0 0 10px" }}>{t("messagesBlurb")}</p>
-            <Link className="btn ghost sm" href="/messages" style={{ textDecoration: "none" }}>
-              {t("openMessages")}
-            </Link>
+            <DocumentsDesk weddingId={wedding.id} vendorId={v.id} docs={papers} />
+
+            {/* ── the couple's word — read by the team, never edited ── */}
+            {coupleWords.length > 0 && (
+              <div className="card">
+                <div className="eyebrow" style={{ marginBottom: 8 }}>{tc("teamFeedbackTitle")}</div>
+                <ul className="steps">
+                  {coupleWords.map((f, i) => (
+                    <li key={i}>
+                      <span className="d">{"★".repeat(f.rating)}</span>
+                      <span>{f.comment || tc("noComment")}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {/* ── other weddings, same house profile ── */}
+            {history.length > 0 && (
+              <div className="card">
+                <div className="eyebrow" style={{ marginBottom: 8 }}>{t("historyTitle")}</div>
+                <ul className="steps">
+                  {history.map((h) => (
+                    <li key={h.id}>
+                      <span className="d">{h.weddings?.date_start?.slice(0, 4) ?? "—"}</span>
+                      <span>{h.weddings?.couple_display_name ?? "—"} · {t(`stageWord`, { stage: h.stage })}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {/* ── messages live in their own room ── */}
+            <div className="card">
+              <div className="eyebrow" style={{ marginBottom: 6 }}>{t("messagesTitle")}</div>
+              <p style={{ fontSize: 13, color: "var(--ink2)", margin: "0 0 10px" }}>{t("messagesBlurb")}</p>
+              <Link className="btn ghost sm" href="/messages" style={{ textDecoration: "none" }}>
+                {t("openMessages")}
+              </Link>
+            </div>
           </div>
         </div>
       </div>

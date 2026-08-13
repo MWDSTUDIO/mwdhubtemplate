@@ -6,8 +6,8 @@ import { Link, useRouter } from "@/i18n/navigation";
 import type { Vendor, VendorContact, VendorContactRole, VendorDocument, VendorNote, VendorRegistry } from "@/lib/types";
 import {
   addVendorNote, deleteDraftVendor, deleteVendorDocument, removeVendorContact,
-  removeVendorNote, saveVendorContact, saveVendorProfile, setVendorArchived,
-  updateVendorDocumentMeta, type VendorProfileFields
+  removeVendorNote, saveVendorContact, saveVendorFeedback, saveVendorProfile,
+  setVendorArchived, updateVendorDocumentMeta, type VendorProfileFields
 } from "@/app/actions/vendors";
 
 /** The profile under the house's hand — every control does what it says. */
@@ -356,6 +356,97 @@ export function DocumentsDesk({
         </div>
       ))}
       <p style={{ fontSize: 12, color: "var(--ink2)", margin: "10px 0 0" }}>{t("docsNote")}</p>
+    </div>
+  );
+}
+
+/**
+ * The couple's word on the vendor (PRD Vendors Client View) — their
+ * own rating and note, never the house's internal assessment. One row
+ * per person, refined in place; RLS keeps each author to their own.
+ */
+export function VendorFeedbackDesk({
+  weddingId,
+  vendorId,
+  vendorName,
+  existing
+}: {
+  weddingId: string;
+  vendorId: string;
+  vendorName: string;
+  existing: { rating: number; comment: string | null } | null;
+}) {
+  const t = useTranslations("vendors.client");
+  const router = useRouter();
+  const [, startTransition] = useTransition();
+  const [open, setOpen] = useState(false);
+  const [rating, setRating] = useState(existing?.rating ?? 0);
+  const [comment, setComment] = useState(existing?.comment ?? "");
+  const [busy, setBusy] = useState(false);
+  const [thanked, setThanked] = useState(false);
+
+  if (!open) {
+    return (
+      <div className="card">
+        <div className="eyebrow" style={{ marginBottom: 6 }}>{t("feedbackTitle")}</div>
+        {existing ? (
+          <p style={{ fontSize: 13.5, margin: "0 0 10px" }}>
+            <span style={{ color: "var(--champagne)", letterSpacing: 2 }}>{"★".repeat(existing.rating)}</span>
+            {existing.comment ? ` — ${existing.comment}` : ""}
+          </p>
+        ) : (
+          <p style={{ fontSize: 13, color: "var(--ink2)", margin: "0 0 10px" }}>{t("feedbackBlurb", { name: vendorName })}</p>
+        )}
+        {thanked && <p style={{ fontSize: 12.5, color: "var(--bronze)", margin: "0 0 10px" }}>{t("feedbackThanks")}</p>}
+        <button className="btn ghost sm" onClick={() => setOpen(true)}>
+          {existing ? t("feedbackEdit") : t("feedbackOpen")}
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="card">
+      <div className="eyebrow" style={{ marginBottom: 10 }}>{t("feedbackTitle")}</div>
+      <div role="radiogroup" aria-label={t("feedbackTitle")} style={{ display: "flex", gap: 6, marginBottom: 10 }}>
+        {[1, 2, 3, 4, 5].map((n) => (
+          <button
+            key={n}
+            role="radio"
+            aria-checked={rating === n}
+            aria-label={t("stars", { n })}
+            onClick={() => setRating(n)}
+            style={{ background: "none", border: "none", cursor: "pointer", fontSize: 22, lineHeight: 1, color: n <= rating ? "var(--champagne)" : "var(--line)" }}
+          >
+            ★
+          </button>
+        ))}
+      </div>
+      <textarea
+        rows={3}
+        value={comment}
+        onChange={(e) => setComment(e.target.value)}
+        placeholder={t("feedbackPlaceholder")}
+        style={{ width: "100%", fontSize: 13.5 }}
+      />
+      <div style={{ display: "flex", gap: 10, marginTop: 10 }}>
+        <button
+          className="btn sm"
+          disabled={busy || rating === 0}
+          onClick={async () => {
+            setBusy(true);
+            const r = await saveVendorFeedback(weddingId, vendorId, rating, comment);
+            setBusy(false);
+            if (!r.ok) { window.alert(t("feedbackFailed")); return; }
+            setOpen(false);
+            setThanked(true);
+            startTransition(() => router.refresh());
+          }}
+        >
+          {busy ? "…" : t("feedbackSend")}
+        </button>
+        <button className="btn ghost sm" onClick={() => setOpen(false)}>{t("feedbackCancel")}</button>
+      </div>
     </div>
   );
 }

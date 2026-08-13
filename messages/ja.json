@@ -1493,6 +1493,28 @@
       "integrate": "迎え入れる",
       "counts": "作成 {create} · 見送り {skip}",
       "done": "迎え入れました — 作成 {created} · 結び {linked} · 見送り {skipped}。"
+    },
+    "client": {
+      "eyebrow": "ヴェンダーのご紹介",
+      "website": "ウェブサイト",
+      "instagram": "Instagram",
+      "portfolio": "ポートフォリオ",
+      "finTitle": "ご予算の概要",
+      "papersTitle": "お二人への共有書類",
+      "open": "開く",
+      "messagesBlurb": "このヴェンダーについてのご質問は、どうぞハウスまで——喜んでお答えいたします。",
+      "feedbackTitle": "このヴェンダーへのお言葉",
+      "feedbackBlurb": "{name}の印象をハウスにお聞かせください——お言葉は私どもの間に留まります。",
+      "feedbackOpen": "このヴェンダーを評価",
+      "feedbackEdit": "評価を修正",
+      "feedbackSend": "ハウスへ送る",
+      "feedbackCancel": "キャンセル",
+      "feedbackPlaceholder": "よろしければひとことどうぞ……",
+      "feedbackThanks": "承りました——お言葉をありがとうございます。",
+      "feedbackFailed": "送信できませんでした——少し置いてからお試しください。",
+      "stars": "星{n}つ",
+      "teamFeedbackTitle": "お二人のお言葉",
+      "noComment": "（コメントなし）"
     }
   },
   "guests": {

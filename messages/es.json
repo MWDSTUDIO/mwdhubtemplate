@@ -1493,6 +1493,28 @@
       "integrate": "Integrar",
       "counts": "{create} por crear · {skip} descartados",
       "done": "Integrado — {created} creados · {linked} vinculados · {skipped} descartados."
+    },
+    "client": {
+      "eyebrow": "Su proveedor",
+      "website": "Sitio web",
+      "instagram": "Instagram",
+      "portfolio": "Portafolio",
+      "finTitle": "Su resumen financiero",
+      "papersTitle": "Compartido con usted",
+      "open": "Abrir",
+      "messagesBlurb": "¿Una pregunta sobre este proveedor? Escriba a la casa — respondemos con gusto.",
+      "feedbackTitle": "Su palabra sobre este proveedor",
+      "feedbackBlurb": "Cuente a la casa qué le pareció {name} — su palabra queda entre nosotros.",
+      "feedbackOpen": "Valorar este proveedor",
+      "feedbackEdit": "Ajustar su valoración",
+      "feedbackSend": "Enviar a la casa",
+      "feedbackCancel": "Cancelar",
+      "feedbackPlaceholder": "Unas palabras, si lo desea…",
+      "feedbackThanks": "Recibido — gracias por su palabra.",
+      "feedbackFailed": "Su palabra no se registró — inténtelo en un momento.",
+      "stars": "{n} estrellas",
+      "teamFeedbackTitle": "La palabra de la pareja",
+      "noComment": "(sin comentario)"
     }
   },
   "guests": {

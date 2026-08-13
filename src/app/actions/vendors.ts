@@ -349,6 +349,37 @@ export async function saveVendorClientNote(input: {
    would cap the body at 1 MB and reject any real proposal. */
 
 /**
+ * The couple's word on a vendor (PRD Vendors Client View, 0034) —
+ * their own rating and note, one row per person, refined in place.
+ * Entirely separate from the house's internal rating: RLS lets each
+ * author write only their own line, and the team only read.
+ */
+export async function saveVendorFeedback(
+  weddingId: string,
+  vendorId: string,
+  rating: number,
+  comment: string
+) {
+  const session = await requireHouseSession();
+  if (!Number.isInteger(rating) || rating < 1 || rating > 5) return { ok: false as const };
+  const supabase = await createClient();
+  const { error } = await supabase.from("vendor_feedback").upsert(
+    {
+      wedding_id: weddingId,
+      vendor_id: vendorId,
+      author_id: session.userId,
+      rating,
+      comment: comment.trim() || null,
+      updated_at: new Date().toISOString()
+    },
+    { onConflict: "vendor_id,author_id" }
+  );
+  if (error) return { ok: false as const, needsMigration: true };
+  revalidatePath("/vendors");
+  return { ok: true as const };
+}
+
+/**
  * A document entered twice can leave: the record goes, the filed
  * original goes with it. The budget lines and instalments it fed are
  * removed by hand where they live — nothing vanishes silently.
