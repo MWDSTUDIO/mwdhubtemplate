@@ -7,7 +7,7 @@ import type { Vendor, VendorContact, VendorContactRole, VendorDocument, VendorNo
 import {
   addVendorNote, deleteDraftVendor, deleteVendorDocument, removeVendorContact,
   removeVendorNote, saveVendorContact, saveVendorProfile, setVendorArchived,
-  updateVendorDocumentMeta, uploadVendorDocument, type VendorProfileFields
+  updateVendorDocumentMeta, type VendorProfileFields
 } from "@/app/actions/vendors";
 
 /** The profile under the house's hand — every control does what it says. */
@@ -272,18 +272,35 @@ export function DocumentsDesk({
   const { pending, act } = useAct();
   const router = useRouter();
   const [busy, setBusy] = useState<string | null>(null);
+  // Rows the server confirmed but the props have not caught up with
+  // yet — persisted data only, never an optimistic guess. Rapid
+  // consecutive router.refresh() calls dedupe, so the last render can
+  // predate the last insert; the route's response bridges that gap.
+  const [landed, setLanded] = useState<VendorDocument[]>([]);
+  const known = new Set(docs.map((d) => d.id));
+  const shown = [...docs, ...landed.filter((d) => !known.has(d.id))];
 
   // A simple filing (PRD Vendors correction): upload → attach →
-  // display. No analysis is asked here; the Budget module keeps its
-  // own reading room for financial papers.
+  // display, through the same route-handler door the Documents room
+  // uses — a server action would cap the body at 1 MB and reject any
+  // real proposal before our code ran. No analysis is asked here; the
+  // Budget module keeps its own reading room for financial papers.
   const upload = async (file: File) => {
     setBusy("upload");
     try {
       const form = new FormData();
+      form.append("vendorId", vendorId);
       form.append("file", file);
-      const r = await uploadVendorDocument(weddingId, vendorId, form);
-      if (!r.ok) window.alert(t("uploadFailed"));
+      const r = await fetch("/api/vendor-documents/upload", { method: "POST", body: form });
+      if (!r.ok) {
+        window.alert(t("uploadFailed"));
+      } else {
+        const { doc } = (await r.json()) as { doc?: VendorDocument };
+        if (doc) setLanded((prev) => [...prev, doc]);
+      }
       router.refresh();
+    } catch {
+      window.alert(t("uploadFailed"));
     } finally { setBusy(null); }
   };
 
@@ -296,8 +313,8 @@ export function DocumentsDesk({
           <input type="file" hidden accept=".pdf,.png,.jpg,.jpeg" onChange={(e) => { const f = e.target.files?.[0]; if (f) void upload(f); e.target.value = ""; }} />
         </label>
       </div>
-      {docs.length === 0 && <p style={{ fontSize: 13, color: "var(--ink2)", fontStyle: "italic" }}>{t("noDocs")}</p>}
-      {docs.map((d) => (
+      {shown.length === 0 && <p style={{ fontSize: 13, color: "var(--ink2)", fontStyle: "italic" }}>{t("noDocs")}</p>}
+      {shown.map((d) => (
         <div key={d.id} style={{ padding: "8px 0", borderBottom: "1px solid rgba(201,178,145,.2)", opacity: d.archived ? 0.55 : 1 }}>
           <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
             <select

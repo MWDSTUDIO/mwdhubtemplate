@@ -6,7 +6,6 @@ import { requireHouseSession } from "@/lib/session";
 import { revalidateRooms } from "@/lib/revalidate";
 import { logActivity } from "@/lib/activity";
 import { runAgent } from "@/lib/agents/run";
-import { storageKeyFor } from "@/lib/docfiles";
 
 async function teamSession() {
   const session = await requireHouseSession();
@@ -345,44 +344,9 @@ export async function saveVendorClientNote(input: {
   return { ok: !error, needsMigration: Boolean(error) };
 }
 
-/**
- * A paper simply filed on the vendor (PRD Vendors correction): one
- * upload, one canonical vendor_documents record, one physical file —
- * NO analysis, no Budget extraction, nothing asked of any agent. The
- * Budget module keeps its own reading room for that.
- */
-export async function uploadVendorDocument(weddingId: string, vendorId: string, fd: FormData) {
-  await teamSession();
-  const supabase = await createClient();
-  const file = fd.get("file") as File | null;
-  if (!file || !file.size) return { ok: false as const };
-  if (file.size > 25 * 1024 * 1024) return { ok: false as const, reason: "size" as const };
-  const key = `${weddingId}/vendors/${vendorId}/${Date.now()}-${storageKeyFor(file.name)}`;
-  const { error: upErr } = await supabase.storage
-    .from("internal")
-    .upload(key, Buffer.from(await file.arrayBuffer()), {
-      contentType: file.type || "application/pdf",
-      upsert: false
-    });
-  if (upErr) return { ok: false as const, reason: "upload" as const };
-  const row = {
-    wedding_id: weddingId,
-    vendor_id: vendorId,
-    type: "other",
-    label: file.name.replace(/\.[a-z0-9]{1,8}$/i, "").trim() || file.name,
-    storage_path: `internal/${key}`,
-    // Showing a paper to the couple is Estelle's explicit gesture (0033).
-    client_visible: false
-  };
-  const { error } = await supabase.from("vendor_documents").insert(row);
-  if (error) {
-    await supabase.storage.from("internal").remove([key]).catch(() => undefined);
-    return { ok: false as const, reason: "save" as const };
-  }
-  revalidatePath("/vendors");
-  revalidatePath("/budget");
-  return { ok: true as const };
-}
+/* The vendor upload lives in /api/vendor-documents/upload — a route
+   handler, like the Documents room's transmit door: a server action
+   would cap the body at 1 MB and reject any real proposal. */
 
 /**
  * A document entered twice can leave: the record goes, the filed
