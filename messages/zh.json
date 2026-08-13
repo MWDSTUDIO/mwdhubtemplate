@@ -334,7 +334,11 @@
       "dismissHint": "永久从新人页面移开——保留存档，绝不删除。",
       "needsMigration": "请先执行迁移 0029。",
       "hideAside": "收起已搁置",
-      "showAside": "已搁置（{count}）"
+      "showAside": "已搁置（{count}）",
+      "restore": "恢复",
+      "restoreHint": "将此事项恢复到之前的活动状态——文字与关联不变。",
+      "bringBack": "取回",
+      "bringBackHint": "结束休眠或搁置——事项回到活动列表。"
     },
     "importer": {
       "title": "导入里程碑",

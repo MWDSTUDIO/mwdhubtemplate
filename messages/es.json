@@ -334,7 +334,11 @@
       "dismissHint": "Deja la página de la pareja definitivamente — conservada, nunca eliminada.",
       "needsMigration": "Ejecute primero la migración 0029.",
       "hideAside": "Ocultar las apartadas",
-      "showAside": "Apartadas ({count})"
+      "showAside": "Apartadas ({count})",
+      "restore": "Restaurar",
+      "restoreHint": "Devolver esta atención a su estado activo anterior — mismo texto, mismos enlaces.",
+      "bringBack": "Recuperar",
+      "bringBackHint": "Terminar el descanso o el apartado — la atención vuelve a la lista activa."
     },
     "importer": {
       "title": "Importar hitos",

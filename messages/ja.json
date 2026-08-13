@@ -334,7 +334,11 @@
       "dismissHint": "お二人のページから外れますが、削除はされません。",
       "needsMigration": "先にマイグレーション0029の実行をお願いいたします。",
       "hideAside": "取り下げ分を畳む",
-      "showAside": "取り下げ（{count}）"
+      "showAside": "取り下げ（{count}）",
+      "restore": "復元",
+      "restoreHint": "このアテンションを以前のアクティブな状態に戻します——文面もリンクもそのままです。",
+      "bringBack": "呼び戻す",
+      "bringBackHint": "休止や保留を解いて、アテンションをアクティブな一覧に戻します。"
     },
     "importer": {
       "title": "マイルストーンの読み込み",

@@ -334,7 +334,11 @@
       "dismissHint": "It leaves the couple's page for good — kept, never deleted.",
       "needsMigration": "Run migration 0029 first.",
       "hideAside": "Hide the set-aside",
-      "showAside": "Set aside ({count})"
+      "showAside": "Set aside ({count})",
+      "restore": "Restore",
+      "restoreHint": "Return this attention to its previous active state — same text, same links.",
+      "bringBack": "Bring back",
+      "bringBackHint": "End the rest or the set-aside — the attention returns to the active list."
     },
     "importer": {
       "title": "Import milestones",

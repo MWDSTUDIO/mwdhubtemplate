@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import { useFormatter, useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import type { Attention } from "@/lib/types";
-import { dismissAttention, entrustAttention, resolveAttention, settleAttention, snoozeAttention } from "@/app/actions/timeline";
+import { dismissAttention, entrustAttention, resolveAttention, restoreAttention, settleAttention, snoozeAttention, wakeAttention } from "@/app/actions/timeline";
 import { Dictate } from "@/components/Dictate";
 
 /** Your attentions — never "tasks", never "pending". */
@@ -153,6 +153,30 @@ export function Attentions({
               </button>
             ) : (
               statusTag(a.status)
+            )}
+            {/* A settled attention is no dead end — the same row wakes
+                again, text and links untouched (PRD Restore). */}
+            {isTeam && a.status === "attended" && (
+              <button
+                className="addnote team-only"
+                style={{ marginLeft: 10 }}
+                title={t("restoreHint")}
+                disabled={pending}
+                onClick={() => startTransition(async () => { await restoreAttention(a.id); router.refresh(); })}
+              >
+                {t("restore")}
+              </button>
+            )}
+            {isTeam && isAside(a) && (
+              <button
+                className="addnote team-only"
+                style={{ marginLeft: 10 }}
+                title={t("bringBackHint")}
+                disabled={pending}
+                onClick={() => startTransition(async () => { const r = await wakeAttention(a.id); if (r.needsMigration) window.alert(t("needsMigration")); router.refresh(); })}
+              >
+                {t("bringBack")}
+              </button>
             )}
             {isTeam && a.status !== "attended" && (
               <span className="team-only" style={{ display: "inline-flex", gap: 8, marginLeft: 10 }}>

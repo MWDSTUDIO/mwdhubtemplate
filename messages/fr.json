@@ -334,7 +334,11 @@
       "dismissHint": "Elle quitte la page du couple pour de bon — conservée, jamais supprimée.",
       "needsMigration": "Exécutez d'abord la migration 0029.",
       "hideAside": "Replier les écartées",
-      "showAside": "Écartées ({count})"
+      "showAside": "Écartées ({count})",
+      "restore": "Restaurer",
+      "restoreHint": "Rendre cette attention à son état actif précédent — même texte, mêmes liens.",
+      "bringBack": "Rappeler",
+      "bringBackHint": "Mettre fin au repos ou à la mise de côté — l'attention revient dans la liste active."
     },
     "importer": {
       "title": "Importer des jalons",

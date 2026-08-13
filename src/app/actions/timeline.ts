@@ -170,13 +170,70 @@ export async function dismissAttention(id: string) {
   return { ok: !error, needsMigration: Boolean(error) };
 }
 
-/** The team resolves an attention on the couple's behalf. */
+/** The team resolves an attention on the couple's behalf — the
+    previous state rides into the journal so Restore can find it. */
 export async function resolveAttention(id: string) {
-  await teamSession();
+  const session = await teamSession();
   const supabase = await createClient();
+  const { data: a } = await supabase.from("attentions").select("wedding_id, title, status").eq("id", id).maybeSingle();
   await supabase.from("attentions").update({ status: "attended" }).eq("id", id);
+  if (a) {
+    await logActivity(supabase, a.wedding_id, session.profile.full_name, "attention_resolved", {
+      attentionId: id, title: a.title, from: a.status
+    });
+  }
   revalidatePath("/timeline");
   return { ok: true as const };
+}
+
+/**
+ * A settled attention returns to life (PRD Restore) — the SAME row,
+ * same text, same links: only the workflow state moves. The journal
+ * remembers what it was before resolution; without a trace it wakes
+ * in the schema's default active state.
+ */
+export async function restoreAttention(id: string) {
+  const session = await teamSession();
+  const supabase = await createClient();
+  const { data: a } = await supabase.from("attentions").select("wedding_id, title, status").eq("id", id).maybeSingle();
+  if (!a || a.status !== "attended") return { ok: false as const };
+  let previous: "awaiting_word" | "at_leisure" = "at_leisure";
+  try {
+    const { data: trace } = await supabase
+      .from("activity_log")
+      .select("detail")
+      .eq("wedding_id", a.wedding_id)
+      .eq("action", "attention_resolved")
+      .contains("detail", { attentionId: id })
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    const from = (trace?.detail as { from?: string } | null)?.from;
+    if (from === "awaiting_word" || from === "at_leisure") previous = from;
+  } catch {
+    /* the journal is a bonus; the restore stands without it */
+  }
+  const { error } = await supabase.from("attentions").update({ status: previous }).eq("id", id);
+  if (error) return { ok: false as const };
+  await logActivity(supabase, a.wedding_id, session.profile.full_name, "attention_restored", {
+    attentionId: id, title: a.title, to: previous
+  });
+  revalidatePath("/timeline");
+  return { ok: true as const, to: previous };
+}
+
+/** A rest or a set-aside undone — the attention returns to the active
+    shelf, nothing else about it moves. */
+export async function wakeAttention(id: string) {
+  const session = await teamSession();
+  const supabase = await createClient();
+  const { data: a } = await supabase.from("attentions").select("wedding_id, title").eq("id", id).maybeSingle();
+  const { error } = await supabase.from("attentions").update({ snoozed_until: null, dismissed: false }).eq("id", id);
+  if (!error && a) {
+    await logActivity(supabase, a.wedding_id, session.profile.full_name, "attention_woken", { attentionId: id, title: a.title });
+  }
+  revalidatePath("/timeline");
+  return { ok: !error, needsMigration: Boolean(error) };
 }
 
 export async function publishTimeline(weddingId: string) {
