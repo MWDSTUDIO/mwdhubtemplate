@@ -60,12 +60,12 @@ export default async function VendorSheetPage({
       session.isTeam
         ? supabase.from("budget_envelopes").select("id, label").eq("wedding_id", wedding.id).order("sort")
         : Promise.resolve({ data: null }),
-      session.isTeam
-        ? supabase
-            .from("vendor_documents")
-            .select("id, type, label, storage_path")
-            .eq("vendor_id", vendorId)
-        : Promise.resolve({ data: null })
+      // Everyone reads through their own RLS: the couple only ever
+      // receives papers marked client-visible (PRD Vendors correction).
+      supabase
+        .from("vendor_documents")
+        .select("id, type, label, storage_path, archived")
+        .eq("vendor_id", vendorId)
     ]);
   if (!vendor) notFound();
 
@@ -137,20 +137,19 @@ export default async function VendorSheetPage({
   const money = (n: number | null | undefined, currency = "EUR") =>
     n == null ? "—" : format.number(n, { style: "currency", currency, maximumFractionDigits: 0 });
 
-  // The vendor's papers, with a one-hour signed door to each original.
-  const papers: { id: string; type: string; label: string; url: string | null }[] = [];
-  if (session.isTeam) {
-    for (const d of papersRes.data ?? []) {
-      let url: string | null = null;
-      if (d.storage_path?.startsWith("internal/")) {
-        const { data: signed } = await supabase.storage
-          .from("internal")
-          .createSignedUrl(d.storage_path.slice("internal/".length), 3600);
-        url = signed?.signedUrl ?? null;
-      }
-      papers.push({ id: d.id, type: d.type, label: d.label, url });
-    }
-  }
+  // The vendor's papers — opened through /api/vendor-documents/[id]/
+  // download, access judged on every click (the Documents room's own
+  // mechanism). Nothing is signed at render, nothing expires.
+  const papers: { id: string; type: string; label: string; url: string | null }[] = (
+    (papersRes.data ?? []) as { id: string; type: string; label: string; storage_path: string | null; archived?: boolean }[]
+  )
+    .filter((d) => !d.archived)
+    .map((d) => ({
+      id: d.id,
+      type: d.type,
+      label: d.label,
+      url: d.storage_path ? `/api/vendor-documents/${d.id}/download` : null
+    }));
 
   const committed = vendorLines.reduce((s, l) => s + (l.committed ?? 0), 0);
   const paidTotal = vendorLines.reduce((s, l) => s + (l.paid ?? 0), 0);
@@ -239,31 +238,35 @@ export default async function VendorSheetPage({
         envelopes={(envelopesRes.data ?? []) as { id: string; label: string }[]}
       />
 
-      {/* The vendor's papers — dropped here, on the vendor itself:
-          a contract, a proposal, an invoice; the analyst reads whole
-          and the reading awaits Estelle's word in the Budget. */}
-      {session.isTeam && (
-        <div className="card team-only">
+      {/* The vendor's papers — one canonical filed original each,
+          opened through the Documents room's per-click judgement.
+          The couple reads only what was deliberately shown to them:
+          a title and its door, nothing operational. */}
+      {(session.isTeam || papers.some((d) => d.url)) && (
+        <div className={session.isTeam ? "card team-only" : "card"}>
           <div className="eyebrow">{t("papers.title")}</div>
-          {papers.length === 0 && (
+          {session.isTeam && papers.length === 0 && (
             <p style={{ fontSize: 13, color: "var(--ink2)", marginTop: 8 }}>{t("papers.empty")}</p>
           )}
           {papers.length > 0 && (
             <ul style={{ margin: "8px 0 0", padding: 0, listStyle: "none" }}>
               {papers.map((d) => (
                 <li key={d.id} style={{ display: "flex", gap: 10, alignItems: "baseline", padding: "5px 0", flexWrap: "wrap" }}>
-                  <span className="tag">{t(`papers.type_${d.type}`)}</span>
+                  {session.isTeam && <span className="tag">{t(`papers.type_${d.type}`)}</span>}
                   <span style={{ flex: "1 1 200px" }}>{d.label}</span>
                   {d.url && (
-                    <a className="addnote" href={d.url} target="_blank" rel="noreferrer">
-                      {t("papers.open")}
-                    </a>
+                    <>
+                      <a className="addnote" href={`${d.url}?preview=1`} target="_blank" rel="noreferrer">
+                        {t("papers.open")}
+                      </a>
+                      <a className="addnote" href={d.url}>{t("papers.download")}</a>
+                    </>
                   )}
                 </li>
               ))}
             </ul>
           )}
-          <FicheDocDrop weddingId={wedding.id} vendorId={vendorId} />
+          {session.isTeam && <FicheDocDrop weddingId={wedding.id} vendorId={vendorId} />}
         </div>
       )}
 

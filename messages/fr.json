@@ -780,7 +780,16 @@
         "open": "Ouvrir",
         "type_proposal": "Devis",
         "type_contract": "Contrat",
-        "type_invoice": "Facture"
+        "type_invoice": "Facture",
+        "download": "Télécharger",
+        "type_proposal_request": "Demande de proposition",
+        "type_brochure": "Brochure",
+        "type_technical": "Technique",
+        "type_insurance": "Assurance",
+        "type_licence": "Licence",
+        "type_bank_details": "Coordonnées bancaires",
+        "type_portfolio": "Portfolio",
+        "type_other": "Document"
       },
       "itemsCategory": "La catégorie propre du poste — suit la ligne sauf réglage",
       "itemsFollows": "Suit la ligne",
@@ -1292,7 +1301,10 @@
       "licence": "Licence",
       "bank_details": "Coordonnées bancaires",
       "portfolio": "Portfolio",
-      "other": "Autre"
+      "other": "Autre",
+      "proposal_request": "Demande de proposition",
+      "brochure": "Brochure",
+      "technical": "Document technique"
     },
     "add": {
       "name": "Nom du prestataire…",
@@ -1424,7 +1436,7 @@
       "archive": "Archiver",
       "restore": "Restaurer",
       "removeDocConfirm": "Retirer « {label} » ? L'original classé reste au coffre.",
-      "docsNote": "Un papier, un enregistrement — les lectures attendent ton mot au desk Budget avant qu'un chiffre ne bouge.",
+      "docsNote": "Un papier, un original classé. Pour une lecture financière, déposez-le dans la salle de lecture du Budget — rien n'est analysé d'ici.",
       "finTitle": "Résumé financier",
       "finCommitted": "Engagé",
       "finPaid": "Payé",
@@ -1444,7 +1456,13 @@
       "deleteDraft": "Supprimer le brouillon",
       "deleteDraftHint": "Seul un prestataire sans chiffres ni papiers peut simplement partir",
       "deleteDraftConfirm": "Supprimer ce prestataire brouillon ?",
-      "notADraft": "Ce prestataire porte des chiffres ou des papiers — passez par le rituel de départ sur sa fiche Budget."
+      "notADraft": "Ce prestataire porte des chiffres ou des papiers — passez par le rituel de départ sur sa fiche Budget.",
+      "open": "Ouvrir",
+      "uploadFailed": "L'envoi n'a pas abouti — réessayez.",
+      "showToClient": "Montrer au couple",
+      "hideFromClient": "Masquer au couple",
+      "clientVisibleHint": "Un papier montré paraît sur la fiche prestataire du couple, titre et porte seulement.",
+      "clientTag": "Couple"
     },
     "importer": {
       "title": "Importer des prestataires",

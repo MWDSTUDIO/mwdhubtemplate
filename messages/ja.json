@@ -780,7 +780,16 @@
         "open": "開く",
         "type_proposal": "見積",
         "type_contract": "契約",
-        "type_invoice": "請求"
+        "type_invoice": "請求",
+        "download": "ダウンロード",
+        "type_proposal_request": "提案依頼",
+        "type_brochure": "パンフレット",
+        "type_technical": "技術",
+        "type_insurance": "保険",
+        "type_licence": "ライセンス",
+        "type_bank_details": "銀行情報",
+        "type_portfolio": "ポートフォリオ",
+        "type_other": "書類"
       },
       "itemsCategory": "この項目自身の区分——定めなければ行に従います",
       "itemsFollows": "行に従う",
@@ -1292,7 +1301,10 @@
       "licence": "許可証",
       "bank_details": "お振込先",
       "portfolio": "ポートフォリオ",
-      "other": "その他"
+      "other": "その他",
+      "proposal_request": "提案依頼",
+      "brochure": "パンフレット",
+      "technical": "技術資料"
     },
     "add": {
       "name": "パートナー名…",
@@ -1424,7 +1436,7 @@
       "archive": "蔵入れ",
       "restore": "戻す",
       "removeDocConfirm": "「{label}」を外しますか？ 納めた原本は残ります。",
-      "docsNote": "一つの書類に一つの記録 — 読み取りはBudgetの机であなたのお言葉を待ってから数字に触れます。",
+      "docsNote": "ひとつの書類に、ひとつの原本。財務的な読み取りは予算のリーディングルームへ——ここでは一切分析いたしません。",
       "finTitle": "お金の要約",
       "finCommitted": "ご契約額",
       "finPaid": "お支払い済み",
@@ -1444,7 +1456,13 @@
       "deleteDraft": "下書きを消す",
       "deleteDraftHint": "数字も書類もない業者だけがそのまま去れます",
       "deleteDraftConfirm": "この下書きの業者を消しますか？",
-      "notADraft": "この業者は数字か書類を持っています — Budgetの頁で送別の儀を。"
+      "notADraft": "この業者は数字か書類を持っています — Budgetの頁で送別の儀を。",
+      "open": "開く",
+      "uploadFailed": "アップロードできませんでした——もう一度お試しください。",
+      "showToClient": "お二人に表示",
+      "hideFromClient": "お二人に非表示",
+      "clientVisibleHint": "表示した書類はお二人のヴェンダーページに、タイトルと入口のみ現れます。",
+      "clientTag": "お二人に表示中"
     },
     "importer": {
       "title": "業者を取り込む",

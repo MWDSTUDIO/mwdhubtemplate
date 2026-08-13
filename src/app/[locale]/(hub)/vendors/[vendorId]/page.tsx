@@ -77,14 +77,9 @@ export default async function VendorProfilePage({
     .sort((a, b) => (a.due_date! < b.due_date! ? -1 : 1))[0];
   const eur = (n: number) => format.number(n, { style: "currency", currency: "EUR", maximumFractionDigits: 0 });
 
-  // Papers open through one-hour signed doors, never public URLs.
-  const signed = new Map<string, string>();
-  for (const d of papers) {
-    if (!d.storage_path) continue;
-    const [bucket, ...rest] = d.storage_path.split("/");
-    const { data: s } = await supabase.storage.from(bucket).createSignedUrl(rest.join("/"), 3600);
-    if (s?.signedUrl) signed.set(d.id, s.signedUrl);
-  }
+  // Papers open through /api/vendor-documents/[id]/download — access
+  // judged on every click, the Documents room's own mechanism. No URL
+  // is signed at render, so nothing can expire in the page's hands.
 
   return (
     <section className="sheet">
@@ -130,12 +125,7 @@ export default async function VendorProfilePage({
             </Link>
           </div>
 
-          <DocumentsDesk
-            weddingId={wedding.id}
-            vendorId={v.id}
-            docs={papers}
-            signedUrls={Object.fromEntries(signed)}
-          />
+          <DocumentsDesk weddingId={wedding.id} vendorId={v.id} docs={papers} />
 
           {/* ── other weddings, same house profile ── */}
           {history.length > 0 && (

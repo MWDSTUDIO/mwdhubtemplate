@@ -780,7 +780,16 @@
         "open": "Abrir",
         "type_proposal": "Presupuesto",
         "type_contract": "Contrato",
-        "type_invoice": "Factura"
+        "type_invoice": "Factura",
+        "download": "Descargar",
+        "type_proposal_request": "Solicitud de propuesta",
+        "type_brochure": "Folleto",
+        "type_technical": "Técnico",
+        "type_insurance": "Seguro",
+        "type_licence": "Licencia",
+        "type_bank_details": "Datos bancarios",
+        "type_portfolio": "Portafolio",
+        "type_other": "Documento"
       },
       "itemsCategory": "La categoría propia de la partida — sigue la línea salvo ajuste",
       "itemsFollows": "Sigue la línea",
@@ -1292,7 +1301,10 @@
       "licence": "Licencia",
       "bank_details": "Datos bancarios",
       "portfolio": "Portfolio",
-      "other": "Otro"
+      "other": "Otro",
+      "proposal_request": "Solicitud de propuesta",
+      "brochure": "Folleto",
+      "technical": "Documento técnico"
     },
     "add": {
       "name": "Nombre del proveedor…",
@@ -1424,7 +1436,7 @@
       "archive": "Archivar",
       "restore": "Restaurar",
       "removeDocConfirm": "¿Retirar «{label}»? El original archivado permanece.",
-      "docsNote": "Un papel, un registro — las lecturas esperan su palabra en el desk de Budget antes de mover una cifra.",
+      "docsNote": "Un papel, un original archivado. Para una lectura financiera, déjelo en la sala de lectura del Presupuesto — nada se analiza desde aquí.",
       "finTitle": "Resumen financiero",
       "finCommitted": "Comprometido",
       "finPaid": "Pagado",
@@ -1444,7 +1456,13 @@
       "deleteDraft": "Borrar borrador",
       "deleteDraftHint": "Solo un proveedor sin cifras ni papeles puede irse sin más",
       "deleteDraftConfirm": "¿Borrar este proveedor borrador?",
-      "notADraft": "Este proveedor lleva cifras o papeles — use el ritual de salida en su ficha de Budget."
+      "notADraft": "Este proveedor lleva cifras o papeles — use el ritual de salida en su ficha de Budget.",
+      "open": "Abrir",
+      "uploadFailed": "La subida no se completó — inténtelo de nuevo.",
+      "showToClient": "Mostrar a la pareja",
+      "hideFromClient": "Ocultar a la pareja",
+      "clientVisibleHint": "Un papel mostrado aparece en la ficha del proveedor de la pareja, solo título y puerta.",
+      "clientTag": "Pareja"
     },
     "importer": {
       "title": "Importar proveedores",

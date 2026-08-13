@@ -7,7 +7,7 @@ import type { Vendor, VendorContact, VendorContactRole, VendorDocument, VendorNo
 import {
   addVendorNote, deleteDraftVendor, deleteVendorDocument, removeVendorContact,
   removeVendorNote, saveVendorContact, saveVendorProfile, setVendorArchived,
-  updateVendorDocumentMeta, type VendorProfileFields
+  updateVendorDocumentMeta, uploadVendorDocument, type VendorProfileFields
 } from "@/app/actions/vendors";
 
 /** The profile under the house's hand — every control does what it says. */
@@ -256,18 +256,16 @@ export function NotesDesk({ weddingId, vendorId, notes }: { weddingId: string; v
 
 /* ── papers: one canonical record, every action real ── */
 
-const DOC_TYPES = ["proposal", "contract", "invoice", "insurance", "licence", "bank_details", "portfolio", "other"] as const;
+const DOC_TYPES = ["proposal_request", "proposal", "contract", "invoice", "brochure", "portfolio", "insurance", "technical", "licence", "bank_details", "other"] as const;
 
 export function DocumentsDesk({
   weddingId,
   vendorId,
-  docs,
-  signedUrls
+  docs
 }: {
   weddingId: string;
   vendorId: string;
   docs: VendorDocument[];
-  signedUrls: Record<string, string>;
 }) {
   const t = useTranslations("vendors.profile");
   const td = useTranslations("vendors.docTypes");
@@ -275,30 +273,16 @@ export function DocumentsDesk({
   const router = useRouter();
   const [busy, setBusy] = useState<string | null>(null);
 
+  // A simple filing (PRD Vendors correction): upload → attach →
+  // display. No analysis is asked here; the Budget module keeps its
+  // own reading room for financial papers.
   const upload = async (file: File) => {
     setBusy("upload");
     try {
       const form = new FormData();
-      form.append("weddingId", weddingId);
-      form.append("vendorId", vendorId);
       form.append("file", file);
-      await fetch("/api/agents/document", { method: "POST", body: form });
-      router.refresh();
-    } finally { setBusy(null); }
-  };
-
-  /* Re-read the same filed paper — no re-upload asked of anyone. */
-  const reanalyse = async (d: VendorDocument) => {
-    const url = signedUrls[d.id];
-    if (!url) return;
-    setBusy(d.id);
-    try {
-      const blob = await (await fetch(url)).blob();
-      const form = new FormData();
-      form.append("weddingId", weddingId);
-      form.append("vendorId", vendorId);
-      form.append("file", new File([blob], d.label || "document.pdf", { type: blob.type || "application/pdf" }));
-      await fetch("/api/agents/document", { method: "POST", body: form });
+      const r = await uploadVendorDocument(weddingId, vendorId, form);
+      if (!r.ok) window.alert(t("uploadFailed"));
       router.refresh();
     } finally { setBusy(null); }
   };
@@ -331,12 +315,22 @@ export function DocumentsDesk({
               onBlur={(e) => { if (e.target.value !== d.label) act(() => updateVendorDocumentMeta(weddingId, d.id, { label: e.target.value })); }}
               style={{ flex: 1, minWidth: 140, fontSize: 13, padding: "4px 7px", border: "1px solid transparent" }}
             />
-            {signedUrls[d.id] && (
-              <a className="addnote" href={signedUrls[d.id]} target="_blank" rel="noreferrer">{t("download")}</a>
+            {d.storage_path && (
+              <>
+                {/* Access judged per click — nothing pre-signed, nothing expires. */}
+                <a className="addnote" href={`/api/vendor-documents/${d.id}/download?preview=1`} target="_blank" rel="noreferrer">{t("open")}</a>
+                <a className="addnote" href={`/api/vendor-documents/${d.id}/download`}>{t("download")}</a>
+              </>
             )}
-            <button className="addnote" disabled={busy === d.id || !signedUrls[d.id]} onClick={() => void reanalyse(d)} title={t("reanalyseHint")}>
-              {busy === d.id ? "…" : t("reanalyse")}
+            <button
+              className="addnote"
+              disabled={pending}
+              title={t("clientVisibleHint")}
+              onClick={() => act(() => updateVendorDocumentMeta(weddingId, d.id, { clientVisible: !d.client_visible }))}
+            >
+              {d.client_visible ? t("hideFromClient") : t("showToClient")}
             </button>
+            {d.client_visible && <span className="tag ok" style={{ fontSize: 10 }}>{t("clientTag")}</span>}
             <button className="addnote" disabled={pending} onClick={() => act(() => updateVendorDocumentMeta(weddingId, d.id, { archived: !d.archived }))}>
               {d.archived ? t("restore") : t("archive")}
             </button>

@@ -780,7 +780,16 @@
         "open": "Open",
         "type_proposal": "Proposal",
         "type_contract": "Contract",
-        "type_invoice": "Invoice"
+        "type_invoice": "Invoice",
+        "download": "Download",
+        "type_proposal_request": "Proposal request",
+        "type_brochure": "Brochure",
+        "type_technical": "Technical",
+        "type_insurance": "Insurance",
+        "type_licence": "Licence",
+        "type_bank_details": "Bank details",
+        "type_portfolio": "Portfolio",
+        "type_other": "Document"
       },
       "itemsCategory": "The post's own category — follows the line unless set",
       "itemsFollows": "Follows the line",
@@ -1292,7 +1301,10 @@
       "licence": "Licence",
       "bank_details": "Bank details",
       "portfolio": "Portfolio",
-      "other": "Other"
+      "other": "Other",
+      "proposal_request": "Proposal request",
+      "brochure": "Brochure",
+      "technical": "Technical document"
     },
     "add": {
       "name": "Vendor name…",
@@ -1424,7 +1436,7 @@
       "archive": "Archive",
       "restore": "Restore",
       "removeDocConfirm": "Remove “{label}”? The filed original stays in storage.",
-      "docsNote": "One paper, one record — readings land on the Budget desk for your approval before any figure moves.",
+      "docsNote": "One paper, one filed original. For a financial reading, drop it in the Budget's reading room — nothing is analysed from here.",
       "finTitle": "Financial summary",
       "finCommitted": "Committed",
       "finPaid": "Paid",
@@ -1444,7 +1456,13 @@
       "deleteDraft": "Delete draft",
       "deleteDraftHint": "Only a vendor with no figures and no papers may simply leave",
       "deleteDraftConfirm": "Delete this draft vendor?",
-      "notADraft": "This vendor carries figures or papers — use the departure ritual on their Budget sheet."
+      "notADraft": "This vendor carries figures or papers — use the departure ritual on their Budget sheet.",
+      "open": "Open",
+      "uploadFailed": "The upload did not land — try again.",
+      "showToClient": "Show to the couple",
+      "hideFromClient": "Hide from the couple",
+      "clientVisibleHint": "A shown paper appears on the couple's vendor sheet, title and door only.",
+      "clientTag": "Couple"
     },
     "importer": {
       "title": "Import vendors",
