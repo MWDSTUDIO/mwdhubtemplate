@@ -669,6 +669,9 @@ export interface Message {
   created_at: string;
   /** Conversation subject (migration 0010) — null = the general thread. */
   subject?: string | null;
+  /** The salon's growth (0035): a filed photo, a quiet withdrawal. */
+  attachment_path?: string | null;
+  withdrawn_at?: string | null;
 }
 
 export interface FormRow {

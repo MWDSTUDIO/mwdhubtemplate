@@ -2120,7 +2120,17 @@
       "inputIn": "「{subject}」に書き添える…",
       "emptyThread": "「{subject}」にはまだ何もございません——会話をおひらきください。",
       "emptyGeneral": "全般の糸は静かでございます——最初のひとことをどうぞ。"
-    }
+    },
+    "today": "本日",
+    "yesterday": "昨日",
+    "composerHint": "Shift + Enter で改行 · **太字** · _斜体_",
+    "attachPhoto": "写真を添える",
+    "attachFailed": "写真を送れませんでした——もう一度お試しください。",
+    "photoAlt": "会話で共有された写真",
+    "withdraw": "取り消す",
+    "withdrawConfirm": "このメッセージを取り消しますか？会話にはささやかな痕跡が残ります。",
+    "withdrawFailed": "取り消せませんでした——もう一度お試しください。",
+    "withdrawn": "メッセージは取り消されました——{name}、{time}"
   },
   "forms": {
     "eyebrow": "お取り交わし",

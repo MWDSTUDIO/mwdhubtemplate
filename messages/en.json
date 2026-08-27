@@ -2120,7 +2120,17 @@
       "inputIn": "Write under “{subject}”…",
       "emptyThread": "Nothing under “{subject}” yet — open the conversation.",
       "emptyGeneral": "The general thread is quiet — write the first word."
-    }
+    },
+    "today": "Today",
+    "yesterday": "Yesterday",
+    "composerHint": "Shift + Enter: new line · **bold** · _italic_",
+    "attachPhoto": "Slip in a photo",
+    "attachFailed": "The photo did not land — try again.",
+    "photoAlt": "Photo shared in the conversation",
+    "withdraw": "Withdraw",
+    "withdrawConfirm": "Withdraw this message? A quiet trace will remain in the conversation.",
+    "withdrawFailed": "The withdrawal did not land — try again.",
+    "withdrawn": "Message withdrawn — {name}, {time}"
   },
   "forms": {
     "eyebrow": "Exchanges",

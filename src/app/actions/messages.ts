@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireHouseSession } from "@/lib/session";
 import { notifyCouple, notifyProfiles, notifyTeam } from "@/lib/notify";
+import type { Message } from "@/lib/types";
 
 const fold = (s: string) =>
   s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
@@ -57,11 +58,13 @@ export async function sendMessage(
   weddingId: string,
   channel: "client" | "teamwork",
   body: string,
-  subject?: string | null
+  subject?: string | null,
+  attachmentPath?: string | null
 ) {
   const session = await requireHouseSession();
   const text = body.trim();
-  if (!text) return { ok: false };
+  // A photo may travel alone; words may travel alone; never neither.
+  if (!text && !attachmentPath) return { ok: false };
 
   const supabase = await createClient();
   const row: Record<string, unknown> = {
@@ -71,12 +74,20 @@ export async function sendMessage(
     body: text
   };
   if (subject?.trim()) row.subject = subject.trim();
-  let { error } = await supabase.from("messages").insert(row);
-  // Before migration 0010 the subject column is absent — the word
-  // still reaches the house, in the general thread.
+  if (attachmentPath) row.attachment_path = attachmentPath;
+  // The persisted row returns so the salon can trade its optimistic
+  // bubble for the server's word — confirmed, not presumed.
+  let { data, error } = await supabase.from("messages").insert(row).select().single();
+  // Before migration 0035 the attachment column is absent; before
+  // 0010 the subject column is — the word still reaches the house.
+  if (error && row.attachment_path) {
+    delete row.attachment_path;
+    if (!text) return { ok: false, needsMigration: true };
+    ({ data, error } = await supabase.from("messages").insert(row).select().single());
+  }
   if (error && row.subject) {
     delete row.subject;
-    ({ error } = await supabase.from("messages").insert(row));
+    ({ data, error } = await supabase.from("messages").insert(row).select().single());
   }
   if (error) return { ok: false };
 
@@ -100,5 +111,22 @@ export async function sendMessage(
       });
     }
   }
-  return { ok: true };
+  return { ok: true, message: data as Message | null };
+}
+
+/**
+ * The author withdraws their own message (0035) — a quiet trace
+ * stays, nothing is deleted, nothing edited. RLS holds the pen: only
+ * the author's own line can move, and the UI offers no other change.
+ */
+export async function withdrawMessage(messageId: string) {
+  const session = await requireHouseSession();
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("messages")
+    .update({ withdrawn_at: new Date().toISOString() })
+    .eq("id", messageId)
+    .eq("author_id", session.userId);
+  if (error) return { ok: false as const, needsMigration: true };
+  return { ok: true as const };
 }

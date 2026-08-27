@@ -2120,7 +2120,17 @@
       "inputIn": "Écrire sous « {subject} »…",
       "emptyThread": "Rien encore sous « {subject} » — ouvrez la conversation.",
       "emptyGeneral": "Le fil général est calme — écrivez le premier mot."
-    }
+    },
+    "today": "Aujourd'hui",
+    "yesterday": "Hier",
+    "composerHint": "Maj + Entrée : à la ligne · **gras** · _italique_",
+    "attachPhoto": "Glisser une photo",
+    "attachFailed": "La photo n'a pas abouti — réessayez.",
+    "photoAlt": "Photo partagée dans la conversation",
+    "withdraw": "Retirer",
+    "withdrawConfirm": "Retirer ce message ? Une trace discrète restera dans la conversation.",
+    "withdrawFailed": "Le retrait n'a pas abouti — réessayez.",
+    "withdrawn": "Message retiré — {name}, {time}"
   },
   "forms": {
     "eyebrow": "Échanges",

@@ -2120,7 +2120,17 @@
       "inputIn": "在「{subject}」下书写…",
       "emptyThread": "「{subject}」之下尚无一言——请开启对话。",
       "emptyGeneral": "综合话题静候着——请写下第一句。"
-    }
+    },
+    "today": "今天",
+    "yesterday": "昨天",
+    "composerHint": "Shift + Enter 换行 · **加粗** · _斜体_",
+    "attachPhoto": "插入照片",
+    "attachFailed": "照片发送失败——请重试。",
+    "photoAlt": "对话中分享的照片",
+    "withdraw": "撤回",
+    "withdrawConfirm": "撤回此消息？对话中将留下一条低调的痕迹。",
+    "withdrawFailed": "撤回未成功——请重试。",
+    "withdrawn": "消息已撤回——{name},{time}"
   },
   "forms": {
     "eyebrow": "往来",

@@ -2120,7 +2120,17 @@
       "inputIn": "Escribir bajo «{subject}»…",
       "emptyThread": "Nada aún bajo «{subject}» — abra la conversación.",
       "emptyGeneral": "El hilo general está en calma — escriba la primera palabra."
-    }
+    },
+    "today": "Hoy",
+    "yesterday": "Ayer",
+    "composerHint": "Mayús + Intro: nueva línea · **negrita** · _cursiva_",
+    "attachPhoto": "Añadir una foto",
+    "attachFailed": "La foto no se envió — inténtelo de nuevo.",
+    "photoAlt": "Foto compartida en la conversación",
+    "withdraw": "Retirar",
+    "withdrawConfirm": "¿Retirar este mensaje? Quedará una huella discreta en la conversación.",
+    "withdrawFailed": "La retirada no se completó — inténtelo de nuevo.",
+    "withdrawn": "Mensaje retirado — {name}, {time}"
   },
   "forms": {
     "eyebrow": "Intercambios",
